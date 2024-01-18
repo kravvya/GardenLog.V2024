@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MongoDB.Bson" Version="2.23.1" />
+		<PackageReference Include="MongoDB.Driver" Version="2.23.1" />
+		<PackageReference Include="MongoDB.Driver.Core" Version="2.23.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\GardenLog.SharedInfrastructure\GardenLog.SharedInfrastructure.csproj" />
+	  <ProjectReference Include="..\..\GardenLog.SharedKernel\GardenLog.SharedKernel.csproj" />
+	  <ProjectReference Include="..\PlantCatalog.Contract\PlantCatalog.Contract.csproj" />
+	  <ProjectReference Include="..\PlantCatalog.Domain\PlantCatalog.Domain.csproj" />
+	</ItemGroup>
+
+</Project>

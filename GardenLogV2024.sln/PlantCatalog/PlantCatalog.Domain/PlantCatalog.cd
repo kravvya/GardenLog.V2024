@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="PlantCatalog.Domain.PlantAggregate.Plant">
+    <Position X="10.5" Y="1.25" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AAQAAkgAAAAgIAIAIAAAAQQEAEAQAEAgAQAAgEQAAEA=</HashCode>
+      <FileName>PlantAggregate\Plant.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="GrowingInstructions" />
+      <Property Name="SubGroups" />
+    </ShowAsCollectionAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PlantCatalog.Domain.PlantAggregate.GrowInstruction">
+    <Position X="15.75" Y="1.25" Width="3" />
+    <TypeIdentifier>
+      <HashCode>CIQAAggAAAAgAgIAgEAQAAQAAgASAEAAAAACAAAKAAM=</HashCode>
+      <FileName>PlantAggregate\GrowInstruction.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PlantCatalog.Domain.PlantAggregate.PlantVariety">
+    <Position X="1.25" Y="1.25" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAYACAgAAAAgIEAAIAAAAAQEAAAAAEAAAAQAAAAAAEE=</HashCode>
+      <FileName>PlantAggregate\PlantVariety.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="MoistureRequirement" />
+      <Property Name="LightRequirement" />
+      <Property Name="GrowTolerance" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="PlantCatalog.Domain.PlantAggregate.PlantSubGroup">
+    <Position X="6" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAgAAAAAAAAAAAAAAAQAAAAAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>PlantAggregate\PlantSubGroup.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Enum Name="PlantCatalog.Domain.PlantAggregate.Enum.HarvestSeasonEnum">
+    <Position X="17.25" Y="7" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAAAAAAAEAAAABEgAAAAAAAAQAAAAAAAAAAA=</HashCode>
+      <FileName>PlantAggregate\Enum\HarvestSeasonEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PlantCatalog.Domain.PlantAggregate.Enum.MoistureRequirementEnum">
+    <Position X="6" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAACABAAAAAAAgAABAAAAAAAAAAgAAAAAAAAAAAAA=</HashCode>
+      <FileName>PlantAggregate\Enum\MoistureRequirementEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PlantCatalog.Domain.PlantAggregate.Enum.LightRequirementEnum">
+    <Position X="6" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAAAAgACAAAAAAAAAAAAAAAAAAAAAAAAAAQA=</HashCode>
+      <FileName>PlantAggregate\Enum\LightRequirementEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PlantCatalog.Domain.PlantAggregate.Enum.PlantLifecycleEnum">
+    <Position X="11.25" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAAAAAAAAAAAAEBAAAAAAAAgAAAAEAAAAAAA=</HashCode>
+      <FileName>PlantAggregate\Enum\PlantLifecycleEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PlantCatalog.Domain.PlantAggregate.Enum.PlantTypeEnum">
+    <Position X="9.5" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAAAAUAIAAAAAAAAAAQAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PlantAggregate\Enum\PlantTypeEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PlantCatalog.Domain.PlantAggregate.Enum.PlantingDepthEnum">
+    <Position X="14.75" Y="7" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAABAAAAAAAAAAAAAAAEAAAAAAAgAAAAgAAAAAA=</HashCode>
+      <FileName>PlantAggregate\Enum\PlantingDepthEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PlantCatalog.Domain.PlantAggregate.Enum.WeatherConditionEnum">
+    <Position X="20.75" Y="1.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAABAAAAAAAAAAAAIAgAAAgAAAAAAAAAQEAAAAA=</HashCode>
+      <FileName>PlantAggregate\Enum\WeatherConditionEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PlantCatalog.Domain.PlantAggregate.Enum.PlantingMethodEnum">
+    <Position X="20.75" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAABAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAA=</HashCode>
+      <FileName>PlantAggregate\Enum\PlantingMethodEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PlantCatalog.Domain.PlantAggregate.Enum.GrowToleranceEnum">
+    <Position X="6" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAAAgAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PlantAggregate\Enum\GrowToleranceEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

@@ -1,0 +1,7 @@
+# For more info on HTTP files go to https://aka.ms/vs/httpfile
+@PlantCatalog.Api_HostAddress = http://localhost:5080
+
+GET {{PlantCatalog.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
