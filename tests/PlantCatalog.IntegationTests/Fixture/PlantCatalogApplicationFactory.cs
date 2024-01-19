@@ -19,10 +19,10 @@ public class PlantCatalogApplicationFactory<TEntryPoint> : WebApplicationFactory
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
             configBuilder.AddInMemoryCollection(new Dictionary<string, string>
                 {
-                    { "MongoDB:Server",  config["MongoDB:Server"]! },
-                    { "MongoDB:DatabaseName",  config["MongoDB:DatabaseName"]! },
-                    { "MongoDB:UserName", config["MongoDB:UserName"]! },
-                    { "MongoDB:Password", config["MongoDB:Password"]! }
+                    { "MongoDB:Server",  config["mongodb-server"]! },
+                    { "MongoDB:DatabaseName",  config["mongodb-databasename"]! },
+                    { "MongoDB:UserName", config["mongodb-username"]! },
+                    { "MongoDB:Password", config["mongodb-password"]! }
              });
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
         });
