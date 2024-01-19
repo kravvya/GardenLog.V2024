@@ -1,0 +1,10 @@
+global using Microsoft.AspNetCore.Mvc.Testing;
+global using PlantCatalog.Contract.ViewModels;
+global using PlantCatalog.IntegrationTest.Clients;
+global using PlantCatalog.IntegrationTest.Fixture;
+global using System.Net.Http;
+global using System.Net.Http.Json;
+global using System.Text.Json;
+global using System.Text.Json.Serialization;
+global using Xunit;
+global using Xunit.Abstractions;
