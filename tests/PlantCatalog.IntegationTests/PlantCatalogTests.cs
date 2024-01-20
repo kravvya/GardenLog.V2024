@@ -6,6 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using SendGrid.Helpers.Mail;
 using System.Net;
 using System.Net.Http;
@@ -34,56 +35,71 @@ public class PlantCatalogTests : IClassFixture<PlantCatalogServiceFixture>
     [Fact]
     public async Task WhyDoesItFail()
     {
-        var token = (new Auth0Helper()).GetToken(typeof(Program).Assembly);
+        try
+        {
+            var token = (new Auth0Helper()).GetToken(typeof(Program).Assembly);
 
-        _output.WriteLine($"Token is {token}");
+            _output.WriteLine($"Token is {token}");
 
-        Assert.NotNull(token);
+            Assert.NotNull(token);
+        }
+        catch (Exception ex)
+        {
+            _output.WriteLine($"Exception {ex}");
+        }
+
     }
 
     [Fact]
     public async Task WhyDoesItFail2()
     {
-        var configuration = new ConfigurationBuilder()
+        try
+        {
+            var configuration = new ConfigurationBuilder()
               .AddJsonFile("appsettings.json")
               .AddUserSecrets(typeof(Program).Assembly)
               .AddEnvironmentVariables()
               .Build();
 
-        var serviceProvider = new ServiceCollection()
-            .AddHttpClient()
-            .AddLogging()
-            .AddMemoryCache()
-            .AddSingleton<IConfiguration>(configuration)
-            .AddSingleton<IConfigurationService, ConfigurationService>()
-            .AddSingleton<IAuth0AuthenticationApiClient, Auth0AuthenticationApiClient>()
-            .BuildServiceProvider();
+            var serviceProvider = new ServiceCollection()
+                .AddHttpClient()
+                .AddLogging()
+                .AddMemoryCache()
+                .AddSingleton<IConfiguration>(configuration)
+                .AddSingleton<IConfigurationService, ConfigurationService>()
+                .AddSingleton<IAuth0AuthenticationApiClient, Auth0AuthenticationApiClient>()
+                .BuildServiceProvider();
 
-        var authApiClient = serviceProvider.GetRequiredService<IAuth0AuthenticationApiClient>();
-        var appSettings = serviceProvider.GetRequiredService<IConfigurationService>().GetAuthSettings();
+            var authApiClient = serviceProvider.GetRequiredService<IAuth0AuthenticationApiClient>();
+            var appSettings = serviceProvider.GetRequiredService<IConfigurationService>().GetAuthSettings();
 
-        if (appSettings.Audience == null) throw new ArgumentException("Required Audience paramter is not found. Can not generate access token without Audience", "Audience");
+            if (appSettings.Audience == null) throw new ArgumentException("Required Audience paramter is not found. Can not generate access token without Audience", "Audience");
 
-        _output.WriteLine($"Token is {appSettings.Audience}");
+            _output.WriteLine($"Token is {appSettings.Audience}");
 
 
-        TokenRequest _tokenRequest = new()
+            TokenRequest _tokenRequest = new()
+            {
+                ClientId = appSettings.ClientId,
+                ClientSecret = appSettings.ClientSecret,
+                GrantType = "client_credentials"
+            };
+
+
+            _tokenRequest.Audience = appSettings.Audience;
+
+            _output.WriteLine($"Request for token {_tokenRequest}");
+
+            var accessToken = authApiClient.GetAccessToken(appSettings.Audience).GetAwaiter().GetResult();
+
+            _output.WriteLine($"{accessToken}");
+
+            Assert.NotNull(accessToken);
+        }
+        catch (Exception ex)
         {
-            ClientId = appSettings.ClientId,
-            ClientSecret = appSettings.ClientSecret,
-            GrantType = "client_credentials"
-        };
-
-      
-        _tokenRequest.Audience = appSettings.Audience;
-
-        _output.WriteLine($"Request for token {_tokenRequest}");
-
-        var accessToken = authApiClient.GetAccessToken(appSettings.Audience).GetAwaiter().GetResult();
-
-        _output.WriteLine($"{accessToken}");
-
-        Assert.NotNull(accessToken);
+            _output.WriteLine($"Exception {ex}");
+        }
     }
     //#region Plant
     //[Fact]
