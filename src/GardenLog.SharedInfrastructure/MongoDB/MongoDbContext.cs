@@ -55,6 +55,7 @@ public class MongoDbContext : IMongoDBContext
         settings.WriteConcern = WriteConcern.WMajority;
         settings.ServerApi = new ServerApi(ServerApiVersion.V1);
         settings.LinqProvider = LinqProvider.V3;
+        settings.AllowInsecureTls = true;
 
         MongoClient = new MongoClient(settings);
         _logger.LogInformation("Mongo Client is set up");
