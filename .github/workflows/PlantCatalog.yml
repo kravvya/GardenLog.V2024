@@ -44,11 +44,11 @@ jobs:
   build:
     
     env:
-      mongodb-server: needs.setup.outputs.test-mongodb-server
-      mongodb-databasename: needs.setup.outputs.test-mongodb-databasename
-      mongodb-username: needs.setup.outputs.test-mongodb-username
-      mongodb-password: needs.setup.outputs.test-mongodb-password
-      auth0-clientsecret: needs.setup.outputs.auth0-clientsecret
+      mongodb-server: ${{ needs.setup.outputs.test-mongodb-server }}
+      mongodb-databasename: ${{ needs.setup.outputs.test-mongodb-databasename }}
+      mongodb-username: ${{ needs.setup.outputs.test-mongodb-username }}
+      mongodb-password: ${{ needs.setup.outputs.test-mongodb-password }}
+      auth0-clientsecret: ${{ needs.setup.outputs.auth0-clientsecret }}
       
     needs: setup
     
