@@ -18,17 +18,17 @@ public class PlantCatalogServiceFixture : PlantCatalogApplicationFactory<Program
         _factory= new PlantCatalogApplicationFactory<Program>();
         _factory.ConfigureAwait(true);
 
-        //var token = (new Auth0Helper()).GetToken(typeof(Program).Assembly);
+        var token = (new Auth0Helper()).GetToken(typeof(Program).Assembly);
 
         FixtureId = Guid.NewGuid().ToString();
         
         var client = _factory.CreateClient();
 
-        //client.DefaultRequestHeaders.Add("RequestUser", "auth0|ec329c32-5705-4e42-a18b-4831916a3003");
+        client.DefaultRequestHeaders.Add("RequestUser", "auth0|ec329c32-5705-4e42-a18b-4831916a3003");
 
-        //client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        //if (client.BaseAddress == null) throw new ArgumentException("Base address is not set on the http client. Fixture setup aborted", "BaseAddress");
+        if (client.BaseAddress == null) throw new ArgumentException("Base address is not set on the http client. Fixture setup aborted", "BaseAddress");
 
         PlantCatalogClient = new PlantCatalogClient(client.BaseAddress, client);
     }

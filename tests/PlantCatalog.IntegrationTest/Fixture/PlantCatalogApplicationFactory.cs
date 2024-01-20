@@ -9,8 +9,7 @@ public class PlantCatalogApplicationFactory<TEntryPoint> : WebApplicationFactory
     {
         //base.ConfigureWebHost(builder);
         var config = new ConfigurationBuilder()
-            //.AddUserSecrets<PlantCatalogTests>()
-            .AddUserSecrets<AuthTests>()
+            .AddUserSecrets<PlantCatalogTests>()
             .AddEnvironmentVariables()
             .Build();
 
