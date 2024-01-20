@@ -16,7 +16,6 @@ namespace PlantCatalog.IntegrationTest;
 public class PlantCatalogTests : IClassFixture<PlantCatalogServiceFixture>
 {
     private readonly ITestOutputHelper _output;
-    private readonly HttpClient _httpClient;
     private readonly PlantCatalogClient _plantCatalogClient;
     private const string TEST_PLANT_NAME = "Blackmelon";
     private const string TEST_GROW_INSTRUCTION_NAME = "Start at home and pick in the Summer";
@@ -25,11 +24,10 @@ public class PlantCatalogTests : IClassFixture<PlantCatalogServiceFixture>
     private const string TEST_DELETE_PLANT_NAME = "DeletePlantName";
     private const string TEST_DELETE_VARIETY_NAME = "Delete Black Beauty";
 
-    public PlantCatalogTests(PlantCatalogServiceFixture fixture, ITestOutputHelper output, HttpClient httpClient)
+    public PlantCatalogTests(PlantCatalogServiceFixture fixture, ITestOutputHelper output)
     {
         _plantCatalogClient = fixture.PlantCatalogClient;
         _output = output;
-        _httpClient = httpClient;
         _output.WriteLine($"Service id {fixture.FixtureId} @ {DateTime.Now:F}");
     }
 
@@ -69,33 +67,23 @@ public class PlantCatalogTests : IClassFixture<PlantCatalogServiceFixture>
         _output.WriteLine($"Token is {appSettings.Audience}");
 
 
-        TokenRequest _tokenRequest=new()
+        TokenRequest _tokenRequest = new()
         {
             ClientId = appSettings.ClientId,
             ClientSecret = appSettings.ClientSecret,
             GrantType = "client_credentials"
         };
 
-        var route = "oauth/token";
-            _tokenRequest.Audience = appSettings.Audience;
+      
+        _tokenRequest.Audience = appSettings.Audience;
 
         _output.WriteLine($"Request for token {_tokenRequest}");
 
-        var result = await _httpClient.PostAsync(route, GenerateByteContent(_tokenRequest));
+        var accessToken = authApiClient.GetAccessToken(appSettings.Audience).GetAwaiter().GetResult();
 
-    _output.WriteLine($"Service responded with {result.StatusCode} code and {result.Content.ReadAsStringAsync()} message");
+        _output.WriteLine($"{accessToken}");
 
-        Assert.NotNull(result);
-    }
-    private static ByteArrayContent GenerateByteContent(object content)
-    {
-        var myContent = JsonSerializer.Serialize(content);
-        var buffer = System.Text.Encoding.UTF8.GetBytes(myContent);
-        var byteContent = new ByteArrayContent(buffer);
-
-        byteContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-        byteContent.Headers.ContentType.Parameters.Add(new System.Net.Http.Headers.NameValueHeaderValue("charset", "utf-8"));
-        return byteContent;
+        Assert.NotNull(accessToken);
     }
     //#region Plant
     //[Fact]
