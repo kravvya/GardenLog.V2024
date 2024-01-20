@@ -1,7 +1,7 @@
 ﻿using GardenLog.SharedInfrastructure.ApiClients;
 using Newtonsoft.Json.Linq;
 
-namespace PlantCatalog.IntegationTests;
+namespace PlantCatalog.IntegrationTests;
 
 public class AuthTests : IClassFixture<PlantCatalogServiceFixture>
 {

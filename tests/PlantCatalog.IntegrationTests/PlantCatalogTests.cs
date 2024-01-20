@@ -1,4 +1,4 @@
-﻿namespace PlantCatalog.IntegrationTest;
+﻿//namespace PlantCatalog.IntegrationTest;
 
 //public class PlantCatalogTests : IClassFixture<PlantCatalogServiceFixture>
 //{
