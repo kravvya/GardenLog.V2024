@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -9,6 +9,15 @@
     <IsTestProject>true</IsTestProject>
     <UserSecretsId>c7083a56-ce3f-4ee4-a9e1-62a6270a1ba3</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\src\PlantCatalog\PlantCatalog.Api\appsettings.Development.json" Link="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\src\PlantCatalog\PlantCatalog.Api\appsettings.json" Link="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.1" />

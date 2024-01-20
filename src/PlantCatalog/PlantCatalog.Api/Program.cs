@@ -102,16 +102,16 @@ try
     //Aapp Container ingress is EntityHandling HTTPs redirects. This is not needed.
     //app.UseHttpsRedirection();
     app.UseKubernetesHealthChecks();
-
+    Log.Information("Starting up PlantCatalog.Api 7");
     //// 2. Enable authentication middleware
     app.UseAuthentication();
-
+    Log.Information("Starting up PlantCatalog.Api 8");
     app.UseAuthorization();
-
+    Log.Information("Starting up PlantCatalog.Api 9");
     app.UseCors("glWebPolicy");
 
     app.MapControllers();
-
+    Log.Information("Starting up PlantCatalog.Api 1=");
     app.Run();
 }
 catch (Exception ex)
