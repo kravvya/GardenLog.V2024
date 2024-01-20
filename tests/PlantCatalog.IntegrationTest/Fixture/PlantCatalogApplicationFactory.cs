@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using PlantCatalog.IntegrationTests;
 
 namespace PlantCatalog.IntegrationTest.Fixture;
 
@@ -11,7 +10,7 @@ public class PlantCatalogApplicationFactory<TEntryPoint> : WebApplicationFactory
         //base.ConfigureWebHost(builder);
         var config = new ConfigurationBuilder()
             //.AddUserSecrets<PlantCatalogTests>()
-            .AddUserSecrets<AuthTests>()
+            .AddUserSecrets<PlantCatalogTests>()
             .AddEnvironmentVariables()
             .Build();
 
