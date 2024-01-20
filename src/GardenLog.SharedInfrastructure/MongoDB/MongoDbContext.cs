@@ -60,8 +60,20 @@ public class MongoDbContext : IMongoDBContext
         MongoClient = new MongoClient(settings);
         _logger.LogInformation("Mongo Client is set up");
 
+        _logger.LogInformation($"{Settings.Server}  {Settings.UserName}   {Settings.Password}  {Settings.DatabaseName} ");
+
         Database = MongoClient.GetDatabase(Settings.DatabaseName);
         _logger.LogInformation("Mongo database is set up {db}", Settings.DatabaseName);
+
+        try
+        {
+            var result = Database.RunCommand<BsonDocument>(new BsonDocument("ping", 1));
+            Console.WriteLine("Pinged your deployment. You successfully connected to MongoDB!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
 
 #pragma warning disable CS0618 // Type or member is obsolete
         BsonDefaults.GuidRepresentationMode = GuidRepresentationMode.V3;
