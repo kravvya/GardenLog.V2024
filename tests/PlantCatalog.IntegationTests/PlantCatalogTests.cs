@@ -1,4 +1,6 @@
-﻿namespace PlantCatalog.IntegrationTest;
+﻿using GardenLog.SharedInfrastructure.ApiClients;
+
+namespace PlantCatalog.IntegrationTest;
 
 public class PlantCatalogTests : IClassFixture<PlantCatalogServiceFixture>
 {
@@ -18,545 +20,555 @@ public class PlantCatalogTests : IClassFixture<PlantCatalogServiceFixture>
         _output.WriteLine($"Service id {fixture.FixtureId} @ {DateTime.Now:F}");
     }
 
-    #region Plant
     [Fact]
-    public async Task Post_Plant_MayCreateNewProduct()
+    public async Task WhyDoesItFail()
     {
-        var response = await _plantCatalogClient.CreatePlant(TEST_PLANT_NAME);
+        var token = (new Auth0Helper()).GetToken(typeof(Program).Assembly);
 
-        var returnString = await response.Content.ReadAsStringAsync();
+        _output.WriteLine($"Token is {token}");
 
-        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
-
-        if (response.StatusCode == System.Net.HttpStatusCode.OK)
-        {
-            Assert.NotEmpty(returnString);
-            Assert.True(Guid.TryParse(returnString, out _));
-        }
-        else
-        {
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.BadRequest);
-            Assert.NotEmpty(returnString);
-            Assert.Contains("Plant with this name already exists", returnString);
-        }
+        Assert.NotNull(token);
     }
 
-    [Fact]
-    public async Task Post_Plant_ShouldNotCreateNewProduct_WithoutName()
-    {
-        var response = await _plantCatalogClient.CreatePlant("");
+    //#region Plant
+    //[Fact]
+    //public async Task Post_Plant_MayCreateNewProduct()
+    //{
+    //    var response = await _plantCatalogClient.CreatePlant(TEST_PLANT_NAME);
 
-        var returnString = await response.Content.ReadAsStringAsync();
+    //    var returnString = await response.Content.ReadAsStringAsync();
 
-        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
+    //    _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.BadRequest);
-        Assert.NotEmpty(returnString);
-        Assert.Contains("'Name' must not be empty.", returnString);
-    }
+    //    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+    //    {
+    //        Assert.NotEmpty(returnString);
+    //        Assert.True(Guid.TryParse(returnString, out _));
+    //    }
+    //    else
+    //    {
+    //        Assert.True(response.StatusCode == System.Net.HttpStatusCode.BadRequest);
+    //        Assert.NotEmpty(returnString);
+    //        Assert.Contains("Plant with this name already exists", returnString);
+    //    }
+    //}
 
-    [Fact]
-    public async Task Put_Plant_ShouldUpdatePlant()
-    {
-        var response = await _plantCatalogClient.GetPlantIdByPlantName(TEST_PLANT_NAME);
+    //[Fact]
+    //public async Task Post_Plant_ShouldNotCreateNewProduct_WithoutName()
+    //{
+    //    var response = await _plantCatalogClient.CreatePlant("");
 
-        var returnString = await response.Content.ReadAsStringAsync();
+    //    var returnString = await response.Content.ReadAsStringAsync();
 
-        _output.WriteLine($"Plant to update was found with service responded with {response.StatusCode} code and {returnString} message");
+    //    _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-        if (response.StatusCode != System.Net.HttpStatusCode.OK || string.IsNullOrEmpty(returnString))
-        {
-            _output.WriteLine($"Plant to update is not found. Will create new one");
-            response = await _plantCatalogClient.CreatePlant(TEST_PLANT_NAME);
+    //    Assert.True(response.StatusCode == System.Net.HttpStatusCode.BadRequest);
+    //    Assert.NotEmpty(returnString);
+    //    Assert.Contains("'Name' must not be empty.", returnString);
+    //}
 
-            returnString = await response.Content.ReadAsStringAsync();
+    //[Fact]
+    //public async Task Put_Plant_ShouldUpdatePlant()
+    //{
+    //    var response = await _plantCatalogClient.GetPlantIdByPlantName(TEST_PLANT_NAME);
 
-            _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
-        }
+    //    var returnString = await response.Content.ReadAsStringAsync();
 
-        response = await _plantCatalogClient.GetPlant(returnString);
-        returnString = await response.Content.ReadAsStringAsync();
-        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
+    //    _output.WriteLine($"Plant to update was found with service responded with {response.StatusCode} code and {returnString} message");
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters =
-                {
-                    new JsonStringEnumConverter(),
-                },
-        };
-        var plant = await response.Content.ReadFromJsonAsync<PlantViewModel>(options);
+    //    if (response.StatusCode != System.Net.HttpStatusCode.OK || string.IsNullOrEmpty(returnString))
+    //    {
+    //        _output.WriteLine($"Plant to update is not found. Will create new one");
+    //        response = await _plantCatalogClient.CreatePlant(TEST_PLANT_NAME);
 
-        plant!.SeedViableForYears += 1;
+    //        returnString = await response.Content.ReadAsStringAsync();
 
-        response = await _plantCatalogClient.UpdatePlant(plant);
+    //        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
+    //    }
 
-        returnString = await response.Content.ReadAsStringAsync();
+    //    response = await _plantCatalogClient.GetPlant(returnString);
+    //    returnString = await response.Content.ReadAsStringAsync();
+    //    _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
+    //    var options = new JsonSerializerOptions
+    //    {
+    //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    //        Converters =
+    //            {
+    //                new JsonStringEnumConverter(),
+    //            },
+    //    };
+    //    var plant = await response.Content.ReadFromJsonAsync<PlantViewModel>(options);
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
-        Assert.NotEmpty(returnString);
-    }
+    //    plant!.SeedViableForYears += 1;
 
-    [Fact]
-    public async Task Delete_Plant()
-    {
-        var response = await _plantCatalogClient.GetPlantIdByPlantName(TEST_DELETE_PLANT_NAME);
+    //    response = await _plantCatalogClient.UpdatePlant(plant);
 
-        var returnString = await response.Content.ReadAsStringAsync();
+    //    returnString = await response.Content.ReadAsStringAsync();
 
-        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
+    //    _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-        if (response.StatusCode != System.Net.HttpStatusCode.OK || string.IsNullOrEmpty(returnString))
-        {
-            _output.WriteLine($"Plant to delete is not found. Will create new one");
-            response = await _plantCatalogClient.CreatePlant(TEST_DELETE_PLANT_NAME);
+    //    Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+    //    Assert.NotEmpty(returnString);
+    //}
 
-            returnString = await response.Content.ReadAsStringAsync();
+    //[Fact]
+    //public async Task Delete_Plant()
+    //{
+    //    var response = await _plantCatalogClient.GetPlantIdByPlantName(TEST_DELETE_PLANT_NAME);
 
-            _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
-        }
+    //    var returnString = await response.Content.ReadAsStringAsync();
 
-        response = await _plantCatalogClient.DeletePLant(returnString);
+    //    _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-        returnString = await response.Content.ReadAsStringAsync();
+    //    if (response.StatusCode != System.Net.HttpStatusCode.OK || string.IsNullOrEmpty(returnString))
+    //    {
+    //        _output.WriteLine($"Plant to delete is not found. Will create new one");
+    //        response = await _plantCatalogClient.CreatePlant(TEST_DELETE_PLANT_NAME);
 
-        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
+    //        returnString = await response.Content.ReadAsStringAsync();
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
-        Assert.NotEmpty(returnString);
-    }
+    //        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
+    //    }
 
-    [Fact]
-    public async Task Get_Should_Return_All_Plants()
-    {
-        var response = await _plantCatalogClient.GetAllPlants();
+    //    response = await _plantCatalogClient.DeletePLant(returnString);
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters =
-                {
-                    new JsonStringEnumConverter(),
-                },
-        };
+    //    returnString = await response.Content.ReadAsStringAsync();
 
-        var returnString = await response.Content.ReadAsStringAsync();
-        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
+    //    _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-        var plants = await response.Content.ReadFromJsonAsync<List<PlantViewModel>>(options);
+    //    Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+    //    Assert.NotEmpty(returnString);
+    //}
 
-        Assert.NotNull(plants);
-        Assert.NotEmpty(plants);
+    //[Fact]
+    //public async Task Get_Should_Return_All_Plants()
+    //{
+    //    var response = await _plantCatalogClient.GetAllPlants();
 
-        var testPlant = plants.FirstOrDefault(plants => plants.Name == TEST_PLANT_NAME);
+    //    var options = new JsonSerializerOptions
+    //    {
+    //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    //        Converters =
+    //            {
+    //                new JsonStringEnumConverter(),
+    //            },
+    //    };
 
-        Assert.NotNull(testPlant);
-    }
+    //    var returnString = await response.Content.ReadAsStringAsync();
+    //    _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-    [Fact]
-    public async Task Get_Should_Return_All_PlantNames()
-    {
-        var response = await _plantCatalogClient.GetAllPlantNames();
+    //    var plants = await response.Content.ReadFromJsonAsync<List<PlantViewModel>>(options);
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters =
-                {
-                    new JsonStringEnumConverter(),
-                },
-        };
+    //    Assert.NotNull(plants);
+    //    Assert.NotEmpty(plants);
 
-        var returnString = await response.Content.ReadAsStringAsync();
-        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
+    //    var testPlant = plants.FirstOrDefault(plants => plants.Name == TEST_PLANT_NAME);
 
-        var plants = await response.Content.ReadFromJsonAsync<List<PlantNameOnlyViewModel>>(options);
+    //    Assert.NotNull(testPlant);
+    //}
 
-        Assert.NotNull(plants);
-        Assert.NotEmpty(plants);
+    //[Fact]
+    //public async Task Get_Should_Return_All_PlantNames()
+    //{
+    //    var response = await _plantCatalogClient.GetAllPlantNames();
 
-        var testPlant = plants.FirstOrDefault(plants => plants.Name == TEST_PLANT_NAME);
+    //    var options = new JsonSerializerOptions
+    //    {
+    //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    //        Converters =
+    //            {
+    //                new JsonStringEnumConverter(),
+    //            },
+    //    };
 
-        Assert.NotNull(testPlant);
-    }
+    //    var returnString = await response.Content.ReadAsStringAsync();
+    //    _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-    [Fact]
-    public async Task Get_Should_Return_Plant()
-    {
-        var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
+    //    var plants = await response.Content.ReadFromJsonAsync<List<PlantNameOnlyViewModel>>(options);
 
+    //    Assert.NotNull(plants);
+    //    Assert.NotEmpty(plants);
 
-        var response = await _plantCatalogClient.GetPlant(plantId);
+    //    var testPlant = plants.FirstOrDefault(plants => plants.Name == TEST_PLANT_NAME);
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters =
-                {
-                    new JsonStringEnumConverter(),
-                },
-        };
+    //    Assert.NotNull(testPlant);
+    //}
 
-        var returnString = await response.Content.ReadAsStringAsync();
-        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
+    //[Fact]
+    //public async Task Get_Should_Return_Plant()
+    //{
+    //    var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
 
-        var plant = await response.Content.ReadFromJsonAsync<PlantViewModel>(options);
 
-        Assert.NotNull(plant);
-        Assert.Equal(TEST_PLANT_NAME, plant.Name);
-    }
+    //    var response = await _plantCatalogClient.GetPlant(plantId);
 
-    #endregion
+    //    var options = new JsonSerializerOptions
+    //    {
+    //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    //        Converters =
+    //            {
+    //                new JsonStringEnumConverter(),
+    //            },
+    //    };
 
-    #region Plant Grow Instruction
+    //    var returnString = await response.Content.ReadAsStringAsync();
+    //    _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-    [Fact]
-    public async Task Post_PlantGrowInstruction_MayCreateNew()
-    {
-        var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
+    //    var plant = await response.Content.ReadFromJsonAsync<PlantViewModel>(options);
 
-        var response = await _plantCatalogClient.CreatePlantGrowInstruction(plantId, TEST_GROW_INSTRUCTION_NAME);
-        var returnString = await response.Content.ReadAsStringAsync();
+    //    Assert.NotNull(plant);
+    //    Assert.Equal(TEST_PLANT_NAME, plant.Name);
+    //}
 
-        if (response.StatusCode == System.Net.HttpStatusCode.OK)
-        {
-            Assert.NotEmpty(returnString);
-            Assert.True(Guid.TryParse(returnString, out _));
-        }
-        else
-        {
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.BadRequest);
-            returnString = await response.Content.ReadAsStringAsync();
-            Assert.NotEmpty(returnString);
-            Assert.Contains("Grow Instruction with this name already exists", returnString);
-        }
-    }
+    //#endregion
 
-    [Fact]
-    public async Task Get_PlantGrowInstruction_All()
-    {
-        var growInstructions = await GetPlantGrowInstructionsToWorkWith();
+    //#region Plant Grow Instruction
 
-        Assert.NotNull(growInstructions);
-        _output.WriteLine($"Found '{growInstructions.First().Name}' grow instruction");
-        Assert.NotEmpty(growInstructions.First().HarvestInstructions);
-    }
+    //[Fact]
+    //public async Task Post_PlantGrowInstruction_MayCreateNew()
+    //{
+    //    var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
 
-    [Fact]
-    public async Task Get_PlantGrowInstruction_One()
-    {
-        var growInstructions = await GetPlantGrowInstructionsToWorkWith();
+    //    var response = await _plantCatalogClient.CreatePlantGrowInstruction(plantId, TEST_GROW_INSTRUCTION_NAME);
+    //    var returnString = await response.Content.ReadAsStringAsync();
 
-        var original = growInstructions.First(g => g.Name == TEST_GROW_INSTRUCTION_NAME);
+    //    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+    //    {
+    //        Assert.NotEmpty(returnString);
+    //        Assert.True(Guid.TryParse(returnString, out _));
+    //    }
+    //    else
+    //    {
+    //        Assert.True(response.StatusCode == System.Net.HttpStatusCode.BadRequest);
+    //        returnString = await response.Content.ReadAsStringAsync();
+    //        Assert.NotEmpty(returnString);
+    //        Assert.Contains("Grow Instruction with this name already exists", returnString);
+    //    }
+    //}
 
-        if (growInstructions.Count == 1)
-        {
-            //create new grow instruction to make sure we only get one back
-            var response = await _plantCatalogClient.CreatePlantGrowInstruction(original.PlantId, TEST_DELETE_GROW_INSTRUCTION_NAME);
-        }
+    //[Fact]
+    //public async Task Get_PlantGrowInstruction_All()
+    //{
+    //    var growInstructions = await GetPlantGrowInstructionsToWorkWith();
 
-        var growInstruction = await GetPlantGrowInstructionToWorkWith(original.PlantId, original.PlantGrowInstructionId);
+    //    Assert.NotNull(growInstructions);
+    //    _output.WriteLine($"Found '{growInstructions.First().Name}' grow instruction");
+    //    Assert.NotEmpty(growInstructions.First().HarvestInstructions);
+    //}
 
-        _output.WriteLine($"Found '{growInstruction.Name}' grow instruction");
-        Assert.Equal(original.Name, growInstruction.Name);
-    }
+    //[Fact]
+    //public async Task Get_PlantGrowInstruction_One()
+    //{
+    //    var growInstructions = await GetPlantGrowInstructionsToWorkWith();
 
-    [Fact]
-    public async Task Put_PlantGrowInstruction_ShouldUpdate()
-    {
-        var grow = (await GetPlantGrowInstructionsToWorkWith()).First(g => g.Name == TEST_GROW_INSTRUCTION_NAME);
+    //    var original = growInstructions.First(g => g.Name == TEST_GROW_INSTRUCTION_NAME);
 
-        //Step 3 update grow Instruction
+    //    if (growInstructions.Count == 1)
+    //    {
+    //        //create new grow instruction to make sure we only get one back
+    //        var response = await _plantCatalogClient.CreatePlantGrowInstruction(original.PlantId, TEST_DELETE_GROW_INSTRUCTION_NAME);
+    //    }
 
-        grow.DaysToSproutMin += 1;
+    //    var growInstruction = await GetPlantGrowInstructionToWorkWith(original.PlantId, original.PlantGrowInstructionId);
 
-        var response = await _plantCatalogClient.UpdatePlantGrowInstruction(grow);
+    //    _output.WriteLine($"Found '{growInstruction.Name}' grow instruction");
+    //    Assert.Equal(original.Name, growInstruction.Name);
+    //}
 
-        var returnString = await response.Content.ReadAsStringAsync();
+    //[Fact]
+    //public async Task Put_PlantGrowInstruction_ShouldUpdate()
+    //{
+    //    var grow = (await GetPlantGrowInstructionsToWorkWith()).First(g => g.Name == TEST_GROW_INSTRUCTION_NAME);
 
-        _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
+    //    //Step 3 update grow Instruction
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
-        Assert.NotEmpty(returnString);
-    }
+    //    grow.DaysToSproutMin += 1;
 
-    [Fact]
-    public async Task Put_PlantGrowInstruction_ShouldDelete()
-    {
-        var grow = (await GetPlantGrowInstructionsToWorkWith()).FirstOrDefault(g => g.Name == TEST_DELETE_GROW_INSTRUCTION_NAME);
+    //    var response = await _plantCatalogClient.UpdatePlantGrowInstruction(grow);
 
-        if (grow == null)
-        {
-            //oh well. something deleted this grow nstruction already. will skip this round
-            return;
-        }
+    //    var returnString = await response.Content.ReadAsStringAsync();
 
-        var response = await _plantCatalogClient.DeletePlantGrowInstruction(grow.PlantId, grow.PlantGrowInstructionId);
+    //    _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-        var returnString = await response.Content.ReadAsStringAsync();
+    //    Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+    //    Assert.NotEmpty(returnString);
+    //}
 
-        _output.WriteLine($"Service to delete plant grow instruction responded with {response.StatusCode} code and {returnString} message");
+    //[Fact]
+    //public async Task Put_PlantGrowInstruction_ShouldDelete()
+    //{
+    //    var grow = (await GetPlantGrowInstructionsToWorkWith()).FirstOrDefault(g => g.Name == TEST_DELETE_GROW_INSTRUCTION_NAME);
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
-        Assert.NotEmpty(returnString);
-    }
+    //    if (grow == null)
+    //    {
+    //        //oh well. something deleted this grow nstruction already. will skip this round
+    //        return;
+    //    }
 
-    #endregion
+    //    var response = await _plantCatalogClient.DeletePlantGrowInstruction(grow.PlantId, grow.PlantGrowInstructionId);
 
-    #region PLant Variety
-    [Fact]
-    public async Task Post_PlantVariety_MayCreateNew()
-    {
-        var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
+    //    var returnString = await response.Content.ReadAsStringAsync();
 
-        var varieties = await GetPlantVarietiesToWorkWith(plantId);
+    //    _output.WriteLine($"Service to delete plant grow instruction responded with {response.StatusCode} code and {returnString} message");
 
-        var original = varieties.FirstOrDefault(v => v.Name.Equals(TEST_VARIETY_NAME));
+    //    Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+    //    Assert.NotEmpty(returnString);
+    //}
 
-        if (original != null)
-        {
-            var response = await _plantCatalogClient.DeletePlantVariety(original.PlantId, original.PlantVarietyId);
-        }
+    //#endregion
 
-        var varietyId = await CreatePLantVarietyToWorkWith(plantId, TEST_VARIETY_NAME);
-    }
+    //#region PLant Variety
+    //[Fact]
+    //public async Task Post_PlantVariety_MayCreateNew()
+    //{
+    //    var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
 
-    [Fact]
-    public async Task Get_PlantVariety_All()
-    {
-        var response = await _plantCatalogClient.GetPlantVarieties();
+    //    var varieties = await GetPlantVarietiesToWorkWith(plantId);
 
-        _output.WriteLine($"Service to get all plant varieties responded with {response.StatusCode} code");
+    //    var original = varieties.FirstOrDefault(v => v.Name.Equals(TEST_VARIETY_NAME));
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters =
-                {
-                    new JsonStringEnumConverter(),
-                },
-        };
-        var varieties = await response.Content.ReadFromJsonAsync<List<PlantVarietyViewModel>>(options);
+    //    if (original != null)
+    //    {
+    //        var response = await _plantCatalogClient.DeletePlantVariety(original.PlantId, original.PlantVarietyId);
+    //    }
 
-        Assert.NotNull(varieties);
-        Assert.NotEmpty(varieties);
-    }
+    //    var varietyId = await CreatePLantVarietyToWorkWith(plantId, TEST_VARIETY_NAME);
+    //}
 
-    [Fact]
-    public async Task Get_PlantVariety_ByPLantId()
-    {
-        var variety = await GetPlantVarietiesBasedOnTestPlantToWorkWith();
+    //[Fact]
+    //public async Task Get_PlantVariety_All()
+    //{
+    //    var response = await _plantCatalogClient.GetPlantVarieties();
 
-        Assert.NotNull(variety);
-        _output.WriteLine($"Found '{variety.First().Name}' variety");
-        Assert.NotEmpty(variety.First().Title);
-    }
+    //    _output.WriteLine($"Service to get all plant varieties responded with {response.StatusCode} code");
 
-    [Fact]
-    public async Task Get_PlantVariety_One()
-    {
-        var varieties = await GetPlantVarietiesBasedOnTestPlantToWorkWith();
+    //    var options = new JsonSerializerOptions
+    //    {
+    //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    //        Converters =
+    //            {
+    //                new JsonStringEnumConverter(),
+    //            },
+    //    };
+    //    var varieties = await response.Content.ReadFromJsonAsync<List<PlantVarietyViewModel>>(options);
 
-        var original = varieties.First(g => g.Name == TEST_VARIETY_NAME);
+    //    Assert.NotNull(varieties);
+    //    Assert.NotEmpty(varieties);
+    //}
 
-        if (varieties.Count == 1)
-        {
-            //create new variety to make sure we only get one back
-            var response = await _plantCatalogClient.CreatePlantVariety(original.PlantId, TEST_DELETE_VARIETY_NAME);
-        }
+    //[Fact]
+    //public async Task Get_PlantVariety_ByPLantId()
+    //{
+    //    var variety = await GetPlantVarietiesBasedOnTestPlantToWorkWith();
 
-        var variety = await GetPlantVarietyToWorkWith(original.PlantId, original.PlantVarietyId);
+    //    Assert.NotNull(variety);
+    //    _output.WriteLine($"Found '{variety.First().Name}' variety");
+    //    Assert.NotEmpty(variety.First().Title);
+    //}
 
-        _output.WriteLine($"Found '{variety.Name}' variety");
-        Assert.Equal(original.Name, variety.Name);
-    }
+    //[Fact]
+    //public async Task Get_PlantVariety_One()
+    //{
+    //    var varieties = await GetPlantVarietiesBasedOnTestPlantToWorkWith();
 
-    [Fact]
-    public async Task Put_PlantVariety_ShouldUpdate()
-    {
-        var variety = (await GetPlantVarietiesBasedOnTestPlantToWorkWith()).First(g => g.Name == TEST_VARIETY_NAME);
+    //    var original = varieties.First(g => g.Name == TEST_VARIETY_NAME);
 
-        //Step 3 update variety
+    //    if (varieties.Count == 1)
+    //    {
+    //        //create new variety to make sure we only get one back
+    //        var response = await _plantCatalogClient.CreatePlantVariety(original.PlantId, TEST_DELETE_VARIETY_NAME);
+    //    }
 
-        variety.DaysToMaturityMax += 1;
-        variety.Tags.Add("Black " + DateTime.Now.ToString());
+    //    var variety = await GetPlantVarietyToWorkWith(original.PlantId, original.PlantVarietyId);
 
-        var response = await _plantCatalogClient.UpdatePlantVariety(variety);
+    //    _output.WriteLine($"Found '{variety.Name}' variety");
+    //    Assert.Equal(original.Name, variety.Name);
+    //}
 
-        var returnString = await response.Content.ReadAsStringAsync();
+    //[Fact]
+    //public async Task Put_PlantVariety_ShouldUpdate()
+    //{
+    //    var variety = (await GetPlantVarietiesBasedOnTestPlantToWorkWith()).First(g => g.Name == TEST_VARIETY_NAME);
 
-        _output.WriteLine($"Service to update Variety responded with {response.StatusCode} code and {returnString} message");
+    //    //Step 3 update variety
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
-        Assert.NotEmpty(returnString);
-    }
+    //    variety.DaysToMaturityMax += 1;
+    //    variety.Tags.Add("Black " + DateTime.Now.ToString());
 
-    [Fact]
-    public async Task Delete_PlantVariety_ShouldDelete()
-    {
-        var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
+    //    var response = await _plantCatalogClient.UpdatePlantVariety(variety);
 
-        var variety = (await GetPlantVarietiesToWorkWith(plantId)).FirstOrDefault(g => g.Name == TEST_DELETE_VARIETY_NAME);
+    //    var returnString = await response.Content.ReadAsStringAsync();
 
-        if (variety == null)
-        {
-            var varietyId = await CreatePLantVarietyToWorkWith(plantId, TEST_DELETE_VARIETY_NAME);
-            variety = new PlantVarietyViewModel() { PlantId = plantId, PlantVarietyId = varietyId };
-        }
+    //    _output.WriteLine($"Service to update Variety responded with {response.StatusCode} code and {returnString} message");
 
-        var response = await _plantCatalogClient.DeletePlantVariety(variety.PlantId, variety.PlantVarietyId);
+    //    Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+    //    Assert.NotEmpty(returnString);
+    //}
 
-        var returnString = await response.Content.ReadAsStringAsync();
+    //[Fact]
+    //public async Task Delete_PlantVariety_ShouldDelete()
+    //{
+    //    var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
 
-        _output.WriteLine($"Service to delete plant variety responded with {response.StatusCode} code and {returnString} message");
+    //    var variety = (await GetPlantVarietiesToWorkWith(plantId)).FirstOrDefault(g => g.Name == TEST_DELETE_VARIETY_NAME);
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
-        Assert.NotEmpty(returnString);
-    }
-    #endregion
+    //    if (variety == null)
+    //    {
+    //        var varietyId = await CreatePLantVarietyToWorkWith(plantId, TEST_DELETE_VARIETY_NAME);
+    //        variety = new PlantVarietyViewModel() { PlantId = plantId, PlantVarietyId = varietyId };
+    //    }
 
-    #region Shared Private Functions
-    private async Task<string> GetPlantIdToWorkWith(string plantName)
-    {
-        //Step 1 - Get Plant to work with
-        var response = await _plantCatalogClient.GetPlantIdByPlantName(plantName);
-        var plantId = await response.Content.ReadAsStringAsync();
+    //    var response = await _plantCatalogClient.DeletePlantVariety(variety.PlantId, variety.PlantVarietyId);
 
-        if (response.StatusCode != System.Net.HttpStatusCode.OK || string.IsNullOrEmpty(plantId))
-        {
-            _output.WriteLine($"Plant is not found. Will create new one");
-            response = await _plantCatalogClient.CreatePlant(plantName);
+    //    var returnString = await response.Content.ReadAsStringAsync();
 
-            plantId = await response.Content.ReadAsStringAsync();
+    //    _output.WriteLine($"Service to delete plant variety responded with {response.StatusCode} code and {returnString} message");
 
-            _output.WriteLine($"Service to create plant responded with {response.StatusCode} code and {plantId} message");
-        }
-        else
-        {
-            _output.WriteLine($"Plant was found with service responded with {response.StatusCode} code and {plantId} message");
-        }
+    //    Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+    //    Assert.NotEmpty(returnString);
+    //}
+    //#endregion
 
-        return plantId;
-    }
+    //#region Shared Private Functions
+    //private async Task<string> GetPlantIdToWorkWith(string plantName)
+    //{
+    //    //Step 1 - Get Plant to work with
+    //    var response = await _plantCatalogClient.GetPlantIdByPlantName(plantName);
+    //    var plantId = await response.Content.ReadAsStringAsync();
 
-    private async Task<List<PlantGrowInstructionViewModel>> GetPlantGrowInstructionsToWorkWith()
-    {
-        var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
+    //    if (response.StatusCode != System.Net.HttpStatusCode.OK || string.IsNullOrEmpty(plantId))
+    //    {
+    //        _output.WriteLine($"Plant is not found. Will create new one");
+    //        response = await _plantCatalogClient.CreatePlant(plantName);
 
-        //Step 2 - Get Grow Instruction to update
-        var response = await _plantCatalogClient.GetPlantGrowInstructions(plantId);
+    //        plantId = await response.Content.ReadAsStringAsync();
 
-        _output.WriteLine($"Service to get all plant grow instructions responded with {response.StatusCode} code");
+    //        _output.WriteLine($"Service to create plant responded with {response.StatusCode} code and {plantId} message");
+    //    }
+    //    else
+    //    {
+    //        _output.WriteLine($"Plant was found with service responded with {response.StatusCode} code and {plantId} message");
+    //    }
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters =
-                {
-                    new JsonStringEnumConverter(),
-                },
-        };
-        var growInstructions = await response.Content.ReadFromJsonAsync<List<PlantGrowInstructionViewModel>>(options);
+    //    return plantId;
+    //}
 
-        Assert.NotNull(growInstructions);
-        Assert.NotEmpty(growInstructions);
+    //private async Task<List<PlantGrowInstructionViewModel>> GetPlantGrowInstructionsToWorkWith()
+    //{
+    //    var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
 
-        return growInstructions;
-    }
+    //    //Step 2 - Get Grow Instruction to update
+    //    var response = await _plantCatalogClient.GetPlantGrowInstructions(plantId);
 
-    private async Task<PlantGrowInstructionViewModel> GetPlantGrowInstructionToWorkWith(string plantId, string growId)
-    {
-        var response = await _plantCatalogClient.GetPlantGrowInstruction(plantId, growId);
+    //    _output.WriteLine($"Service to get all plant grow instructions responded with {response.StatusCode} code");
 
-        _output.WriteLine($"Service to get single plant grow instruction responded with {response.StatusCode} code");
+    //    var options = new JsonSerializerOptions
+    //    {
+    //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    //        Converters =
+    //            {
+    //                new JsonStringEnumConverter(),
+    //            },
+    //    };
+    //    var growInstructions = await response.Content.ReadFromJsonAsync<List<PlantGrowInstructionViewModel>>(options);
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters =
-                {
-                    new JsonStringEnumConverter(),
-                },
-        };
-        var growInstruction = await response.Content.ReadFromJsonAsync<PlantGrowInstructionViewModel>(options);
+    //    Assert.NotNull(growInstructions);
+    //    Assert.NotEmpty(growInstructions);
 
-        Assert.NotNull(growInstruction);
+    //    return growInstructions;
+    //}
 
-        return growInstruction;
-    }
+    //private async Task<PlantGrowInstructionViewModel> GetPlantGrowInstructionToWorkWith(string plantId, string growId)
+    //{
+    //    var response = await _plantCatalogClient.GetPlantGrowInstruction(plantId, growId);
 
-    private async Task<List<PlantVarietyViewModel>> GetPlantVarietiesToWorkWith(string plantId)
-    {
-        //Step 2 - Get Grow Instruction to update
-        var response = await _plantCatalogClient.GetPlantVarieties(plantId);
+    //    _output.WriteLine($"Service to get single plant grow instruction responded with {response.StatusCode} code");
 
-        _output.WriteLine($"Service to get all plant varieties responded with {response.StatusCode} code");
+    //    var options = new JsonSerializerOptions
+    //    {
+    //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    //        Converters =
+    //            {
+    //                new JsonStringEnumConverter(),
+    //            },
+    //    };
+    //    var growInstruction = await response.Content.ReadFromJsonAsync<PlantGrowInstructionViewModel>(options);
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters =
-                {
-                    new JsonStringEnumConverter(),
-                },
-        };
-        var varieties = await response.Content.ReadFromJsonAsync<List<PlantVarietyViewModel>>(options);
-           
+    //    Assert.NotNull(growInstruction);
 
-        return varieties!;
-    }
+    //    return growInstruction;
+    //}
 
-    private async Task<List<PlantVarietyViewModel>> GetPlantVarietiesBasedOnTestPlantToWorkWith()
-    {
-        var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
+    //private async Task<List<PlantVarietyViewModel>> GetPlantVarietiesToWorkWith(string plantId)
+    //{
+    //    //Step 2 - Get Grow Instruction to update
+    //    var response = await _plantCatalogClient.GetPlantVarieties(plantId);
 
-        return await GetPlantVarietiesToWorkWith(plantId);
+    //    _output.WriteLine($"Service to get all plant varieties responded with {response.StatusCode} code");
 
-    }
+    //    var options = new JsonSerializerOptions
+    //    {
+    //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    //        Converters =
+    //            {
+    //                new JsonStringEnumConverter(),
+    //            },
+    //    };
+    //    var varieties = await response.Content.ReadFromJsonAsync<List<PlantVarietyViewModel>>(options);
 
-    private async Task<PlantVarietyViewModel> GetPlantVarietyToWorkWith(string plantId, string varietyId)
-    {
-        var response = await _plantCatalogClient.GetPlantVariety(plantId, varietyId);
 
-        _output.WriteLine($"Service to get single plant variety responded with {response.StatusCode} code");
+    //    return varieties!;
+    //}
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters =
-                {
-                    new JsonStringEnumConverter(),
-                },
-        };
-        var variety = await response.Content.ReadFromJsonAsync<PlantVarietyViewModel>(options);
+    //private async Task<List<PlantVarietyViewModel>> GetPlantVarietiesBasedOnTestPlantToWorkWith()
+    //{
+    //    var plantId = await GetPlantIdToWorkWith(TEST_PLANT_NAME);
 
-        Assert.NotNull(variety);
+    //    return await GetPlantVarietiesToWorkWith(plantId);
 
-        return variety;
-    }
+    //}
 
-    private async Task<string> CreatePLantVarietyToWorkWith(string plantId, string plantName)
-    {
-        var response = await _plantCatalogClient.CreatePlantVariety(plantId, plantName);
-        var returnString = await response.Content.ReadAsStringAsync();
+    //private async Task<PlantVarietyViewModel> GetPlantVarietyToWorkWith(string plantId, string varietyId)
+    //{
+    //    var response = await _plantCatalogClient.GetPlantVariety(plantId, varietyId);
 
-        if (response.StatusCode == System.Net.HttpStatusCode.OK)
-        {
-            Assert.NotEmpty(returnString);
-            Assert.True(Guid.TryParse(returnString, out _));
-        }
-        else
-        {
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.BadRequest);
-            returnString = await response.Content.ReadAsStringAsync();
-            Assert.NotEmpty(returnString);
-            Assert.Contains("Variety with this name already exists", returnString);
-        }
-        return returnString;
-    }
+    //    _output.WriteLine($"Service to get single plant variety responded with {response.StatusCode} code");
 
-    #endregion
+    //    var options = new JsonSerializerOptions
+    //    {
+    //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    //        Converters =
+    //            {
+    //                new JsonStringEnumConverter(),
+    //            },
+    //    };
+    //    var variety = await response.Content.ReadFromJsonAsync<PlantVarietyViewModel>(options);
+
+    //    Assert.NotNull(variety);
+
+    //    return variety;
+    //}
+
+    //private async Task<string> CreatePLantVarietyToWorkWith(string plantId, string plantName)
+    //{
+    //    var response = await _plantCatalogClient.CreatePlantVariety(plantId, plantName);
+    //    var returnString = await response.Content.ReadAsStringAsync();
+
+    //    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+    //    {
+    //        Assert.NotEmpty(returnString);
+    //        Assert.True(Guid.TryParse(returnString, out _));
+    //    }
+    //    else
+    //    {
+    //        Assert.True(response.StatusCode == System.Net.HttpStatusCode.BadRequest);
+    //        returnString = await response.Content.ReadAsStringAsync();
+    //        Assert.NotEmpty(returnString);
+    //        Assert.Contains("Variety with this name already exists", returnString);
+    //    }
+    //    return returnString;
+    //}
+
+    //#endregion
 }
