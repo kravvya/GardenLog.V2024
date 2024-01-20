@@ -65,4 +65,4 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --logger "console;verbosity=detailed" --no-build --verbosity normal
+      run: dotnet test --logger "console;verbosity=normal" --no-build --verbosity normal
