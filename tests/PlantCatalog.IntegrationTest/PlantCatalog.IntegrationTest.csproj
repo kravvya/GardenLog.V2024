@@ -11,6 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="PlantCatalogTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\..\src\PlantCatalog\PlantCatalog.Api\appsettings.Development.json" Link="appsettings.Development.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
