@@ -16,17 +16,6 @@ public class PlantCatalogServiceFixture : PlantCatalogApplicationFactory<Program
     public PlantCatalogServiceFixture()
     {
         _factory= new PlantCatalogApplicationFactory<Program>();
-        _factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureTestServices(services =>
-            {
-                services.Configure<IConfigurationService>(opts =>
-                {
-                    var setting = opts.GetPlantCatalogMongoSettings()!;
-                    setting.Server = "localhost";
-                });
-            });
-        });
         _factory.ConfigureAwait(true);
 
         var token = (new Auth0Helper()).GetToken(typeof(Program).Assembly);

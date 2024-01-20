@@ -63,6 +63,8 @@ public class Auth0AuthenticationApiClient : IAuth0AuthenticationApiClient
 
             _tokenRequest.Audience = audience;
 
+            _logger.LogInformation($"Request for token {_tokenRequest}");
+
             var response = await _httpClient.ApiPostAsync<TokenResponse>(route, _tokenRequest);
             if (!response.IsSuccess)
             {
@@ -78,6 +80,7 @@ public class Auth0AuthenticationApiClient : IAuth0AuthenticationApiClient
             });
 
             _semaphore.Release();
+            _logger.LogInformation($"Generated new token {token}");
         }
 
         return token;
