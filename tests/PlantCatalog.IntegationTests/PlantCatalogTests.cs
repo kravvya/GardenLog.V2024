@@ -1,10 +1,22 @@
-﻿using GardenLog.SharedInfrastructure.ApiClients;
+﻿using Amazon.Runtime.Internal.Util;
+using GardenLog.SharedInfrastructure;
+using GardenLog.SharedInfrastructure.ApiClients;
+using GardenLog.SharedInfrastructure.Extensions;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using SendGrid.Helpers.Mail;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
 
 namespace PlantCatalog.IntegrationTest;
 
 public class PlantCatalogTests : IClassFixture<PlantCatalogServiceFixture>
 {
     private readonly ITestOutputHelper _output;
+    private readonly HttpClient _httpClient;
     private readonly PlantCatalogClient _plantCatalogClient;
     private const string TEST_PLANT_NAME = "Blackmelon";
     private const string TEST_GROW_INSTRUCTION_NAME = "Start at home and pick in the Summer";
@@ -13,10 +25,11 @@ public class PlantCatalogTests : IClassFixture<PlantCatalogServiceFixture>
     private const string TEST_DELETE_PLANT_NAME = "DeletePlantName";
     private const string TEST_DELETE_VARIETY_NAME = "Delete Black Beauty";
 
-    public PlantCatalogTests(PlantCatalogServiceFixture fixture, ITestOutputHelper output)
+    public PlantCatalogTests(PlantCatalogServiceFixture fixture, ITestOutputHelper output, HttpClient httpClient)
     {
         _plantCatalogClient = fixture.PlantCatalogClient;
         _output = output;
+        _httpClient = httpClient;
         _output.WriteLine($"Service id {fixture.FixtureId} @ {DateTime.Now:F}");
     }
 
@@ -30,6 +43,60 @@ public class PlantCatalogTests : IClassFixture<PlantCatalogServiceFixture>
         Assert.NotNull(token);
     }
 
+    [Fact]
+    public async Task WhyDoesItFail2()
+    {
+        var configuration = new ConfigurationBuilder()
+              .AddJsonFile("appsettings.json")
+              .AddUserSecrets(typeof(Program).Assembly)
+              .AddEnvironmentVariables()
+              .Build();
+
+        var serviceProvider = new ServiceCollection()
+            .AddHttpClient()
+            .AddLogging()
+            .AddMemoryCache()
+            .AddSingleton<IConfiguration>(configuration)
+            .AddSingleton<IConfigurationService, ConfigurationService>()
+            .AddSingleton<IAuth0AuthenticationApiClient, Auth0AuthenticationApiClient>()
+            .BuildServiceProvider();
+
+        var authApiClient = serviceProvider.GetRequiredService<IAuth0AuthenticationApiClient>();
+        var appSettings = serviceProvider.GetRequiredService<IConfigurationService>().GetAuthSettings();
+
+        if (appSettings.Audience == null) throw new ArgumentException("Required Audience paramter is not found. Can not generate access token without Audience", "Audience");
+
+        _output.WriteLine($"Token is {appSettings.Audience}");
+
+
+        TokenRequest _tokenRequest=new()
+        {
+            ClientId = appSettings.ClientId,
+            ClientSecret = appSettings.ClientSecret,
+            GrantType = "client_credentials"
+        };
+
+        var route = "oauth/token";
+            _tokenRequest.Audience = appSettings.Audience;
+
+        _output.WriteLine($"Request for token {_tokenRequest}");
+
+        var result = await _httpClient.PostAsync(route, GenerateByteContent(_tokenRequest));
+
+    _output.WriteLine($"Service responded with {result.StatusCode} code and {result.Content.ReadAsStringAsync()} message");
+
+        Assert.NotNull(result);
+    }
+    private static ByteArrayContent GenerateByteContent(object content)
+    {
+        var myContent = JsonSerializer.Serialize(content);
+        var buffer = System.Text.Encoding.UTF8.GetBytes(myContent);
+        var byteContent = new ByteArrayContent(buffer);
+
+        byteContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        byteContent.Headers.ContentType.Parameters.Add(new System.Net.Http.Headers.NameValueHeaderValue("charset", "utf-8"));
+        return byteContent;
+    }
     //#region Plant
     //[Fact]
     //public async Task Post_Plant_MayCreateNewProduct()
