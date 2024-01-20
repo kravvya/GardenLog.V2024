@@ -44,11 +44,11 @@ jobs:
   build:
     
     env:
-      mongodb-server: needs.setup.outputs.test-mongodb-server
-      mongodb-databasename: needs.setup.outputs.test-mongodb-databasename
-      mongodb-username: needs.setup.outputs.test-mongodb-username
-      mongodb-password: needs.setup.outputs.test-mongodb-password
-      auth0-clientsecret: needs.setup.outputs.auth0-clientsecret
+      mongodb-server: ${{needs.setup.outputs.test-mongodb-server}}
+      mongodb-databasename: ${{needs.setup.outputs.test-mongodb-databasename}}
+      mongodb-username: ${{needs.setup.outputs.test-mongodb-username}}
+      mongodb-password: ${{needs.setup.outputs.test-mongodb-password}}
+      auth0-clientsecret: ${{needs.setup.outputs.auth0-clientsecret}}
       
     needs: setup
     
@@ -64,5 +64,9 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
+    - name: Debug
+      run: |
+        echo '${{needs.setup.outputs.auth0-clientsecret}}'
+        echo '${{env.auth0-clientsecret}}'
     - name: Test
       run: dotnet test --no-build --verbosity normal
