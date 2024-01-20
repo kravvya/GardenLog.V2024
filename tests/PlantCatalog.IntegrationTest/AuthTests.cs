@@ -6,6 +6,7 @@ using PlantCatalog.Contract;
 using SendGrid;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using GardenLog.SharedInfrastructure.Extensions;
 
 namespace PlantCatalog.IntegrationTest;
 
@@ -22,7 +23,7 @@ public class AuthTests : IClassFixture<PlantCatalogServiceFixture>
     }
 
     [Fact]
-    public void Get_Token_ShouldGetToken()
+    public async Task Get_Token_ShouldGetTokenAsync()
     {
         try
         {
@@ -47,9 +48,30 @@ public class AuthTests : IClassFixture<PlantCatalogServiceFixture>
 
             if (authSettings.Audience == null) throw new ArgumentException("Required Audience paramter is not found. Can not generate access token without Audience", "Audience");
 
-            _output.WriteLine($"AUTH DOMAIN: {authSettings.Authority} AUDIENCE: {authSettings.Audience}  AUDIENCE: {authSettings.Audience} CLIENT: {authSettings.ClientId} SECRET: {authSettings.ClientSecret}");
+            _output.WriteLine($"AUTH DOMAIN: {authSettings.Authority}  AUDIENCE: {authSettings.Audience} CLIENT: {authSettings.ClientId} SECRET: {authSettings.ClientSecret}");
 
-            var token = authApiClient.GetAccessToken(authSettings.Audience).GetAwaiter().GetResult();
+            //var token = authApiClient.GetAccessToken(authSettings.Audience).GetAwaiter().GetResult();
+
+            var route = "oauth/token";
+
+            TokenRequest _tokenRequest = new()
+            {
+                ClientId = authSettings.ClientId,
+                ClientSecret = authSettings.ClientSecret,
+                GrantType = "client_credentials",
+                Audience = authSettings.Audience
+            };
+
+            _output.WriteLine($"Request for token {_tokenRequest}");
+
+            var response = await authApiClient.HttpClient.ApiPostAsync<TokenResponse>(route, _tokenRequest);
+            if (!response.IsSuccess)
+            {
+                _output.WriteLine($"Unable to get Token: {response.ErrorMessage}");
+            }
+
+            var token = response.Response!.AccessToken;
+
 
             _output.WriteLine($"Token: {token}");
 

@@ -7,6 +7,7 @@ namespace GardenLog.SharedInfrastructure.ApiClients;
 
 public interface IAuth0AuthenticationApiClient
 {
+    HttpClient HttpClient { get; }
     Task<string?> GetAccessToken(string audience);
     Task<string?> GetAccessTokenForMachineToMachine(string audience);
 }
@@ -43,6 +44,8 @@ public class Auth0AuthenticationApiClient : IAuth0AuthenticationApiClient
 
         if (_authSettings.Authority != null) _httpClient.BaseAddress = new Uri(_authSettings.Authority);
     }
+
+    public HttpClient HttpClient => _httpClient;
 
     public async Task<string?> GetAccessToken(string audience)
     {
