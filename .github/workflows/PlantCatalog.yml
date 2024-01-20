@@ -25,6 +25,7 @@ jobs:
       test-mongodb-databasename: ${{steps.retrieve_secrets.outputs.test-mongodb-databasename}}
       test-mongodb-username: ${{steps.retrieve_secrets.outputs.test-mongodb-username}}
       test-mongodb-password: ${{steps.retrieve_secrets.outputs.test-mongodb-password}}
+      auth0-clientsecret: ${{steps.retrieve_secrets.outputs.auth0-clientsecret}}
       
     steps: 
     - uses: Azure/login@v1
@@ -35,11 +36,11 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-            az ad signed-in-user show
             echo test-mongodb-server=$(az keyvault secret show --name "test-mongodb-server" --vault-name "gardenlogvault" --query "value") >> $GITHUB_OUTPUT
             echo test-mongodb-databasename=$(az keyvault secret show --name "test-mongodb-databasename" --vault-name "gardenlogvault" --query "value") >> $GITHUB_OUTPUT
             echo test-mongodb-username=$(az keyvault secret show --name "test-mongodb-username" --vault-name "gardenlogvault" --query "value") >> $GITHUB_OUTPUT
             echo test-mongodb-password=$(az keyvault secret show --name "test-mongodb-password" --vault-name "gardenlogvault" --query "value") >> $GITHUB_OUTPUT
+            echo auth0-clientsecret=$(az keyvault secret show --name "auth0-clientsecret" --vault-name "gardenlogvault" --query "value") >> $GITHUB_OUTPUT
   build:
     
     env:
@@ -47,6 +48,7 @@ jobs:
       mongodb-databasename: needs.setup.outputs.test-mongodb-databasename
       mongodb-username: needs.setup.outputs.test-mongodb-username
       mongodb-password: needs.setup.outputs.test-mongodb-password
+      auth0-clientsecret: needs.setup.outputs.auth0-clientsecret
       
     needs: setup
     
