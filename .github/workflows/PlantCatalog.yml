@@ -64,9 +64,5 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-    - name: Debug
-      run: |
-        echo '${{needs.setup.outputs.auth0-clientsecret}}'
-        echo '${{env.auth0-clientsecret}}'
     - name: Test
       run: dotnet test --logger "console;verbosity=detailed" --no-build --verbosity normal
