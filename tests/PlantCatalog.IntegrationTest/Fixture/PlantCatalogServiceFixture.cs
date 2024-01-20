@@ -20,9 +20,9 @@ public class PlantCatalogServiceFixture : PlantCatalogApplicationFactory<Program
 
         //var token = (new Auth0Helper()).GetToken(typeof(Program).Assembly);
 
-        //FixtureId = Guid.NewGuid().ToString();
+        FixtureId = Guid.NewGuid().ToString();
         
-        //var client = _factory.CreateClient();
+        var client = _factory.CreateClient();
 
         //client.DefaultRequestHeaders.Add("RequestUser", "auth0|ec329c32-5705-4e42-a18b-4831916a3003");
 
@@ -30,7 +30,7 @@ public class PlantCatalogServiceFixture : PlantCatalogApplicationFactory<Program
 
         //if (client.BaseAddress == null) throw new ArgumentException("Base address is not set on the http client. Fixture setup aborted", "BaseAddress");
 
-        //PlantCatalogClient = new PlantCatalogClient(client.BaseAddress, client);
+        PlantCatalogClient = new PlantCatalogClient(client.BaseAddress, client);
     }
 
     public PlantCatalogClient PlantCatalogClient { get; init; }
