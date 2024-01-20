@@ -1,7 +1,7 @@
 # This workflow will build a .NET project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: .NET
+name: Deploy Plant Catalog
 
 on:
  push:
@@ -35,6 +35,7 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
+            az ad signed-in-user show
             echo test-mongodb-server=$(az keyvault secret show --name "test-mongodb-server" --vault-name "gardenlogvault" --query "value") >> $GITHUB_OUTPUT
             echo test-mongodb-databasename=$(az keyvault secret show --name "test-mongodb-databasename" --vault-name "gardenlogvault" --query "value") >> $GITHUB_OUTPUT
             echo test-mongodb-username=$(az keyvault secret show --name "test-mongodb-username" --vault-name "gardenlogvault" --query "value") >> $GITHUB_OUTPUT
