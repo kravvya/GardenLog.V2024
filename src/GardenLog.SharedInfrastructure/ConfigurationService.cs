@@ -121,7 +121,6 @@ public class ConfigurationService : IConfigurationService
         else
         {
             _logger.LogInformation("AUTH DOMAIN WAS LOCATED! YEHAA");
-            _logger.LogInformation($"AUTH DOMAIN: {authSettings.Authority} AUDIENCE: {authSettings.Audience}  AUDIENCE: {authSettings.Audience} CLIENT: {authSettings.ClientId} SECRET: {authSettings.ClientSecret}");
         }
         return authSettings!;
     }
