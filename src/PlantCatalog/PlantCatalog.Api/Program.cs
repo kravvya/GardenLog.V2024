@@ -51,21 +51,15 @@ try
          options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
      });
 
-    Log.Information("Starting up PlantCatalog.Api 2");
 
     // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     builder.Services.AddEndpointsApiExplorer();
     builder.RegisterSwaggerForAuth("Plant Catalog Api");
     builder.Services.AddBasicHealthChecks();
 
-    Log.Information("Starting up PlantCatalog.Api 3");
-
-
     builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
     builder.Services.AddSingleton<IMongoDBContext, MongoDbContext>();
     builder.Services.AddScoped<IUnitOfWork, MongoDBUnitOfWork>();
-
-    Log.Information("Starting up PlantCatalog.Api 4");
 
 
     builder.Services.AddScoped<IPlantRepository, PlantRepository>();
@@ -87,31 +81,27 @@ try
                     });
     });
 
-    Log.Information("Starting up PlantCatalog.Api 5");
-
     // 1. Add Authentication Services
     builder.RegisterForAuthentication();
 
     var app = builder.Build();
 
-    Log.Information("Starting up PlantCatalog.Api 6");
-
     // Configure the HTTP request pipeline.
-    app.UseSwaggerForAuth(app.Services.GetRequiredService<IConfigurationService>());
+     app.UseSwaggerForAuth(app.Services.GetRequiredService<IConfigurationService>());
 
     //Aapp Container ingress is EntityHandling HTTPs redirects. This is not needed.
     //app.UseHttpsRedirection();
     app.UseKubernetesHealthChecks();
-    Log.Information("Starting up PlantCatalog.Api 7");
+
     //// 2. Enable authentication middleware
     app.UseAuthentication();
-    Log.Information("Starting up PlantCatalog.Api 8");
+
     app.UseAuthorization();
-    Log.Information("Starting up PlantCatalog.Api 9");
+
     app.UseCors("glWebPolicy");
 
     app.MapControllers();
-    Log.Information("Starting up PlantCatalog.Api 1=");
+
     app.Run();
 }
 catch (Exception ex)
