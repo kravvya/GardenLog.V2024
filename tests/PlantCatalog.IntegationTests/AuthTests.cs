@@ -16,7 +16,7 @@ public class AuthTests : IClassFixture<PlantCatalogServiceFixture>
     }
 
     [Fact]
-    public void Get_Token_ShouldGetToekn()
+    public void Get_Token_ShouldGetToken()
     {
         try
         {
