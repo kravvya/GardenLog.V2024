@@ -41,6 +41,9 @@ jobs:
             echo test-mongodb-username=$(az keyvault secret show --name "test-mongodb-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo test-mongodb-password=$(az keyvault secret show --name "test-mongodb-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo auth0-clientsecret=$(az keyvault secret show --name "auth0-clientsecret" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo registry-server=$(az keyvault secret show --name "registry-srver" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo registry-username=$(az keyvault secret show --name "registry-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo registry-server=$(az keyvault secret show --name "registry-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
   build:
     
     env:
@@ -49,7 +52,9 @@ jobs:
       mongodb-username: ${{needs.setup.outputs.test-mongodb-username}}
       mongodb-password: ${{needs.setup.outputs.test-mongodb-password}}
       auth0-clientsecret: ${{needs.setup.outputs.auth0-clientsecret}}
-      ASPNETCORE_ENVIRONMENT: "Test"
+      ASPNETCORE_ENVIRONMENT: "Test"      
+      PROJECT_NAME_FOR_DOCKER: plantcatalogapi
+      DOCKER_FILE_PATH: src/PlantCatalog/PlantCatalog.Api/Dockerfile
       
     needs: setup
     
@@ -57,13 +62,34 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
     - name: Restore dependencies
       run: dotnet restore
+    
     - name: Build
       run: dotnet build --no-restore
+    
     - name: Test
       run: dotnet test --logger "console;verbosity=normal" --no-build --verbosity normal
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Log in to container registry
+      uses: docker/login-action@v3.0.0
+      with:
+        registry: ${{needs.setup.outputs.registry-server}}.azurecr.io
+        username: ${{needs.setup.outputs.registry-username}}
+        password: ${{needs.setup.outputs.registry-password}}
+    
+    - name: Build and push container image to registry
+      uses: docker/build-push-action@v5.1.0
+      with:
+        push: true
+        tags: ${{needs.setup.outputs.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
+        file: ${{ env.DOCKER_FILE_PATH }}
+    
