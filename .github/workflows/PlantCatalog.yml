@@ -89,9 +89,9 @@ jobs:
       uses: azure/CLI@v1
       with:
        inlineScript: |
-           echo registry-server=$(az keyvault secret show --name "registry-server" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
-           echo registry-username=$(az keyvault secret show --name "registry-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
-           echo registry_password=$(az keyvault secret show --name "registry-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+           echo registry-server=$(az keyvault secret show --name "registry-server" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_ENV
+           echo registry-username=$(az keyvault secret show --name "registry-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_ENV
+           echo registry_password=$(az keyvault secret show --name "registry-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_ENV
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
