@@ -98,9 +98,9 @@ jobs:
     - name: Log in to container registry
       uses: docker/login-action@v3
       with:
-        registry: ${{registry-server}}.azurecr.io
-        username: ${{registry-username}}
-        password: ${{registry-password}}
+        registry: ${{env.registry-server}}.azurecr.io
+        username: ${{env.registry-username}}
+        password: ${{env.registry-password}}
         
     - name: Build and push container image to registry
       uses: docker/build-push-action@v5.1.0
