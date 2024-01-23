@@ -28,7 +28,7 @@ jobs:
       auth0-clientsecret: ${{steps.retrieve_secrets.outputs.auth0-clientsecret}}
       registry-server: ${{steps.retrieve_secrets.outputs.registry-server}}
       registry-username: ${{steps.retrieve_secrets.outputs.registry-username}}
-      registry-password: ${{steps.retrieve_secrets.outputs.registry-pass}}
+      registry-pass: ${{steps.retrieve_secrets.outputs.registry-pass}}
       
     steps: 
     - uses: Azure/login@v1
@@ -97,7 +97,7 @@ jobs:
       with:
         registry: ${{needs.setup.outputs.registry-server}}.azurecr.io
         username: ${{needs.setup.outputs.registry-username}}
-        password: ${{needs.setup.outputs.registry-password}}
+        password: ${{needs.setup.outputs.registry-pass}}
         
     - name: Build and push container image to registry
       uses: docker/build-push-action@v5.1.0
