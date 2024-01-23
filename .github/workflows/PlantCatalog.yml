@@ -27,8 +27,8 @@ jobs:
       test-mongodb-password: ${{steps.retrieve_secrets.outputs.test-mongodb-password}}
       auth0-clientsecret: ${{steps.retrieve_secrets.outputs.auth0-clientsecret}}
       registry-server: ${{steps.retrieve_secrets.outputs.registry-server}}
-      test-registry-username: ${{steps.retrieve_secrets.outputs.test-registry-username}}
-      test-registry-password: ${{steps.retrieve_secrets.outputs.test-registry-password}}
+      registry-username: ${{steps.retrieve_secrets.outputs.registry-username}}
+      registry-password: ${{steps.retrieve_secrets.outputs.registry-password}}
       
     steps: 
     - uses: Azure/login@v1
@@ -56,9 +56,7 @@ jobs:
       mongodb-password: ${{needs.setup.outputs.test-mongodb-password}}
       auth0-clientsecret: ${{needs.setup.outputs.auth0-clientsecret}}
       ASPNETCORE_ENVIRONMENT: "Test"      
-      PROJECT_NAME_FOR_DOCKER: plantcatalogapi
-      DOCKER_FILE_PATH: src/PlantCatalog/PlantCatalog.Api/Dockerfile
-      
+           
     needs: setup
     
     runs-on: ubuntu-latest
@@ -78,7 +76,18 @@ jobs:
     
     - name: Test
       run: dotnet test --logger "console;verbosity=normal" --no-build --verbosity normal
+ 
+  push:
     
+    env:
+      PROJECT_NAME_FOR_DOCKER: plantcatalogapi
+      DOCKER_FILE_PATH: src/PlantCatalog/PlantCatalog.Api/Dockerfile
+      
+    needs: [setup, build]
+    
+    runs-on: ubuntu-latest
+
+    steps:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
