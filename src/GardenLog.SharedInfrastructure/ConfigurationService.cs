@@ -1,4 +1,6 @@
-﻿using DnsClient.Internal;
+﻿using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using DnsClient.Internal;
 using GardenLog.SharedInfrastructure.MongoDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -17,21 +19,61 @@ public interface IConfigurationService
 
 public class ConfigurationService : IConfigurationService
 {
+    private const string VAULT_NAME = "key-vault-name";
+    private const string ENVIRONMENT = "ASPNETCORE_ENVIRONMENT";
     private readonly IConfiguration _configuration;
     private readonly ILogger<ConfigurationService> _logger;
+    private readonly SecretClient? _kvClient;
+    private readonly string _pref=string.Empty;
 
     public ConfigurationService(IConfiguration configuration, ILogger<ConfigurationService> logger)
     {
         _configuration = configuration;
         _logger = logger;
+
+        var env = _configuration.GetValue<string>(ENVIRONMENT);
+
+        if (env == null) { env= "Development";}
+
+        if (env == "Development" || env == "Production")
+        {
+            _logger.LogInformation("Development/Production environment. Will use kv for test values");
+
+            string? vaultName = _configuration.GetValue<string>(VAULT_NAME);
+            if (string.IsNullOrWhiteSpace(vaultName))
+            {
+                _logger.LogCritical("Vault name is not found. Do not expect any good thinng to happen");
+            }
+            else
+            {
+                var kvUrl = $"https://{vaultName}.vault.azure.net/";
+                _kvClient = new SecretClient(new Uri(kvUrl), new DefaultAzureCredential());
+                _pref = (env == "Development" ? "test-" : "");
+            }
+        }
     }
 
     public MongoSettings? GetPlantCatalogMongoSettings()
     {
-        var mongoSettings = _configuration.GetSection(MongoSettings.SECTION).Get<MongoSettings>();
+        MongoSettings? mongoSettings = null;
+
+        if (_kvClient != null)
+        {
+            _logger.LogInformation("Development environment. Will use kv for test values");
+            mongoSettings = new MongoSettings();
+            mongoSettings.Server = _kvClient.GetSecret($"{_pref}mongodb-server").Value.Value;
+            mongoSettings.DatabaseName = _kvClient.GetSecret($"{_pref}mongodb-databasename").Value.Value;
+            mongoSettings.UserName = _kvClient.GetSecret($"{_pref}mongodb-username").Value.Value;
+            mongoSettings.Password = _kvClient.GetSecret($"{_pref}mongodb-password").Value.Value;
+        }
+        else
+        {
+            mongoSettings = _configuration.GetSection(MongoSettings.SECTION).Get<MongoSettings>();
+        }
+
         if (mongoSettings == null)
         {
-            _logger.LogWarning("MONGODB settngs are not found. Do not expect any good thinng to happen");
+            _logger.LogWarning("MONGODB settngs are not found. Do not expect any good things to happen");
             return null;
         }
 
@@ -105,13 +147,20 @@ public class ConfigurationService : IConfigurationService
         {
             _logger.LogInformation("OPEN WEATHER APP ID WAS LOCATED! YEHAA");
         }
-        return openWeartherAppId??string.Empty;
+        return openWeartherAppId ?? string.Empty;
     }
 
     public AuthSettings GetAuthSettings()
     {
         var authSettings = _configuration.GetSection(AuthSettings.SECTION).Get<AuthSettings>();
-        authSettings!.ClientSecret = _configuration.GetValue<string>(AuthSettings.CLIENTSECRET_SECRET);
+        if (_kvClient != null)
+        {
+            authSettings!.ClientSecret = _kvClient.GetSecret(AuthSettings.CLIENTSECRET_SECRET).Value.Value;           
+        }
+        else 
+        {
+            authSettings!.ClientSecret = _configuration.GetValue<string>(AuthSettings.CLIENTSECRET_SECRET);
+        }
         authSettings.ApiClientSecret = _configuration.GetValue<string>(AuthSettings.APICLIENTSECRET_SECRET);
 
         if (string.IsNullOrWhiteSpace(authSettings?.Authority))
@@ -128,7 +177,7 @@ public class ConfigurationService : IConfigurationService
     public string GetEmailPassword()
     {
         var password = _configuration.GetValue<string>("email-password");
-        
+
 
         if (string.IsNullOrWhiteSpace(password))
         {
