@@ -82,6 +82,7 @@ jobs:
     env:
       PROJECT_NAME_FOR_DOCKER: plantcatalogapi
       DOCKER_FILE_PATH: src/PlantCatalog/PlantCatalog.Api/Dockerfile
+      test: ${{needs.setup.outputs.registry-password}}
       
     needs: [setup, build]
     
@@ -97,11 +98,4 @@ jobs:
         registry: ${{needs.setup.outputs.registry-server}}.azurecr.io
         username: ${{needs.setup.outputs.registry-username}}
         password: ${{needs.setup.outputs.registry-password}}
-    
-    - name: Build and push container image to registry
-      uses: docker/build-push-action@v5.1.0
-      with:
-        push: true
-        tags: ${{needs.setup.outputs.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
-        file: ${{ env.DOCKER_FILE_PATH }}
     
