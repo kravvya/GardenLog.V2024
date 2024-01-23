@@ -28,7 +28,7 @@ jobs:
       auth0-clientsecret: ${{steps.retrieve_secrets.outputs.auth0-clientsecret}}
       registry-server: ${{steps.retrieve_secrets.outputs.registry-server}}
       registry-username: ${{steps.retrieve_secrets.outputs.registry-username}}
-      registry-pass: ${{steps.retrieve_secrets.outputs.registry-pass}}
+      registry: ${{steps.retrieve_secrets.outputs.registry}}
       
     steps: 
     - uses: Azure/login@v1
@@ -46,7 +46,7 @@ jobs:
             echo auth0-clientsecret=$(az keyvault secret show --name "auth0-clientsecret" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo registry-server=$(az keyvault secret show --name "registry-server" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo registry-username=$(az keyvault secret show --name "registry-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
-            echo registry-pass=$(az keyvault secret show --name "registry-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo registry=$(az keyvault secret show --name "registry-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
   build:
     
     env:
@@ -82,7 +82,7 @@ jobs:
     env:
       PROJECT_NAME_FOR_DOCKER: plantcatalogapi
       DOCKER_FILE_PATH: src/PlantCatalog/PlantCatalog.Api/Dockerfile
-      test: ${{needs.setup.outputs.registry-password}}
+      test: ${{needs.setup.outputs.registry}}
       
     needs: [setup, build]
     
@@ -97,7 +97,7 @@ jobs:
       with:
         registry: ${{needs.setup.outputs.registry-server}}.azurecr.io
         username: ${{needs.setup.outputs.registry-username}}
-        password: ${{needs.setup.outputs.registry-pass}}
+        password: ${{needs.setup.outputs.registry}}
         
     - name: Build and push container image to registry
       uses: docker/build-push-action@v5.1.0
