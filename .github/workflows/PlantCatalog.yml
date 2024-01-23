@@ -26,9 +26,6 @@ jobs:
       test-mongodb-username: ${{steps.retrieve_secrets.outputs.test-mongodb-username}}
       test-mongodb-password: ${{steps.retrieve_secrets.outputs.test-mongodb-password}}
       auth0-clientsecret: ${{steps.retrieve_secrets.outputs.auth0-clientsecret}}
-      registry-server: ${{steps.retrieve_secrets.outputs.registry-server}}
-      registry-username: ${{steps.retrieve_secrets.outputs.registry-username}}
-      registry: ${{steps.retrieve_secrets.outputs.registry}}
       
     steps: 
     - uses: Azure/login@v1
@@ -44,9 +41,7 @@ jobs:
             echo test-mongodb-username=$(az keyvault secret show --name "test-mongodb-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo test-mongodb-password=$(az keyvault secret show --name "test-mongodb-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo auth0-clientsecret=$(az keyvault secret show --name "auth0-clientsecret" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
-            echo registry-server=$(az keyvault secret show --name "registry-server" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
-            echo registry-username=$(az keyvault secret show --name "registry-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
-            echo registry=$(az keyvault secret show --name "registry-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+
   build:
     
     env:
@@ -82,22 +77,30 @@ jobs:
     env:
       PROJECT_NAME_FOR_DOCKER: plantcatalogapi
       DOCKER_FILE_PATH: src/PlantCatalog/PlantCatalog.Api/Dockerfile
-      test: ${{needs.setup.outputs.registry}}
       
-    needs: [setup, build]
-    
     runs-on: ubuntu-latest
 
     steps:
+    
+    - uses: Azure/login@v1
+      with:
+       creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Retrieve Container Registry Creds
+      uses: azure/CLI@v1
+      with:
+       inlineScript: |
+           echo registry-server=$(az keyvault secret show --name "registry-server" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+           echo registry-username=$(az keyvault secret show --name "registry-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+           echo registry_password=$(az keyvault secret show --name "registry-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
     - name: Log in to container registry
       uses: docker/login-action@v3
       with:
-        registry: ${{needs.setup.outputs.registry-server}}.azurecr.io
-        username: ${{needs.setup.outputs.registry-username}}
-        password: ${{needs.setup.outputs.registry}}
+        registry: ${{registry-server}}.azurecr.io
+        username: ${{registry-username}}
+        password: ${{registry-password}}
         
     - name: Build and push container image to registry
       uses: docker/build-push-action@v5.1.0
