@@ -77,7 +77,7 @@ jobs:
     - name: Test
       run: dotnet test --logger "console;verbosity=normal" --no-build --verbosity normal
  
-  push:
+  register_image:
     
     env:
       PROJECT_NAME_FOR_DOCKER: plantcatalogapi
