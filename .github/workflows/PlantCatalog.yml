@@ -26,6 +26,7 @@ jobs:
       test-mongodb-username: ${{steps.retrieve_secrets.outputs.test-mongodb-username}}
       test-mongodb-password: ${{steps.retrieve_secrets.outputs.test-mongodb-password}}
       auth0-clientsecret: ${{steps.retrieve_secrets.outputs.auth0-clientsecret}}
+      DOTNET_ENVIRONMENT: "Test"
       
     steps: 
     - uses: Azure/login@v1
