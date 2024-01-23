@@ -110,5 +110,5 @@ jobs:
       uses: docker/build-push-action@v5.1.0
       with:
         push: true
-        tags: ${{needs.setup.outputs.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
+        tags: ${{env.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
         file: ${{ env.DOCKER_FILE_PATH }}
