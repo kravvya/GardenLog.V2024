@@ -26,6 +26,9 @@ jobs:
       test-mongodb-username: ${{steps.retrieve_secrets.outputs.test-mongodb-username}}
       test-mongodb-password: ${{steps.retrieve_secrets.outputs.test-mongodb-password}}
       auth0-clientsecret: ${{steps.retrieve_secrets.outputs.auth0-clientsecret}}
+      registry-server: ${{steps.retrieve_secrets.outputs.registry-server}}
+      test-registry-username: ${{steps.retrieve_secrets.outputs.test-registry-username}}
+      test-registry-password: ${{steps.retrieve_secrets.outputs.test-registry-password}}
       
     steps: 
     - uses: Azure/login@v1
@@ -43,7 +46,7 @@ jobs:
             echo auth0-clientsecret=$(az keyvault secret show --name "auth0-clientsecret" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo registry-server=$(az keyvault secret show --name "registry-server" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo registry-username=$(az keyvault secret show --name "registry-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
-            echo registry-server=$(az keyvault secret show --name "registry-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo registry-password=$(az keyvault secret show --name "registry-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
   build:
     
     env:
