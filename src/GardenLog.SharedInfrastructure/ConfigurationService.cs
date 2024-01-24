@@ -49,7 +49,7 @@ public class ConfigurationService : IConfigurationService
                 var kvUrl = $"https://{vaultName}.vault.azure.net/";
                 _kvClient = new SecretClient(new Uri(kvUrl), new DefaultAzureCredential());
                 _pref = (env == "Development" ? "test-" : "");
-                _logger.LogInformation("{_pref} Will use this pref for kv values", _pref);
+                _logger.LogInformation("{_pref} Will use this pref for kv values in {kvUrl}", _pref, kvUrl);
 
                 try
                 {
