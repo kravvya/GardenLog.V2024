@@ -50,6 +50,16 @@ public class ConfigurationService : IConfigurationService
                 _kvClient = new SecretClient(new Uri(kvUrl), new DefaultAzureCredential());
                 _pref = (env == "Development" ? "test-" : "");
                 _logger.LogInformation("{_pref} Will use this pref for kv values", _pref);
+
+                try
+                {
+                    var server = _kvClient.GetSecret($"{_pref}mongodb-server").Value.Value;
+                    _logger.LogInformation("MongoDB server test {mongodb-server}", server);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical("MongoDB server test failed {ex}", ex);
+                }
             }
         }
     }
@@ -158,16 +168,19 @@ public class ConfigurationService : IConfigurationService
     public AuthSettings GetAuthSettings()
     {
         var authSettings = _configuration.GetSection(AuthSettings.SECTION).Get<AuthSettings>();
+
         if (_kvClient != null)
         {
+            _logger.LogInformation("Will use kv for Auth values}");
             authSettings!.ClientSecret = _kvClient.GetSecret(AuthSettings.CLIENTSECRET_SECRET).Value.Value;           
         }
         else 
         {
             authSettings!.ClientSecret = _configuration.GetValue<string>(AuthSettings.CLIENTSECRET_SECRET);
+            authSettings.ApiClientSecret = _configuration.GetValue<string>(AuthSettings.APICLIENTSECRET_SECRET);
         }
-        authSettings.ApiClientSecret = _configuration.GetValue<string>(AuthSettings.APICLIENTSECRET_SECRET);
 
+       
         if (string.IsNullOrWhiteSpace(authSettings?.Authority))
         {
             _logger.LogCritical("AUTH DOMAIN is not found. Do not expect any good things to happen");
