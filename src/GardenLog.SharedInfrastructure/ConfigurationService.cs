@@ -59,7 +59,8 @@ public class ConfigurationService : IConfigurationService
         MongoSettings? mongoSettings;
         if (_kvClient != null)
         {
-            _logger.LogInformation("Development environment. Will use kv for test values");
+            _logger.LogInformation("Will use kv for MongoDB values with prefix: {_pref}", _pref);
+           
             mongoSettings = new MongoSettings
             {
                 Server = _kvClient.GetSecret($"{_pref}mongodb-server").Value.Value,
@@ -67,6 +68,8 @@ public class ConfigurationService : IConfigurationService
                 UserName = _kvClient.GetSecret($"{_pref}mongodb-username").Value.Value,
                 Password = _kvClient.GetSecret($"{_pref}mongodb-password").Value.Value
             };
+
+            _logger.LogInformation("MongoDB server {mongodb-server} @ {mongodb-databasename}", mongoSettings.Server, mongoSettings.DatabaseName);
         }
         else
         {
