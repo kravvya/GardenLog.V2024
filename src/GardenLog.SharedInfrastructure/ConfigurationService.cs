@@ -199,6 +199,7 @@ public class ConfigurationService : IConfigurationService
             _logger.LogCritical("Get Auth values failed {ex}", ex);
         }
 
+        return new();
     }
 
     public string GetEmailPassword()
