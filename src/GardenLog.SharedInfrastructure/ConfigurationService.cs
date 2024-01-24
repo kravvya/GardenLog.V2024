@@ -167,40 +167,33 @@ public class ConfigurationService : IConfigurationService
 
     public AuthSettings GetAuthSettings()
     {
-        _logger.LogInformation("Look for Auth values}");
-        try
+        _logger.LogInformation("Look for Auth values");
+
+        var authSettings = _configuration.GetSection(AuthSettings.SECTION).Get<AuthSettings>();
+
+        if (_kvClient != null)
         {
-            var authSettings = _configuration.GetSection(AuthSettings.SECTION).Get<AuthSettings>();
-
-            if (_kvClient != null)
-            {
-                _logger.LogInformation("Will use kv for Auth values}");
-                authSettings!.ClientSecret = _kvClient.GetSecret(AuthSettings.CLIENTSECRET_SECRET).Value.Value;
-            }
-            else
-            {
-                authSettings!.ClientSecret = _configuration.GetValue<string>(AuthSettings.CLIENTSECRET_SECRET);
-                authSettings.ApiClientSecret = _configuration.GetValue<string>(AuthSettings.APICLIENTSECRET_SECRET);
-            }
-
-
-            if (string.IsNullOrWhiteSpace(authSettings?.Authority))
-            {
-                _logger.LogCritical("AUTH DOMAIN is not found. Do not expect any good things to happen");
-            }
-            else
-            {
-                _logger.LogInformation("AUTH DOMAIN WAS LOCATED! YEHAA");
-            }
-            return authSettings!;
+            _logger.LogInformation("Will use kv for Auth values");
+            authSettings!.ClientSecret = _kvClient.GetSecret(AuthSettings.CLIENTSECRET_SECRET).Value.Value;
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogCritical("Get Auth values failed {ex}", ex);
+            authSettings!.ClientSecret = _configuration.GetValue<string>(AuthSettings.CLIENTSECRET_SECRET);
+            authSettings.ApiClientSecret = _configuration.GetValue<string>(AuthSettings.APICLIENTSECRET_SECRET);
         }
 
-        return new();
+
+        if (string.IsNullOrWhiteSpace(authSettings?.Authority))
+        {
+            _logger.LogCritical("AUTH DOMAIN is not found. Do not expect any good things to happen");
+        }
+        else
+        {
+            _logger.LogInformation("AUTH DOMAIN WAS LOCATED! YEHAA");
+        }
+        return authSettings!;
     }
+
 
     public string GetEmailPassword()
     {
