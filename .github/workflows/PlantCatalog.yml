@@ -122,7 +122,7 @@ jobs:
     - name: Build and deploy Container App
       uses: azure/container-apps-deploy-action@v1
       with:
-        acrName: ${{env.registry-server}}.azurecr.io
+        acrName: ${{needs.setup.outputs.registry-server}}.azurecr.io
         containerAppName: ${{env.CONTAINER_APP_NAME}}
         resourceGroup: GardenLog_ResourceGroup
         imageToDeploy: ${{needs.setup.outputs.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
