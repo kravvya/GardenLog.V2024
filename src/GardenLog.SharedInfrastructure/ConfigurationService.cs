@@ -24,7 +24,7 @@ public class ConfigurationService : IConfigurationService
     private readonly IConfiguration _configuration;
     private readonly ILogger<ConfigurationService> _logger;
     private readonly SecretClient? _kvClient;
-    private readonly string _pref=string.Empty;
+    private readonly string _pref = string.Empty;
 
     public ConfigurationService(IConfiguration configuration, ILogger<ConfigurationService> logger)
     {
@@ -54,7 +54,7 @@ public class ConfigurationService : IConfigurationService
                 try
                 {
                     var server = _kvClient.GetSecret($"{_pref}mongodb-server").Value.Value;
-                    _logger.LogInformation("MongoDB server test {mongodb-server}", server);
+                    _logger.LogInformation("MongoDB server test {server}", server);
                 }
                 catch (Exception ex)
                 {
@@ -70,7 +70,7 @@ public class ConfigurationService : IConfigurationService
         if (_kvClient != null)
         {
             _logger.LogInformation("Will use kv for MongoDB values with prefix: {_pref}", _pref);
-           
+
             mongoSettings = new MongoSettings
             {
                 Server = _kvClient.GetSecret($"{_pref}mongodb-server").Value.Value,
@@ -167,29 +167,38 @@ public class ConfigurationService : IConfigurationService
 
     public AuthSettings GetAuthSettings()
     {
-        var authSettings = _configuration.GetSection(AuthSettings.SECTION).Get<AuthSettings>();
+        _logger.LogInformation("Look for Auth values}");
+        try
+        {
+            var authSettings = _configuration.GetSection(AuthSettings.SECTION).Get<AuthSettings>();
 
-        if (_kvClient != null)
-        {
-            _logger.LogInformation("Will use kv for Auth values}");
-            authSettings!.ClientSecret = _kvClient.GetSecret(AuthSettings.CLIENTSECRET_SECRET).Value.Value;           
+            if (_kvClient != null)
+            {
+                _logger.LogInformation("Will use kv for Auth values}");
+                authSettings!.ClientSecret = _kvClient.GetSecret(AuthSettings.CLIENTSECRET_SECRET).Value.Value;
+            }
+            else
+            {
+                authSettings!.ClientSecret = _configuration.GetValue<string>(AuthSettings.CLIENTSECRET_SECRET);
+                authSettings.ApiClientSecret = _configuration.GetValue<string>(AuthSettings.APICLIENTSECRET_SECRET);
+            }
+
+
+            if (string.IsNullOrWhiteSpace(authSettings?.Authority))
+            {
+                _logger.LogCritical("AUTH DOMAIN is not found. Do not expect any good things to happen");
+            }
+            else
+            {
+                _logger.LogInformation("AUTH DOMAIN WAS LOCATED! YEHAA");
+            }
+            return authSettings!;
         }
-        else 
+        catch (Exception ex)
         {
-            authSettings!.ClientSecret = _configuration.GetValue<string>(AuthSettings.CLIENTSECRET_SECRET);
-            authSettings.ApiClientSecret = _configuration.GetValue<string>(AuthSettings.APICLIENTSECRET_SECRET);
+            _logger.LogCritical("Get Auth values failed {ex}", ex);
         }
 
-       
-        if (string.IsNullOrWhiteSpace(authSettings?.Authority))
-        {
-            _logger.LogCritical("AUTH DOMAIN is not found. Do not expect any good things to happen");
-        }
-        else
-        {
-            _logger.LogInformation("AUTH DOMAIN WAS LOCATED! YEHAA");
-        }
-        return authSettings!;
     }
 
     public string GetEmailPassword()
