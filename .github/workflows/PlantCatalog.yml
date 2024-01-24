@@ -2,7 +2,6 @@
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
 name: Deploy Plant Catalog
-
 on:
  push:
     branches: 
@@ -15,6 +14,11 @@ on:
      paths:
       - "src/PlantCatalog/**"
  workflow_dispatch:
+
+env:
+  PROJECT_NAME_FOR_DOCKER: plantcatalogapi
+  CONTAINER_APP_NAME: plantcatalogapi-containerapp
+  DOCKER_FILE_PATH: src/PlantCatalog/PlantCatalog.Api/Dockerfile  
   
 jobs:
   setup:
@@ -74,10 +78,7 @@ jobs:
       run: dotnet test --logger "console;verbosity=normal" --no-build --verbosity normal
  
   register_image:    
-    env:
-      PROJECT_NAME_FOR_DOCKER: plantcatalogapi
-      DOCKER_FILE_PATH: src/PlantCatalog/PlantCatalog.Api/Dockerfile     
-      
+  
     runs-on: ubuntu-latest
     needs: build    
     steps:    
@@ -121,6 +122,6 @@ jobs:
       uses: azure/container-apps-deploy-action@v1
       with:
         acrName: ${{env.registry-server}}.azurecr.io
-        containerAppName: plantcatalogapi
+        containerAppName: ${{env.CONTAINER_APP_NAME}}
         resourceGroup: GardenLog_ResourceGroup
         imageToDeploy: ${{env.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
