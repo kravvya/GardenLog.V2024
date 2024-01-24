@@ -125,4 +125,4 @@ jobs:
         acrName: ${{env.registry-server}}.azurecr.io
         containerAppName: ${{env.CONTAINER_APP_NAME}}
         resourceGroup: GardenLog_ResourceGroup
-        imageToDeploy: ${{{needs.setup.outputs.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
+        imageToDeploy: ${{needs.setup.outputs.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
