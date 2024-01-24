@@ -43,12 +43,14 @@ public class MongoDbContext : IMongoDBContext
     {
         _logger.LogInformation("Got connection string. Start with {server}", Settings!.Server);
 
-        MongoUrlBuilder bldr = new();
-        bldr.Scheme = ConnectionStringScheme.MongoDBPlusSrv;
-        bldr.UseTls = true;
-        bldr.Server = new MongoServerAddress(Settings!.Server);
-        bldr.Username = Settings.UserName;
-        bldr.Password = Settings.Password;
+        MongoUrlBuilder bldr = new()
+        {
+            Scheme = ConnectionStringScheme.MongoDBPlusSrv,
+            UseTls = true,
+            Server = new MongoServerAddress(Settings!.Server),
+            Username = Settings.UserName,
+            Password = Settings.Password
+        };
 
         var settings = MongoClientSettings.FromUrl(bldr.ToMongoUrl());
         settings.RetryWrites = true;

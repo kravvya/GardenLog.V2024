@@ -132,7 +132,7 @@ public class PlantCommandHandler : IPlantCommandHandler
         }
         catch (Exception ex)
         {
-            _logger.LogCritical("Exception adding plant grow instruction", ex);
+            _logger.LogCritical("Exception adding plant grow instruction: {ex}", ex);
             throw;
         }
        

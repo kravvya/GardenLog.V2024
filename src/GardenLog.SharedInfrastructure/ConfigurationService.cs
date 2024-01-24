@@ -33,11 +33,11 @@ public class ConfigurationService : IConfigurationService
 
         var env = _configuration.GetValue<string>(ENVIRONMENT);
 
-        if (env == null) { env= "Development";}
+        env ??= "Development";
 
         if (env == "Development" || env == "Production")
         {
-            _logger.LogInformation("Development/Production environment. Will use kv for test values");
+            _logger.LogInformation("{env} environment. Will use kv for values", env);
 
             string? vaultName = _configuration.GetValue<string>(VAULT_NAME);
             if (string.IsNullOrWhiteSpace(vaultName))
@@ -49,22 +49,24 @@ public class ConfigurationService : IConfigurationService
                 var kvUrl = $"https://{vaultName}.vault.azure.net/";
                 _kvClient = new SecretClient(new Uri(kvUrl), new DefaultAzureCredential());
                 _pref = (env == "Development" ? "test-" : "");
+                _logger.LogInformation("{_pref} Will use this pref for kv values", _pref);
             }
         }
     }
 
     public MongoSettings? GetPlantCatalogMongoSettings()
     {
-        MongoSettings? mongoSettings = null;
-
+        MongoSettings? mongoSettings;
         if (_kvClient != null)
         {
             _logger.LogInformation("Development environment. Will use kv for test values");
-            mongoSettings = new MongoSettings();
-            mongoSettings.Server = _kvClient.GetSecret($"{_pref}mongodb-server").Value.Value;
-            mongoSettings.DatabaseName = _kvClient.GetSecret($"{_pref}mongodb-databasename").Value.Value;
-            mongoSettings.UserName = _kvClient.GetSecret($"{_pref}mongodb-username").Value.Value;
-            mongoSettings.Password = _kvClient.GetSecret($"{_pref}mongodb-password").Value.Value;
+            mongoSettings = new MongoSettings
+            {
+                Server = _kvClient.GetSecret($"{_pref}mongodb-server").Value.Value,
+                DatabaseName = _kvClient.GetSecret($"{_pref}mongodb-databasename").Value.Value,
+                UserName = _kvClient.GetSecret($"{_pref}mongodb-username").Value.Value,
+                Password = _kvClient.GetSecret($"{_pref}mongodb-password").Value.Value
+            };
         }
         else
         {

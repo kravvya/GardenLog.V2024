@@ -34,16 +34,16 @@ public class PlantQueryHandler : IPlantQueryHandler
     #region Plant
     public async Task<PlantViewModel> GetPlantByPlantId(string plantId)
     {
-        _logger.LogInformation($"Received request to get plant by plantid: {plantId}");
+        _logger.LogInformation("Received request to get plant by plantid: {plantId}", plantId);
         var plant = await _plantRepository.GetByIdAsync(plantId);
 
         return _mapper.Map<PlantViewModel>(plant);
     }
 
-    public async Task<string> GetPlantIdByPlantName(string nane)
+    public async Task<string> GetPlantIdByPlantName(string name)
     {
-        _logger.LogInformation($"Received request to get plant id by plant name: {nane}");
-        return await _plantRepository.GetIdByNameAsync(nane);
+        _logger.LogInformation("Received request to get plant id by plant name: {name}", name);
+        return await _plantRepository.GetIdByNameAsync(name);
     }
 
     public async Task<IReadOnlyCollection<PlantViewModel>> GetAllPlants()
@@ -65,7 +65,7 @@ public class PlantQueryHandler : IPlantQueryHandler
 
     public async Task<IReadOnlyCollection<PlantGrowInstructionViewModel>> GetPlantGrowInstructions(string plantId)
     {
-        _logger.LogInformation($"Received request to get plant grow instructions for {plantId}");
+        _logger.LogInformation("Received request to get plant grow instructions for {plantId}", plantId);
      
         try
         {
@@ -74,7 +74,7 @@ public class PlantQueryHandler : IPlantQueryHandler
         }
         catch (Exception ex)
         {
-            _logger.LogCritical($"Exception readding grow instructions for {plantId}", ex);
+            _logger.LogCritical("Exception readding grow instructions for {ex}", ex);
             throw;
         }
       
@@ -90,7 +90,7 @@ public class PlantQueryHandler : IPlantQueryHandler
         }
         catch (Exception ex)
         {
-            _logger.LogCritical($"Exception readding grow instruction for {plantId} and {id}", ex);
+            _logger.LogCritical("Exception readding grow instruction for {plantId} and {id} with exception: {ex}",plantId, id, ex);
             throw;
         }
 
@@ -111,7 +111,7 @@ public class PlantQueryHandler : IPlantQueryHandler
         }
         catch (Exception ex)
         {
-            _logger.LogCritical($"Exception readding all plant varieties", ex);
+            _logger.LogCritical($"Exception readding all plant varieties: {ex}", ex);
             throw;
         }
 
@@ -146,7 +146,7 @@ public class PlantQueryHandler : IPlantQueryHandler
         }
         catch (Exception ex)
         {
-            _logger.LogCritical($"Exception readding grow instruction for {plantId} and {id}", ex);
+            _logger.LogCritical("Exception readding grow instruction for {plantId} and {id} with exception: {ex}", plantId, id, ex);
             throw;
         }
 
