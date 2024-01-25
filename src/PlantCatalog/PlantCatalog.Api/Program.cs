@@ -68,37 +68,37 @@ try
     builder.Services.AddScoped<IPlantCommandHandler, PlantCommandHandler>();
     builder.Services.AddScoped<IPlantQueryHandler, PlantQueryHandler>();
 
-    //builder.Services.AddCors(options =>
-    //{
-    //    options.AddPolicy(name: "glWebPolicy",
-    //                policy =>
-    //                {
-    //                    policy.WithOrigins("https://kravvya.github.io",
-    //                        "https://localhost:7014",
-    //                        "https://localhost:44318")
-    //                    .AllowAnyMethod()
-    //                    .AllowAnyHeader();
-    //                });
-    //});
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy(name: "glWebPolicy",
+                    policy =>
+                    {
+                        policy.WithOrigins("https://kravvya.github.io",
+                            "https://localhost:7014",
+                            "https://localhost:44318")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                    });
+    });
 
     // 1. Add Authentication Services
-    //builder.RegisterForAuthentication();
+    builder.RegisterForAuthentication();
 
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
-    // app.UseSwaggerForAuth(app.Services.GetRequiredService<IConfigurationService>());
+     app.UseSwaggerForAuth(app.Services.GetRequiredService<IConfigurationService>());
 
     //Aapp Container ingress is EntityHandling HTTPs redirects. This is not needed.
     //app.UseHttpsRedirection();
     app.UseKubernetesHealthChecks();
 
     //// 2. Enable authentication middleware
-    //app.UseAuthentication();
+    app.UseAuthentication();
 
-    //app.UseAuthorization();
+    app.UseAuthorization();
 
-    //app.UseCors("glWebPolicy");
+    app.UseCors("glWebPolicy");
 
     app.MapControllers();
 
