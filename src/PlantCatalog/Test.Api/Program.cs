@@ -16,7 +16,7 @@ app.UseSwaggerUI();
 
 app.UseHealthChecks("/startup");
 app.UseHealthChecks("/health");
-app.UseHealthChecks("_health");
+app.UseHealthChecks("/_health");
 
 app.MapControllers();
 
