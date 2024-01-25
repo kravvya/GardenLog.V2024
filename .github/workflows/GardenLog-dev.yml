@@ -1,0 +1,34 @@
+on:
+  push:
+    branches:
+    - main
+env:
+  DOTNET_CORE_VERSION: 8.0.x
+  CONTAINER_APP_NAME: testapi-containergroup
+  CONTAINER_APP_ENVIRONMENT_NAME: GardenLog-dev
+  RESOURCE_GROUP: GardenLog_ResourceGroup
+  CONTAINER_REGISTRY_NAME: glcontregistry
+  CONTAINER_REGISTRY_LOGIN_SERVER: glcontregistry.azurecr.io
+jobs:
+  BuildAndDeployContainerApp:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
+    - name: Azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Container App deploy
+      uses: azure/container-apps-deploy-action@v1
+      with:
+        appSourcePath: ${{ github.workspace }}
+        acrName: ${{ env.CONTAINER_REGISTRY_NAME }}
+        imageToBuild: ${{ env.CONTAINER_REGISTRY_LOGIN_SERVER }}/${{ env.CONTAINER_APP_NAME }}:${{ github.sha }}
+        containerAppName: ${{ env.CONTAINER_APP_NAME }}
+        containerAppEnvironment: ${{ env.CONTAINER_APP_ENVIRONMENT_NAME }}
+        resourceGroup: ${{ env.RESOURCE_GROUP }}
