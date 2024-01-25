@@ -30,7 +30,13 @@ jobs:
     - uses: Azure/login@v1
       with:
        creds: ${{ secrets.AZURE_CREDENTIALS }}
-  
+    - name: Retrieve Container Registry Creds
+      uses: azure/CLI@v1
+      with:
+       inlineScript: |
+           echo registry-username=$(az keyvault secret show --name "registry-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_ENV
+           echo registry-password=$(az keyvault secret show --name "registry-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_ENV
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3      
     - name: Log in to container registry
