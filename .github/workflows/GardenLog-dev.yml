@@ -1,34 +1,65 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: Deploy Plant Catalog
 on:
-  push:
-    branches:
-    - main
+ push:
+    branches: 
+      - main
+    paths:
+      - "src/PlantCatalog/**"
+ pull_request:
+     branches: 
+       - main
+     paths:
+      - "src/PlantCatalog/**"
+ workflow_dispatch:
+
 env:
-  DOTNET_CORE_VERSION: 8.0.x
+  PROJECT_NAME_FOR_DOCKER: true
   CONTAINER_APP_NAME: testapi-containergroup
-  CONTAINER_APP_ENVIRONMENT_NAME: GardenLog-dev
-  RESOURCE_GROUP: GardenLog_ResourceGroup
-  CONTAINER_REGISTRY_NAME: glcontregistry
-  CONTAINER_REGISTRY_LOGIN_SERVER: glcontregistry.azurecr.io
+  DOCKER_FILE_PATH: src/PlantCatalog/Test.Api/Dockerfile  
+  
 jobs:
-  BuildAndDeployContainerApp:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout source code
-      uses: actions/checkout@v4
-    - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v3
+  
+  
+  register_image:    
+  
+    runs-on: ubuntu-latest 
+    steps:    
+    - uses: Azure/login@v1
       with:
-        dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
-    - name: Azure login
+       creds: ${{ secrets.AZURE_CREDENTIALS }}
+  
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3      
+    - name: Log in to container registry
+      uses: docker/login-action@v3
+      with:
+        registry: GLContRegistry.azurecr.io
+        username: ${{env.registry-username}}
+        password: ${{env.registry-password}}        
+    - name: Build and push container image to registry
+      uses: docker/build-push-action@v5.1.0
+      with:
+        push: true
+        tags: GLContRegistry.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
+        file: ${{ env.DOCKER_FILE_PATH }}
+      
+  deploy:
+   runs-on: ubuntu-latest
+   needs: [ register_image]
+   
+   steps:   
+    - name: Log in to Azure
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - name: Container App deploy
-      uses: azure/container-apps-deploy-action@v1
+    
+    - name: Deploy Container App
+      uses: azure/container-apps-deploy-action@v2
       with:
-        appSourcePath: ${{ github.workspace }}
-        acrName: ${{ env.CONTAINER_REGISTRY_NAME }}
-        imageToBuild: ${{ env.CONTAINER_REGISTRY_LOGIN_SERVER }}/${{ env.CONTAINER_APP_NAME }}:${{ github.sha }}
-        containerAppName: ${{ env.CONTAINER_APP_NAME }}
-        containerAppEnvironment: ${{ env.CONTAINER_APP_ENVIRONMENT_NAME }}
-        resourceGroup: ${{ env.RESOURCE_GROUP }}
+        containerAppName: ${{env.CONTAINER_APP_NAME}}
+        resourceGroup: GardenLog_ResourceGroup
+        imageToDeploy: GLContRegistry.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
+
