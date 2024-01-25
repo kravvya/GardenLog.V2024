@@ -16,7 +16,7 @@ on:
  workflow_dispatch:
 
 env:
-  PROJECT_NAME_FOR_DOCKER: true
+  PROJECT_NAME_FOR_DOCKER: testapi
   CONTAINER_APP_NAME: testapi-containergroup
   DOCKER_FILE_PATH: src/PlantCatalog/Test.Api/Dockerfile  
   
