@@ -125,4 +125,4 @@ jobs:
         containerAppName: ${{env.CONTAINER_APP_NAME}}
         resourceGroup: GardenLog_ResourceGroup
         imageToDeploy: ${{needs.setup.outputs.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
-        environmentVariables: "ASPNETCORE_ENVIRONMENT=Production"
+        environmentVariables: "ASPNETCORE_ENVIRONMENT=Production ASPNETCORE_HTTP_PORTS=80"
