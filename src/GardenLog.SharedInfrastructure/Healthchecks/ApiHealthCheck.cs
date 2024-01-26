@@ -26,5 +26,3 @@ public class ApiHealthCheck : IHealthCheck
                description: "The Api is down"));
     }
 }
-{
-}
