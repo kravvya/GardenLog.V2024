@@ -2,6 +2,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using GardenLog.SharedInfrastructure;
 using GardenLog.SharedInfrastructure.Extensions;
+using GardenLog.SharedInfrastructure.Healthchecks;
 using GardenLog.SharedInfrastructure.MongoDB;
 using GardenLog.SharedKernel.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -56,6 +57,7 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.RegisterSwaggerForAuth("Plant Catalog Api");
     builder.Services.AddBasicHealthChecks();
+    
 
     builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
     builder.Services.AddSingleton<IMongoDBContext, MongoDbContext>();
@@ -92,6 +94,7 @@ try
     //Aapp Container ingress is EntityHandling HTTPs redirects. This is not needed.
     //app.UseHttpsRedirection();
     app.UseKubernetesHealthChecks();
+    app.UserMongoDBHealthCheck();
 
     //// 2. Enable authentication middleware
     app.UseAuthentication();

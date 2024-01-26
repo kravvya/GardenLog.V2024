@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using GardenLog.SharedInfrastructure.Healthchecks;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -17,6 +18,12 @@ public static class HealthCheckExtensions
         return services;
     }
 
+    public static IServiceCollection AddMongoDBHealthCheck(this IServiceCollection services)
+    {
+        services.AddHealthChecks().AddCheck<MongoDBHealthCheck>("MongoDB", tags: new[] { "mongodb" });
+        return services;
+    }
+
     public static IServiceCollection AddAdditionStartupHealthChecks<T>(this IServiceCollection services) where T : class, IHealthCheck
     {
         services.AddHealthChecks().AddCheck<T>(nameof(T), tags: new[] { Startup });
@@ -28,6 +35,13 @@ public static class HealthCheckExtensions
         services.AddHealthChecks().AddCheck<T>(nameof(T), tags: new[] { Liveness });
         return services;
     }
+
+    public static IApplicationBuilder UserMongoDBHealthCheck(this IApplicationBuilder app) =>
+        app.UseHealthChecks("/health/mongodb",
+                       new HealthCheckOptions
+                       {
+                           Predicate = x => x.Tags.Contains("mongodb")
+                       });
 
     public static IApplicationBuilder UseKubernetesHealthChecks(this IApplicationBuilder app) =>
          app

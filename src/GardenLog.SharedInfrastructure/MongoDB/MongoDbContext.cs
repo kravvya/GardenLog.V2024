@@ -12,6 +12,7 @@ public interface IMongoDBContext
 {
     T GetCollection<T, Y>(string collectionName);
     Task<int> ApplyChangesAsync(List<Func<Task>> commands);
+    Task<bool> IsMongoDBHealthy();
 }
 
 public class MongoDbContext : IMongoDBContext
@@ -99,5 +100,11 @@ public class MongoDbContext : IMongoDBContext
         }
 
         return commands.Count; ;
+    }
+
+    public async Task<bool> IsMongoDBHealthy()
+    {
+        var result = await Database!.RunCommandAsync((Command<BsonDocument>)"{ping:1}");
+        return result["ok"] == 1;      
     }
 }
