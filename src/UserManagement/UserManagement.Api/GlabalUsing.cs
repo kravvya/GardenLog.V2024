@@ -1,0 +1,9 @@
+﻿global using GardenLog.SharedKernel;
+global using GardenLog.SharedKernel.Interfaces;
+global using UserManagment.Api.Model.Meta;
+global using UserManagement.Contract.Enum;
+global using UserManagement.Contract.ViewModels;
+global using UserManagement.Contract.Query;
+global using UserManagement.Api.Model;
+global using UserManagement.Contract.Base;
+global using UserManagement.Contract.Command; 

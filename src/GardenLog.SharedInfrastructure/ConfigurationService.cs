@@ -10,7 +10,7 @@ namespace GardenLog.SharedInfrastructure;
 public interface IConfigurationService
 {
     AuthSettings GetAuthSettings();
-    string GetEmailPassword();
+   //string GetEmailPassword();
     string GetImageBlobConnectionString();
     MongoSettings? GetImageCatalogMongoSettings();
     string GetOpenWeartherApplicationId();
@@ -35,7 +35,7 @@ public class ConfigurationService : IConfigurationService
 
         env ??= "Development";
 
-        if (env == "Development" || env == "Production")
+        if (env == "Development")
         {
             _logger.LogInformation("{env} environment. Will use kv for values", env);
 
@@ -88,8 +88,10 @@ public class ConfigurationService : IConfigurationService
 
         if (mongoSettings == null)
         {
-            _logger.LogWarning("MONGODB settngs are not found. Do not expect any good things to happen");
-            return null;
+            mongoSettings = new MongoSettings();
+            mongoSettings.DatabaseName = _configuration.GetValue<string>(MongoSettings.DATABASE_NAME);
+            mongoSettings.Server = _configuration.GetValue<string>(MongoSettings.SERVER);
+            mongoSettings.UserName = _configuration.GetValue<string>(MongoSettings.USERNAME);
         }
 
         if (string.IsNullOrWhiteSpace(mongoSettings.Password))
@@ -175,6 +177,7 @@ public class ConfigurationService : IConfigurationService
         {
             _logger.LogInformation("Will use kv for Auth values");
             authSettings!.ClientSecret = _kvClient.GetSecret(AuthSettings.CLIENTSECRET_SECRET).Value.Value;
+            authSettings!.ApiClientSecret = _kvClient.GetSecret(AuthSettings.APICLIENTSECRET_SECRET).Value.Value;
         }
         else
         {
@@ -195,20 +198,28 @@ public class ConfigurationService : IConfigurationService
     }
 
 
-    public string GetEmailPassword()
-    {
-        var password = _configuration.GetValue<string>("email-password");
+    //public string GetEmailPassword()
+    //{
+    //    string? password;
 
+    //    if (_kvClient != null)
+    //    {
+    //        password = _kvClient.GetSecret($"email-password").Value.Value;
+    //    }
+    //    else
+    //    {
+    //        password = _configuration.GetValue<string>("email-password");
+    //    }
 
-        if (string.IsNullOrWhiteSpace(password))
-        {
-            _logger.LogCritical("EMAIL PASSWORD is not found. Do not expect any good things to happen");
-        }
-        else
-        {
-            _logger.LogInformation("EMAIL PASSWORD WAS LOCATED! YEHAA");
-        }
-        return password!;
-    }
+    //    if (string.IsNullOrWhiteSpace(password))
+    //    {
+    //        _logger.LogCritical("EMAIL PASSWORD is not found. Do not expect any good things to happen");
+    //    }
+    //    else
+    //    {
+    //        _logger.LogInformation("EMAIL PASSWORD WAS LOCATED! YEHAA");
+    //    }
+    //    return password!;
+    //}
 
 }

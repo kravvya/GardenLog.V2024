@@ -8,35 +8,36 @@ namespace GardenLog.SharedInfrastructure.Extensions;
 
 public static class HealthCheckExtensions
 {
-    private const string Liveness = "liveness";
-    private const string Startup = "startup";
+    private const string LIVENESS = "liveness";
+    private const string STARTUP = "startup";
+    private static readonly string[] tags = new[] { "mongodb" };
 
     public static IServiceCollection AddBasicHealthChecks(this IServiceCollection services)
     {
-        services.AddHealthChecks().AddCheck("BasicStartupHealthCheck", () => HealthCheckResult.Healthy(), tags: new[] { Startup });
-        services.AddHealthChecks().AddCheck("BasicLivenessHealthCheck", () => HealthCheckResult.Healthy(), tags: new[] { Liveness });
+        services.AddHealthChecks().AddCheck("BasicStartupHealthCheck", () => HealthCheckResult.Healthy(), tags: new[] { STARTUP });
+        services.AddHealthChecks().AddCheck("BasicLivenessHealthCheck", () => HealthCheckResult.Healthy(), tags: new[] { LIVENESS });
         return services;
     }
 
     public static IServiceCollection AddMongoDBHealthCheck(this IServiceCollection services)
     {
-        services.AddHealthChecks().AddCheck<MongoDBHealthCheck>("MongoDB", tags: new[] { "mongodb" });
+        services.AddHealthChecks().AddCheck<MongoDBHealthCheck>("MongoDB", tags: tags);
         return services;
     }
 
     public static IServiceCollection AddAdditionStartupHealthChecks<T>(this IServiceCollection services) where T : class, IHealthCheck
     {
-        services.AddHealthChecks().AddCheck<T>(nameof(T), tags: new[] { Startup });
+        services.AddHealthChecks().AddCheck<T>(nameof(T), tags: new[] { STARTUP });
         return services;
     }
 
     public static IServiceCollection AddAdditionLivenessHealthChecks<T>(this IServiceCollection services) where T : class, IHealthCheck
     {
-        services.AddHealthChecks().AddCheck<T>(nameof(T), tags: new[] { Liveness });
+        services.AddHealthChecks().AddCheck<T>(nameof(T), tags: new[] { LIVENESS });
         return services;
     }
 
-    public static IApplicationBuilder UserMongoDBHealthCheck(this IApplicationBuilder app) =>
+    public static IApplicationBuilder UseMongoDBHealthCheck(this IApplicationBuilder app) =>
         app.UseHealthChecks("/health/mongodb",
                        new HealthCheckOptions
                        {

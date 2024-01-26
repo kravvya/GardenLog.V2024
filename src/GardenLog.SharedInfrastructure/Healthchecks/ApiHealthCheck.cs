@@ -2,14 +2,9 @@
 
 namespace GardenLog.SharedInfrastructure.Healthchecks;
 
-public class ApiHealthCheck : IHealthCheck
+public class ApiHealthCheck(HttpClient httpClient) : IHealthCheck
 {
-    private readonly HttpClient _httpClient;
-
-    public ApiHealthCheck(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
+    private readonly HttpClient _httpClient = httpClient;
 
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {

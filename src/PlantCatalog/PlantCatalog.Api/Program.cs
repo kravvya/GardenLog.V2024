@@ -57,7 +57,7 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.RegisterSwaggerForAuth("Plant Catalog Api");
     builder.Services.AddBasicHealthChecks();
-    
+    builder.Services.AddMongoDBHealthCheck();
 
     builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
     builder.Services.AddSingleton<IMongoDBContext, MongoDbContext>();
@@ -94,7 +94,7 @@ try
     //Aapp Container ingress is EntityHandling HTTPs redirects. This is not needed.
     //app.UseHttpsRedirection();
     app.UseKubernetesHealthChecks();
-    app.UserMongoDBHealthCheck();
+    app.UseMongoDBHealthCheck();
 
     //// 2. Enable authentication middleware
     app.UseAuthentication();
