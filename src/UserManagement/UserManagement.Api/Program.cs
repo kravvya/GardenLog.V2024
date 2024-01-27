@@ -53,6 +53,7 @@ try
     builder.RegisterSwaggerForAuth("User Management Api");
     builder.Services.AddBasicHealthChecks();
     builder.Services.AddMongoDBHealthCheck();
+    builder.Services.AddEnvironmentHeathChecks();
 
     builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
     builder.Services.AddSingleton<IMongoDBContext, MongoDbContext>();
@@ -94,6 +95,7 @@ try
 
     app.UseKubernetesHealthChecks();
     app.UseMongoDBHealthCheck();
+    app.UseEnvironmentDBHealthCheck();
 
     // 2. Enable authentication middleware
     app.UseAuthentication();
