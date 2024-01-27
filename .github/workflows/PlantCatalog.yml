@@ -30,6 +30,7 @@ jobs:
       test-mongodb-username: ${{steps.retrieve_secrets.outputs.test-mongodb-username}}
       test-mongodb-password: ${{steps.retrieve_secrets.outputs.test-mongodb-password}}
       auth0-clientsecret: ${{steps.retrieve_secrets.outputs.auth0-clientsecret}}
+      auth0-apiclientsecret: ${{steps.retrieve_secrets.outputs.auth0-apiclientsecret}}
       registry-server: ${{steps.retrieve_secrets.outputs.registry-server}}
       email-password: ${{steps.retrieve_secrets.outputs.email-password}}
 
@@ -47,6 +48,7 @@ jobs:
             echo test-mongodb-username=$(az keyvault secret show --name "test-mongodb-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo test-mongodb-password=$(az keyvault secret show --name "test-mongodb-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo auth0-clientsecret=$(az keyvault secret show --name "auth0-clientsecret" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo auth0-apiclientsecret=$(az keyvault secret show --name "auth0-apiclientsecret" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo registry-server=$(az keyvault secret show --name "registry-server" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo email-password=$(az keyvault secret show --name "email-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
 
@@ -58,6 +60,7 @@ jobs:
       mongodb-username: ${{needs.setup.outputs.test-mongodb-username}}
       mongodb-password: ${{needs.setup.outputs.test-mongodb-password}}
       auth0-clientsecret: ${{needs.setup.outputs.auth0-clientsecret}}
+      auth0-apiclientsecret: ${{needs.setup.outputs.auth0-apiclientsecret}}
       email-password: ${{needs.setup.outputs.email-password}}
       ASPNETCORE_ENVIRONMENT: "Test"      
            
