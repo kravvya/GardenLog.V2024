@@ -83,7 +83,7 @@ jobs:
       run: dotnet build --no-restore
     
     - name: Test
-      run: dotnet test  /home/runner/work/GardenLog.V2024/GardenLog.V2024/tests/PlantCatalog.IntegrationTest/PlantCatalog.IntegrationTest.csproj --logger "console;verbosity=normal" --no-build --verbosity normal
+      run: dotnet test  ~/work/GardenLog.V2024/GardenLog.V2024/tests/PlantCatalog.IntegrationTest/PlantCatalog.IntegrationTest.csproj --logger "console;verbosity=normal" --no-build --verbosity normal
  
   register_image:    
   
