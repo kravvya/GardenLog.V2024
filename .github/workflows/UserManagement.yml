@@ -135,4 +135,4 @@ jobs:
         containerAppName: ${{env.CONTAINER_APP_NAME}}
         resourceGroup: GardenLog_ResourceGroup
         imageToDeploy: ${{needs.setup.outputs.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
-        environmentVariables: "ASPNETCORE_ENVIRONMENT=Production"
+        environmentVariables: "ASPNETCORE_ENVIRONMENT=Production mongodb-password=secretref:mongodb-password mongodb-server=secretref:mongodb-server mongodb-username=secretref:mongodb-username mongodb-databasename=secretref:mongodb-databasename email-password=secretref:email-password  auth0-clientsecret=secretref:auth0-clientsecret auth0-apiclientsecret=secretref:auth0-apiclientsecret"
