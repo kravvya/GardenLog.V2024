@@ -92,9 +92,10 @@ jobs:
           ls ${{ github.workspace }}
 
     - name: Test
-      env: glimages_url:${{env.glimages_url}}
       run: dotnet test ~/work/GardenLog.V2024/GardenLog.V2024/tests/ImageCatalog.IntegrationTest/ImageCatalog.IntegrationTest.csproj --logger "console;verbosity=normal" --no-build --verbosity normal
- 
+      env: 
+        glimages_url: '${{env.glimages_url}}'
+        
   register_image:    
   
     runs-on: ubuntu-latest
