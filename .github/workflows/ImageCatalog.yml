@@ -64,15 +64,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-     - uses: Azure/login@v1
+    - uses: Azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Retrieve secret from KV
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-              echo glimages-url=$(az keyvault secret show --name "glimages-url" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_ENV
+    - name: Retrieve secret from KV
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+            echo glimages-url=$(az keyvault secret show --name "glimages-url" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_ENV
 
     - uses: actions/checkout@v3
     
