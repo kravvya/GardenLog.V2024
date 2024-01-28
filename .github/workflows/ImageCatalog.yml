@@ -30,7 +30,6 @@ jobs:
       test-mongodb-username: ${{steps.retrieve_secrets.outputs.test-mongodb-username}}
       test-mongodb-password: ${{steps.retrieve_secrets.outputs.test-mongodb-password}}
       auth0-clientsecret: ${{steps.retrieve_secrets.outputs.auth0-clientsecret}}
-      glimages-url: ${{steps.retrieve_secrets.outputs.glimages-url}}
       registry-server: ${{steps.retrieve_secrets.outputs.registry-server}}
       
     steps: 
@@ -58,7 +57,6 @@ jobs:
       mongodb-username: ${{needs.setup.outputs.test-mongodb-username}}
       mongodb-password: ${{needs.setup.outputs.test-mongodb-password}}
       auth0-clientsecret: ${{needs.setup.outputs.auth0-clientsecret}}
-      glimages-url: ${{needs.setup.outputs.glimages-url}}
       ASPNETCORE_ENVIRONMENT: "Test"      
            
     needs: setup
@@ -66,6 +64,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+     - uses: Azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - id: retrieve_secrets
+      name: Retrieve secret from KV
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+            echo glimages-url=$(az keyvault secret show --name "glimages-url" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_ENV
+
     - uses: actions/checkout@v3
     
     - name: Setup .NET
@@ -84,7 +92,7 @@ jobs:
           ls ${{ github.workspace }}
 
     - name: Test
-      run: dotnet test ~/work/GardenLog.V2024/GardenLog.V2024/tests/ImageCatalog.IntegrationTest/ImageCatalog.IntegrationTest.csproj --logger "console;verbosity=normal" --no-build --verbosity normal
+      run: dotnet test ~/work/GardenLog.V2024/GardenLog.V2024/tests/ImageCatalog.IntegrationTest/ImageCatalog.IntegrationTest.csproj --logger "console;verbosity=normal" --no-build --verbosity normal --environment glimages_url=${env.glimages_url}
  
   register_image:    
   
