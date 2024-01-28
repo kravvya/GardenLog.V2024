@@ -16,8 +16,8 @@ on:
  workflow_dispatch:
 
 env:
-  PROJECT_NAME_FOR_DOCKER: ImageCatalogimagecatalogapi
-  CONTAINER_APP_NAME: ImageCatalogimagecatalogapi-containerapp
+  PROJECT_NAME_FOR_DOCKER: imagecatalogapi
+  CONTAINER_APP_NAME: imagecatalogapi-containerapp
   DOCKER_FILE_PATH: src/ImageCatalog/ImageCatalog.Api/Dockerfile  
   
 jobs:

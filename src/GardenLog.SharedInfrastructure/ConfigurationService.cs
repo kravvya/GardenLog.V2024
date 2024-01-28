@@ -118,7 +118,7 @@ public class ConfigurationService : IConfigurationService
 
         if (_kvClient != null)
         {
-            _logger.LogInformation("Will use kv for Image Blo values ");
+            _logger.LogInformation("Will use kv for Image Blob values ");
 
             blobConnectionString = _kvClient.GetSecret("glimages-url").Value.Value;
         }
