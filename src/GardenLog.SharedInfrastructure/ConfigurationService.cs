@@ -12,7 +12,6 @@ public interface IConfigurationService
     AuthSettings GetAuthSettings();
    //string GetEmailPassword();
     string GetImageBlobConnectionString();
-    MongoSettings? GetImageCatalogMongoSettings();
     string GetOpenWeartherApplicationId();
     MongoSettings? GetPlantCatalogMongoSettings();
 }
@@ -88,37 +87,12 @@ public class ConfigurationService : IConfigurationService
 
         if (mongoSettings == null)
         {
-            mongoSettings = new MongoSettings();
-            mongoSettings.DatabaseName = _configuration.GetValue<string>(MongoSettings.DATABASE_NAME);
-            mongoSettings.Server = _configuration.GetValue<string>(MongoSettings.SERVER);
-            mongoSettings.UserName = _configuration.GetValue<string>(MongoSettings.USERNAME);
-        }
-
-        if (string.IsNullOrWhiteSpace(mongoSettings.Password))
-        {
-            _logger.LogWarning("DB PASSWORD is not found. Will try environment");
-            mongoSettings.Password = _configuration.GetValue<string>(MongoSettings.PASSWORD_SECRET);
-        }
-
-        if (string.IsNullOrWhiteSpace(mongoSettings.Password))
-        {
-            _logger.LogCritical("DB PASSWORD is not found. Do not expect any good things to happen");
-        }
-        else
-        {
-            _logger.LogInformation("DB PASSWORD WAS LOCATED! YEHAA");
-        }
-        return mongoSettings;
-    }
-
-    public MongoSettings? GetImageCatalogMongoSettings()
-    {
-        var mongoSettings = _configuration.GetSection(MongoSettings.SECTION).Get<MongoSettings>();
-
-        if (mongoSettings == null)
-        {
-            _logger.LogWarning("MONGODB settngs are not found. Do not expect any good thinng to happen");
-            return null;
+            mongoSettings = new MongoSettings
+            {
+                DatabaseName = _configuration.GetValue<string>(MongoSettings.DATABASE_NAME),
+                Server = _configuration.GetValue<string>(MongoSettings.SERVER),
+                UserName = _configuration.GetValue<string>(MongoSettings.USERNAME)
+            };
         }
 
         if (string.IsNullOrWhiteSpace(mongoSettings.Password))
@@ -140,7 +114,19 @@ public class ConfigurationService : IConfigurationService
 
     public string GetImageBlobConnectionString()
     {
-        var blobConnectionString = _configuration.GetValue<string>("glimages-url");
+        string? blobConnectionString;
+
+        if (_kvClient != null)
+        {
+            _logger.LogInformation("Will use kv for Image Blo values ");
+
+            blobConnectionString = _kvClient.GetSecret("glimages-url").Value.Value;
+        }
+        else
+        {
+            blobConnectionString = _configuration.GetValue<string>("glimages-url");
+        }
+
         if (string.IsNullOrWhiteSpace(blobConnectionString))
         {
             _logger.LogCritical("Image Blob Url is not found. Do not expect any good things to happen");

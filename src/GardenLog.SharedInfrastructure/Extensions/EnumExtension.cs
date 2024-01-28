@@ -14,7 +14,7 @@ public static class EnumExtensions
                 .Select(str => str.ToCleanString())
                 .ToList();
 
-    // Take an individual enum and report the textual value.
+    // Take an individual enum and report the textual MONGODB.
     public static string ToSingleString(this Enum eNum)
         => eNum.ToString()
                .ToCleanString();

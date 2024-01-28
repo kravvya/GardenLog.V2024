@@ -1,0 +1,15 @@
+﻿global using GardenLog.SharedInfrastructure;
+global using GardenLog.SharedInfrastructure.Extensions;
+global using GardenLog.SharedKernel;
+global using GardenLog.SharedKernel.Enum;
+global using GardenLog.SharedKernel.Interfaces;
+global using ImageCatalog.Api.Data;
+global using Model = ImageCatalog.Api.Model;
+global using ImageCatalog.Api.Model.Enum;
+global using ImageCatalog.Api.Model.Meta;
+global using ImageCatalog.Api.Services;
+global using ImageCatalog.Contract;
+global using ImageCatalog.Contract.Base;
+global using ImageCatalog.Contract.Commands;
+global using ImageCatalog.Contract.Queries;
+global using ImageCatalog.Contract.ViewModels;

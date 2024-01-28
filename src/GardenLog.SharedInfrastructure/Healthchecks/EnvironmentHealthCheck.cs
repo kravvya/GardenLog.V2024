@@ -15,7 +15,8 @@ public class EnvironmentHealthCheck(ILogger<EnvironmentHealthCheck> logger, ICon
         //print all environmental values ot s atringbuilder
         foreach (var item in _configuration.AsEnumerable())
         {
-            _logger.LogInformation($"{item.Key} = {item.Value}");
+            string message = $"{item.Key} = {item.Value}";
+            _logger.LogInformation("Env {message}", message);
         }
 
         return await Task.FromResult(new HealthCheckResult(status: HealthStatus.Healthy));

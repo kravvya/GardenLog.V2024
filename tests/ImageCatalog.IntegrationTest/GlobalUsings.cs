@@ -1,0 +1,10 @@
+global using Microsoft.AspNetCore.Mvc.Testing;
+global using ImageCatalog.Contract.ViewModels;
+global using ImageCatalog.IntegrationTest.Clients;
+global using ImageCatalog.IntegrationTest.Fixture;
+global using System.Net.Http;
+global using System.Net.Http.Json;
+global using System.Text.Json;
+global using System.Text.Json.Serialization;
+global using Xunit;
+global using Xunit.Abstractions;

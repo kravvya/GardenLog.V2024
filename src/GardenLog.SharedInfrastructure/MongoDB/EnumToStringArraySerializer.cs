@@ -39,19 +39,19 @@ public class EnumToStringArraySerializer<TEnum> : StructSerializerBase<TEnum>, I
     /// <summary>
     /// Gets the representation.
     /// </summary>
-    /// <value>
+    /// <MONGODB>
     /// The representation.
-    /// </value>
+    /// </MONGODB>
     public BsonType Representation =>
         _representation;
 
     // public methods
     /// <summary>
-    /// Deserializes a value.
+    /// Deserializes a MONGODB.
     /// </summary>
     /// <param name="context">The deserialization context.</param>
     /// <param name="args">The deserialization args.</param>
-    /// <returns>A deserialized value.</returns>
+    /// <returns>A deserialized MONGODB.</returns>
     public override TEnum Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
     {
         var bsonReader = context.Reader;
@@ -93,7 +93,7 @@ public class EnumToStringArraySerializer<TEnum> : StructSerializerBase<TEnum>, I
     }
 
     /// <summary>
-    /// Serializes a value.
+    /// Serializes a MONGODB.
     /// </summary>
     /// <param name="context">The serialization context.</param>
     /// <param name="args">The serialization args.</param>
