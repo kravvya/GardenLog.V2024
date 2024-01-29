@@ -1,0 +1,43 @@
+﻿Task: SowInside
+Trigger: New PlantHarvestCycle
+Target Date: PlantHarvestCycle - Schedule
+Resolution: PlantHarvestCycle deleted - Seeded date on the PlantHarvestCycle 
+
+
+Task: SowOutside
+Trigger: New PlantHarvestCycle
+Target Date: PlantHarvestCycle - Schedule
+Resolution: Seeded date on the PlantHarvestCycle - WorkLog to seed
+
+Task: Harden Off
+Trigger: Seeded date on the PlanHarvestCycle (if SowInside)
+Target Date: PlantHarvestCycle - transplant date - 1 week
+Resolution: Manul or PlantHarvestCycle - transplanted date
+
+Task: Transplant Outside
+Trigger: Seeded date on the PlanHarvestCycle (if SowInside)
+Target Date: PlantHarvstCycle - schedule
+Resolution: PlantHarvestCycle - transplanted date
+
+Task: Harvest
+Trigger: PlantHarvestCycle.TrsnaplantedDate
+Target Date: PlantharvestCycle.GerminationDate + PlantVariety.DaysToMaturity
+Resolution: PlantHarvestCycle.FirstHarvestDate
+
+Task: Fertilize
+Trigger:  Seeded date on the PlanHarvestCycle (if SowInside) if - FertilizerForSeedlings or Previous Fertilize + 10days if before transplant schedule
+TargetDate: seeded date on the PlanHarvestCycle + 10 days or 10 days after fertilize
+Resolution:  ferilizer, PlantHarvestCycle - transplanted date
+
+Task: Fertilize Outside
+Trigger: PlantHarvestCycle.TrsnaplantedDate
+TargetDate: FertilizeFrequencyInWeeks after eithe transplant date or last fertilize event
+Resolution: fertilizer, PlantHarvestCycle.Transplant
+
+-------------------------------------------------------------------------------------------
+
+NO - Add handler for WorkLog to update PlantHarvestCycle with dates
+Add handler for PlantHarvestCycle to generate WorkLog - when dates change
+
+SeededDate -> SowIndoor WorkLog
+GeminationDate -> Information WorkLog

@@ -1,0 +1,132 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: Deploy Plant Harvest
+on:
+ push:
+    branches: 
+      - main
+    paths:
+      - "src/PlantHarvest/**"
+ pull_request:
+     branches: 
+       - main
+     paths:
+      - "src/PlantHarvest/**"
+ workflow_dispatch:
+
+env:
+  PROJECT_NAME_FOR_DOCKER: plantharvestapi
+  CONTAINER_APP_NAME: plantharvestapi-containerapp
+  DOCKER_FILE_PATH: src/PlantHarvest/PlantHarvest.Api/Dockerfile  
+  
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    
+    outputs:
+      test-mongodb-server: ${{steps.retrieve_secrets.outputs.test-mongodb-server}}
+      test-mongodb-databasename: ${{steps.retrieve_secrets.outputs.test-mongodb-databasename}}
+      test-mongodb-username: ${{steps.retrieve_secrets.outputs.test-mongodb-username}}
+      test-mongodb-password: ${{steps.retrieve_secrets.outputs.test-mongodb-password}}
+      auth0-clientsecret: ${{steps.retrieve_secrets.outputs.auth0-clientsecret}}
+      registry-server: ${{steps.retrieve_secrets.outputs.registry-server}}
+
+    steps: 
+    - uses: Azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - id: retrieve_secrets
+      name: Retrieve secret from KV
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+            echo test-mongodb-server=$(az keyvault secret show --name "test-mongodb-server" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo test-mongodb-databasename=$(az keyvault secret show --name "test-mongodb-databasename" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo test-mongodb-username=$(az keyvault secret show --name "test-mongodb-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo test-mongodb-password=$(az keyvault secret show --name "test-mongodb-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo auth0-clientsecret=$(az keyvault secret show --name "auth0-clientsecret" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo registry-server=$(az keyvault secret show --name "registry-server" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+
+  build:
+    
+    env:
+      mongodb-server: ${{needs.setup.outputs.test-mongodb-server}}
+      mongodb-databasename: ${{needs.setup.outputs.test-mongodb-databasename}}
+      mongodb-username: ${{needs.setup.outputs.test-mongodb-username}}
+      mongodb-password: ${{needs.setup.outputs.test-mongodb-password}}
+      auth0-clientsecret: ${{needs.setup.outputs.auth0-clientsecret}}
+      ASPNETCORE_ENVIRONMENT: "Test"      
+           
+    needs: setup
+    
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+        
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore
+
+    - name: Unit Test
+      run: dotnet test  ~/work/GardenLog.V2024/GardenLog.V2024/tests/PlantHarvest.UnitTest/PlantHarvest.UnitTest.csproj --logger "console;verbosity=normal" --no-build --verbosity normal
+
+    
+    - name: Test
+      run: dotnet test  ~/work/GardenLog.V2024/GardenLog.V2024/tests/PlantHarvest.IntegrationTest/PlantHarvest.IntegrationTest.csproj --logger "console;verbosity=normal" --no-build --verbosity normal
+ 
+  register_image:    
+  
+    runs-on: ubuntu-latest
+    needs: [setup, build]    
+    steps:    
+    - uses: Azure/login@v1
+      with:
+       creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Retrieve Container Registry Creds
+      uses: azure/CLI@v1
+      with:
+       inlineScript: |
+           echo registry-username=$(az keyvault secret show --name "registry-username" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_ENV
+           echo registry-password=$(az keyvault secret show --name "registry-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_ENV
+  
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3      
+    - name: Log in to container registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{needs.setup.outputs.registry-server}}.azurecr.io
+        username: ${{env.registry-username}}
+        password: ${{env.registry-password}}        
+    - name: Build and push container image to registry
+      uses: docker/build-push-action@v5.1.0
+      with:
+        push: true
+        tags: ${{needs.setup.outputs.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
+        file: ${{ env.DOCKER_FILE_PATH }}
+      
+  deploy:
+   runs-on: ubuntu-latest
+   needs: [setup, register_image]
+   
+   steps:   
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Deploy Container App
+      uses: azure/container-apps-deploy-action@v2
+      with:
+        containerAppName: ${{env.CONTAINER_APP_NAME}}
+        resourceGroup: GardenLog_ResourceGroup
+        imageToDeploy: ${{needs.setup.outputs.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
+        environmentVariables: "ASPNETCORE_ENVIRONMENT=Production mongodb-password=secretref:mongodb-password mongodb-server=secretref:mongodb-server mongodb-username=secretref:mongodb-username mongodb-databasename=secretref:mongodb-databasename auth0-clientsecret=secretref:auth0-clientsecret "

@@ -1,0 +1,11 @@
+﻿global using GardenLog.SharedKernel;
+global using GardenLog.SharedKernel.Interfaces;
+global using PlantHarvest.Contract.Base;
+global using PlantHarvest.Contract.Enum;
+global using PlantHarvest.Contract.ViewModels;
+global using PlantHarvest.Domain.HarvestAggregate.Events;
+global using PlantHarvest.Domain.HarvestAggregate.Events.Meta;
+global using PlantHarvest.Domain.PlantTaskAggregate.Events;
+global using PlantHarvest.Domain.PlantTaskAggregate.Events.Meta;
+global using PlantHarvest.Domain.WorkLogAggregate;
+global using PlantHarvest.Domain.WorkLogAggregate.Events.Meta;
