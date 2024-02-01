@@ -183,11 +183,11 @@ public class HarvestCycleController : Controller
     [ProducesResponseType(typeof(PlantHarvestCycleViewModel), (int)HttpStatusCode.OK)]
     public async Task<ActionResult<PlantHarvestCycle>> GetPlantHarvestCycleByIdAsync(string harvestId, string id)
     {
-        var plan = await _queryHandler.GetPlantHarvestCycle(harvestId, id);
+        var plant = await _queryHandler.GetPlantHarvestCycle(harvestId, id);
 
-        if (plan != null)
+        if (plant != null)
         {
-            return Ok(plan);
+            return Ok(plant);
         }
         else
         {

@@ -11,6 +11,7 @@ using Serilog;
 using Serilog.Enrichers.Span;
 using System.Text.Json.Serialization;
 using UserManagement.Api.Data.ApiClients;
+using UserManagement.Api.Data.Repositories;
 using UserManagement.CommandHandlers;
 using UserManagement.QueryHandlers;
 
@@ -56,6 +57,8 @@ try
     builder.Services.AddEnvironmentHeathChecks();
 
     builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
+
+    builder.Services.AddSingleton<IModelConfigurator, DomainModelsConfigurator>();
     builder.Services.AddSingleton<IMongoDBContext, MongoDbContext>();
     builder.Services.AddScoped<IUnitOfWork, MongoDBUnitOfWork>();
 

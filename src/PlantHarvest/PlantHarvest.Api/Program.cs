@@ -39,7 +39,7 @@ try
     builder.Services.AddAutoMapper(typeof(Program));
     builder.Services.AddMemoryCache();
     builder.Services.AddControllers()
-    .ConfigureApiBehaviorOptions(options => 
+    .ConfigureApiBehaviorOptions(options =>
         options.InvalidModelStateResponseFactory = context =>
         {
             return new BadRequestObjectResult(context.ModelState);
@@ -55,6 +55,8 @@ try
     builder.Services.AddBasicHealthChecks();
 
     builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
+
+    builder.Services.AddSingleton<IModelConfigurator, DomainModelsConfigurator>();
     builder.Services.AddSingleton<IMongoDBContext, MongoDbContext>();
     builder.Services.AddScoped<IUnitOfWork, MongoDBUnitOfWork>();
 
@@ -63,8 +65,12 @@ try
     builder.RegisterHttpClient<IPlantCatalogApiClient, PlantCatalogApiClient>();
     builder.RegisterHttpClient<IUserManagementApiClient, UserManagementApiClient>();
 
-    builder.Services.AddScoped<IHarvestCycleRepository, HarvestCycleRepository>();
+    builder.Services.AddScoped<IHarvestCycleRepository, HarvestCycleRepository>();   
+    builder.Services.AddScoped<IPlantHarvestCycleRepository, PlantHarvestCycleRepository>();
+    builder.Services.AddScoped<IGardenBedPlantHarvestCycleRepository, GardenBedPlantHarvestCycleRepository>();
+
     builder.Services.AddScoped<IWorkLogRepository, WorkLogRepository>();
+
     builder.Services.AddScoped<IPlantTaskRepository, PlantTaskRepository>();
 
     builder.Services.AddScoped<IHarvestCommandHandler, HarvestCommandHandler>();

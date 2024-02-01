@@ -40,7 +40,7 @@ public class ImageController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError("Exception getting images", ex);
+            _logger.LogError("Exception getting images: {ex}", ex);
             return Problem(ex.Message);
         }
     }
@@ -63,7 +63,7 @@ public class ImageController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError("Exception getting images", ex);
+            _logger.LogError("Exception getting images: {ex}", ex);
             return Problem(ex.Message);
         }
     }
@@ -83,7 +83,7 @@ public class ImageController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError("Exception creating Image", ex);
+            _logger.LogError("Exception creating Image: {ex}", ex);
             return Problem(ex.Message);
         }
     }
@@ -104,7 +104,7 @@ public class ImageController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError("Exception updating Image", ex);
+            _logger.LogError("Exception updating Image: {ex}", ex);
             return Problem(ex.Message);
         }
     }
@@ -125,7 +125,7 @@ public class ImageController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError("Exception deleting Image", ex);
+            _logger.LogError("Exception deleting Image: {ex}", ex);
             return Problem(ex.Message);
         }
     }

@@ -4,6 +4,7 @@ namespace PlantHarvest.Domain.HarvestAggregate;
 
 public class GardenBedPlantHarvestCycle : BaseEntity, IEntity
 {
+    public string PlantHarvestCycleId { get; private set; } = string.Empty;
     public string PlantId { get; private set; } = string.Empty;
     public string PlantName { get; private set; } = string.Empty;
     public string PlantVarietyId { get; private set; } = string.Empty;
@@ -21,7 +22,7 @@ public class GardenBedPlantHarvestCycle : BaseEntity, IEntity
     public double PatternWidth { get; private set; }
     public double PatternLength { get; private set; }
 
-    private GardenBedPlantHarvestCycle()
+    protected GardenBedPlantHarvestCycle()
     {
     }
 
@@ -31,6 +32,7 @@ public class GardenBedPlantHarvestCycle : BaseEntity, IEntity
         return new GardenBedPlantHarvestCycle()
         {
             Id = Guid.NewGuid().ToString(),
+            PlantHarvestCycleId = command.PlantHarvestCycleId,
             PlantId = command.PlantId,
             PlantName = command.PlantName,
             PlantVarietyId = command.PlantVarietyId??string.Empty,

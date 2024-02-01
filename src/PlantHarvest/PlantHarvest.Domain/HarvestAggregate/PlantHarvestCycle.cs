@@ -44,7 +44,7 @@ public class PlantHarvestCycle : BaseEntity, IEntity
     private readonly List<GardenBedPlantHarvestCycle> _gardenBedLayout = new();
     public IReadOnlyCollection<GardenBedPlantHarvestCycle> GardenBedLayout => _gardenBedLayout.AsReadOnly();
 
-    private PlantHarvestCycle()
+    protected PlantHarvestCycle()
     {
     }
 
@@ -56,7 +56,7 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         , DateTime? germinationDate, decimal? germinationRate
         , int? numberOfTransplants, DateTime? transplantDate
         , DateTime? firstHarvestDate, DateTime? lastHarvestDate, decimal? totalWeightInPounds, int? totalItems
-        , string Notes, int? desiredNumberOfPlants, int? spacingInInches, double? plantsPerFoot, List<PlantSchedule> plantCalendar, List<GardenBedPlantHarvestCycle> gardenBedLayout)
+        , string Notes, int? desiredNumberOfPlants, int? spacingInInches, double? plantsPerFoot, List<PlantSchedule> plantCalendar)
     {
         this.PlantId = plantId;
         this.PlantName = plantName;
@@ -81,14 +81,13 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         this.DesiredNumberOfPlants = desiredNumberOfPlants;
         this.SpacingInInches = spacingInInches == 0 ? null : spacingInInches;
         this.PlantsPerFoot = plantsPerFoot == 0 ? null : plantsPerFoot;
-        this._plantCalendar = plantCalendar;
-        this._gardenBedLayout = gardenBedLayout;
+        this._plantCalendar = plantCalendar; 
     }
 
 
     public static PlantHarvestCycle Create(PlantHarvestCycleBase plant, Action<HarvestEventTriggerEnum, TriggerEntity> addHarvestEvent)
     {
-        var harvestPlant =  new PlantHarvestCycle()
+        var harvestPlant = new PlantHarvestCycle()
         {
             Id = Guid.NewGuid().ToString(),
             PlantId = plant.PlantId,
@@ -99,11 +98,11 @@ public class PlantHarvestCycle : BaseEntity, IEntity
             PlantGrowthInstructionName = plant.PlantGrowthInstructionName,
             NumberOfSeeds = plant.NumberOfSeeds,
             SeedCompanyId = plant.SeedVendorId,
-            SeedCompanyName = plant.SeedVendorName,            
-           
+            SeedCompanyName = plant.SeedVendorName,
+
             GerminationRate = plant.GerminationRate,
             NumberOfTransplants = plant.NumberOfTransplants,
-            
+
             TotalWeightInPounds = plant.TotalWeightInPounds,
             TotalItems = plant.TotalItems,
             Notes = plant.Notes,
@@ -211,6 +210,12 @@ public class PlantHarvestCycle : BaseEntity, IEntity
     #endregion
 
     #region Garden Bed Layout
+
+    public void RehidrateGardenBedPlantHarvestCycles(IList<GardenBedPlantHarvestCycle> beds)
+    {
+        _gardenBedLayout.AddRange(beds);
+    }
+
     public string AddGardenBedPlantHarvestCycle(CreateGardenBedPlantHarvestCycleCommand command)
     {
         var gardenBedPlant = GardenBedPlantHarvestCycle.Create(command);

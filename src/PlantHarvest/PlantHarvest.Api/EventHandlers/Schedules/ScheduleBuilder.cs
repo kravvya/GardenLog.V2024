@@ -79,7 +79,7 @@ public class ScheduleBuilder : IScheduleBuilder
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogCritical("Excountered excetion processing scheduler", ex);
+                    _logger.LogCritical("Excountered excetion processing scheduler: {ex}", ex);
                 }
 
             });

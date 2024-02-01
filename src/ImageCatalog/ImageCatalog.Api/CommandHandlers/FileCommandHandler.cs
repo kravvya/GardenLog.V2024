@@ -71,7 +71,7 @@ public class FileCommandHandler : IFileCommandHandler
         }
         catch (Exception ex)
         {
-            _logger.LogInformation("Exception resizing image", ex);
+            _logger.LogInformation("Exception resizing image: {ex}", ex);
             throw;
         }
     }

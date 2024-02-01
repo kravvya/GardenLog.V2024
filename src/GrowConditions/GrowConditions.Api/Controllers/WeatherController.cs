@@ -64,7 +64,7 @@ public class WeatherController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError("Exception running weather cycle time", ex);
+            _logger.LogError("Exception running weather cycle time: {ex}", ex);
             return Problem(ex.Message);
         }
     }

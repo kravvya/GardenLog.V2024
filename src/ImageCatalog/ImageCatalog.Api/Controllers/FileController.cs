@@ -35,7 +35,7 @@ public class FileController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError("Exception getting images", ex);
+            _logger.LogError("Exception getting images: {ex}", ex);
             return Problem(ex.Message);
         }
     }
@@ -56,7 +56,7 @@ public class FileController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError("Exception getting images", ex);
+            _logger.LogError("Exception getting images: {ex}", ex);
             return Problem(ex.Message);
         }
     }

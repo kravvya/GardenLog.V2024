@@ -4,7 +4,9 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Configuration;
+using MongoDB.Driver.Core.Events;
 using MongoDB.Driver.Linq;
+using System.Collections.Generic;
 
 namespace GardenLog.SharedInfrastructure.MongoDB;
 
@@ -26,7 +28,7 @@ public class MongoDbContext : IMongoDBContext
 
    
 
-    public MongoDbContext(IConfigurationService configurationService, ILogger<MongoDbContext> logger)
+    public MongoDbContext(IConfigurationService configurationService, ILogger<MongoDbContext> logger, IEnumerable<IModelConfigurator> modelConfigurators)
     {
         _logger = logger;
         Settings = configurationService.GetPlantCatalogMongoSettings();
@@ -37,10 +39,10 @@ public class MongoDbContext : IMongoDBContext
             throw new ArgumentNullException(nameof(configurationService));
         }
 
-        OnConfiguring();
+        OnConfiguring(modelConfigurators);
     }
 
-    private void OnConfiguring()
+    private void OnConfiguring(IEnumerable<IModelConfigurator> modelConfigurators)
     {
         _logger.LogInformation("Got connection string. Start with {server}", Settings!.Server);
 
@@ -58,6 +60,15 @@ public class MongoDbContext : IMongoDBContext
         settings.WriteConcern = WriteConcern.WMajority;
         settings.ServerApi = new ServerApi(ServerApiVersion.V1);
         settings.LinqProvider = LinqProvider.V3;
+
+        settings.ClusterConfigurator = cb =>
+        {
+            cb.Subscribe<CommandStartedEvent>(e =>
+            {
+                // Log the generated MongoDB command
+                _logger.LogInformation($"MongoDB Command: {e.Command}");
+            });
+        };
 
         MongoClient = new MongoClient(settings);
         _logger.LogInformation("Mongo Client is set up");
@@ -78,6 +89,8 @@ public class MongoDbContext : IMongoDBContext
 #pragma warning disable CS0618 // Type or member is obsolete
         BsonDefaults.GuidRepresentationMode = GuidRepresentationMode.V3;
 #pragma warning restore CS0618 // Type or member is obsolete
+
+        modelConfigurators.ToList().ForEach(c => c.OnModelCreating());
     }
 
     public T GetCollection<T, Y>(string collectionName)

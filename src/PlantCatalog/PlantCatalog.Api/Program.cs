@@ -61,6 +61,8 @@ try
     builder.Services.AddEnvironmentHeathChecks();
 
     builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
+
+    builder.Services.AddSingleton<IModelConfigurator, DomainModelsConfigurator>();
     builder.Services.AddSingleton<IMongoDBContext, MongoDbContext>();
     builder.Services.AddScoped<IUnitOfWork, MongoDBUnitOfWork>();
 

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using GardenLog.SharedInfrastructure.Extensions;
 using PlantHarvest.Domain.HarvestAggregate;
+using PlantHarvest.Domain.WorkLogAggregate;
 
 namespace PlantHarvest.Api.QueryHandlers;
 
@@ -19,13 +20,17 @@ public interface IHarvestQueryHandler
 public class HarvestQueryHandler : IHarvestQueryHandler
 {
     private readonly IHarvestCycleRepository _harvestCycleRepository;
+    private readonly IPlantHarvestCycleRepository _plantHarvestCycleRepository;
+    private readonly IGardenBedPlantHarvestCycleRepository _gardenBedPlantHarvestCycleRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<HarvestQueryHandler> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public HarvestQueryHandler(IHarvestCycleRepository harvestCycleRepository, IMapper mapper, ILogger<HarvestQueryHandler> logger, IHttpContextAccessor httpContextAccessor)
+    public HarvestQueryHandler(IHarvestCycleRepository harvestCycleRepository, IPlantHarvestCycleRepository plantHarvestCycleRepository, IGardenBedPlantHarvestCycleRepository gardenBedPlantHarvestCycleRepository, IMapper mapper, ILogger<HarvestQueryHandler> logger, IHttpContextAccessor httpContextAccessor)
     {
         _harvestCycleRepository = harvestCycleRepository;
+        _plantHarvestCycleRepository = plantHarvestCycleRepository;
+        _gardenBedPlantHarvestCycleRepository = gardenBedPlantHarvestCycleRepository;
         _mapper = mapper;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
@@ -65,7 +70,15 @@ public class HarvestQueryHandler : IHarvestQueryHandler
 
         try
         {
-            return await _harvestCycleRepository.GetPlantHarvestCycle(harvestCycleId, id);
+            var plantTask = _plantHarvestCycleRepository.GetPlantHarvestCycleView(harvestCycleId, id);
+            var gardenBedsTask = _gardenBedPlantHarvestCycleRepository.GetGardenBedViewsByPlantHarvestCycleId(harvestCycleId, id);
+
+            await Task.WhenAll(plantTask, gardenBedsTask);
+
+            var plant = plantTask.Result;
+            plant.GardenBedLayout.AddRange(gardenBedsTask.Result);
+
+            return plant;
 
         }
         catch (Exception ex)
@@ -81,12 +94,24 @@ public class HarvestQueryHandler : IHarvestQueryHandler
 
         try
         {
-            return await _harvestCycleRepository.GetPlantHarvestCycles(harvestCycleId);
+            var plantsTasks = _plantHarvestCycleRepository.GetPlantHarvestCycleViews(harvestCycleId);
+            var gardenBedsTask = _gardenBedPlantHarvestCycleRepository.GetGardenBedViewsByHarvestCycleId(harvestCycleId);
+
+            await Task.WhenAll(plantsTasks, gardenBedsTask);
+
+            var plants = plantsTasks.Result;
+
+            foreach (var plant in plants)
+            {
+                plant.GardenBedLayout.AddRange(gardenBedsTask.Result.Where(g => g.PlantHarvestCycleId == plant.PlantHarvestCycleId));
+            }
+
+            return plants;
 
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex,"Exception readding plant harvest cycles for {harvestCycleId}", harvestCycleId);
+            _logger.LogCritical(ex, "Exception readding plant harvest cycles for {harvestCycleId}", harvestCycleId);
             throw;
         }
     }
@@ -97,12 +122,12 @@ public class HarvestQueryHandler : IHarvestQueryHandler
 
         try
         {
-            return await _harvestCycleRepository.GetPlantHarvestCyclesByPlantId(plantId);
+            return await _plantHarvestCycleRepository.GetPlantHarvestCyclesByPlantId(plantId);
 
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex,"Exception readding plant harvest cycles for plant {plantId}", plantId);
+            _logger.LogCritical(ex, "Exception readding plant harvest cycles for plant {plantId}", plantId);
             throw;
         }
     }

@@ -18,52 +18,6 @@ public class UserProfileRepository : BaseRepository<UserProfile>, IUserProfileRe
         return _unitOfWork.GetCollection<IMongoCollection<UserProfile>, UserProfile>(USER_COLLECTION_NAME);
     }
 
-    protected override void OnModelCreating()
-    {
-        if (BsonClassMap.IsClassMapRegistered(typeof(UserProfile)))
-        {
-            return;
-        }
-
-        BsonClassMap.RegisterClassMap<UserProfile>(p =>
-        {
-            p.AutoMap();
-            //ignore elements not int he document 
-            p.SetIgnoreExtraElements(true);
-            p.SetDiscriminator("user-profile");
-
-        });
-
-        if (!BsonClassMap.IsClassMapRegistered(typeof(BaseEntity)))
-        {
-            BsonClassMap.RegisterClassMap<BaseEntity>(p =>
-            {
-                p.AutoMap();
-                //p.MapIdMember(c => c.Id).SetIdGenerator(MongoDB.Bson.Serialization.IdGenerators.StringObjectIdGenerator.Instance);
-                //p.IdMemberMap.SetSerializer(new StringSerializer(BsonType.ObjectId));
-                p.SetIgnoreExtraElements(true);
-                p.UnmapMember(m => m.DomainEvents);
-            });
-        }
-
-        BsonClassMap.RegisterClassMap<UserProfileBase>(p =>
-        {
-            p.AutoMap();
-            //ignore elements not in the document 
-            p.SetIgnoreExtraElements(true);
-
-        });
-
-        BsonClassMap.RegisterClassMap<UserProfileViewModel>(p =>
-        {
-            p.AutoMap();
-            //ignore elements not in the document 
-            p.SetIgnoreExtraElements(true);
-            //p.MapMember(m => m.UserProfileId).SetElementName("_id");
-        });
-
-    }
-
     public new async Task<UserProfile> GetByIdAsync(string id)
     {
         var data = await Collection.FindAsync(Builders<UserProfile>.Filter.Eq("UserProfileId", id));

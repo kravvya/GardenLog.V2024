@@ -25,8 +25,7 @@ namespace PlantHarvest.Domain.HarvestAggregate
             DateTime? endDate,
             string notes,
             string userProfileId,
-            string gardenId,
-            List<PlantHarvestCycle> plants
+            string gardenId
            )
         {
             this.UserProfileId = userProfileId;
@@ -34,8 +33,7 @@ namespace PlantHarvest.Domain.HarvestAggregate
             this.StartDate = startDate;
             this.EndDate = endDate;
             this.Notes = notes;
-            this.GardenId = gardenId;
-            this._plants = plants;
+            this.GardenId = gardenId; 
         }
 
         public static HarvestCycle Create(
@@ -106,6 +104,12 @@ namespace PlantHarvest.Domain.HarvestAggregate
         #endregion
 
         #region Plants
+
+        public void RehidratePlants(IReadOnlyCollection<PlantHarvestCycle> plants)
+        {
+            _plants.AddRange(plants);
+        }
+
         public string AddPlantHarvestCycle(CreatePlantHarvestCycleCommand command)
         {
             command.HarvestCycleId = this.Id;

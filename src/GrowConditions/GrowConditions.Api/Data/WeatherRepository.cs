@@ -59,39 +59,5 @@ namespace GrowConditions.Api.Data
         {
             return _unitOfWork.GetCollection<IMongoCollection<WeatherUpdate>, WeatherUpdate>(WEATHER_COLLECTION_NAME);
         }
-
-        protected override void OnModelCreating()
-        {
-            if (BsonClassMap.IsClassMapRegistered(typeof(WeatherUpdate)))
-            {
-                return;
-            }
-
-            BsonClassMap.RegisterClassMap<WeatherUpdate>(p =>
-            {
-                p.AutoMap();
-                //ignore elements not int he document 
-                p.SetIgnoreExtraElements(true);
-                p.SetDiscriminator("weather");             
-
-            });
-
-            BsonClassMap.RegisterClassMap<WeatherUpdateBase>(p =>
-            {
-                p.AutoMap();
-                //ignore elements not int he document 
-                p.SetIgnoreExtraElements(true);
-
-            });
-
-            BsonClassMap.RegisterClassMap<WeatherUpdateViewModel>(p =>
-            {
-                p.AutoMap();
-                //ignore elements not int he document 
-                p.SetIgnoreExtraElements(true);
-                p.MapMember(m => m.WeatherId).SetElementName("_id");
-
-            });
-        }
     }
 }

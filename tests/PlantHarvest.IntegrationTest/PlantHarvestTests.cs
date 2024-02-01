@@ -213,7 +213,7 @@ public partial class PlantHarvestTests : IClassFixture<PlantHarvestServiceFixtur
         var plant = await _plantHarvestClient.GetPlantHarvestCycleToWorkWith(harvestId, TEST_PLANT_ID, TEST_PLANT_VARIETY_ID);
 
 
-        plant.NumberOfSeeds += 1;
+        plant.NumberOfSeeds = 1 + plant.NumberOfSeeds ?? 1;
 
         var response = await _plantHarvestClient.UpdatePlantHarvestCycle(plant);
 

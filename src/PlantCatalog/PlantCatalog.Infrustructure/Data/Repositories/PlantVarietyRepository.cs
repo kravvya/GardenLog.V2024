@@ -83,57 +83,6 @@ namespace PlantCatalog.Infrustructure.Data.Repositories
         {
             return _unitOfWork.GetCollection<IMongoCollection<PlantVariety>, PlantVariety>(PLANT_VARIETY_COLLECTION_NAME);
         }
-
-        protected override void OnModelCreating()
-        {
-            if (BsonClassMap.IsClassMapRegistered(typeof(PlantVariety)))
-            {
-                return;
-            }
-
-            BsonClassMap.RegisterClassMap<PlantVariety>(p =>
-            {
-                p.AutoMap();
-                //ignore elements not int he document 
-                p.SetIgnoreExtraElements(true);
-                p.SetDiscriminator("plantVariety");
-
-                p.MapMember(m => m.MoistureRequirement).SetSerializer(new EnumSerializer<MoistureRequirementEnum>(BsonType.String));
-                p.MapMember(m => m.LightRequirement).SetSerializer(new EnumSerializer<LightRequirementEnum>(BsonType.String));
-                p.MapMember(m => m.GrowTolerance).SetSerializer(new EnumToStringArraySerializer<GrowToleranceEnum>());
-                p.MapProperty(m => m.Tags).SetDefaultValue(new List<string>());
-                p.MapProperty(m => m.Colors).SetDefaultValue(new List<string>());
-                p.MapProperty(m => m.Sources).SetDefaultValue(new List<string>());
-
-                var nonPublicCtors = p.ClassType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance);
-                var longestCtor = nonPublicCtors.OrderByDescending(ctor => ctor.GetParameters().Length).FirstOrDefault();
-                p.MapConstructor(longestCtor, p.ClassType.GetProperties().Where(c => c.Name != "Id").Select(c => c.Name).ToArray());
-            });
-
-            BsonClassMap.RegisterClassMap<PlantVarietyViewModel>(p =>
-            {
-                p.AutoMap();
-                //ignore elements not in the document 
-                p.SetIgnoreExtraElements(true);
-                p.MapMember(m => m.PlantVarietyId).SetElementName("_id");
-
-            });
-
-            BsonClassMap.RegisterClassMap<PlantVarietyBase>(p =>
-            {
-                p.AutoMap();
-                //ignore elements not int he document 
-                p.SetIgnoreExtraElements(true);
-
-                p.MapMember(m => m.MoistureRequirement).SetSerializer(new EnumSerializer<MoistureRequirementEnum>(BsonType.String));
-                p.MapMember(m => m.LightRequirement).SetSerializer(new EnumSerializer<LightRequirementEnum>(BsonType.String));
-                p.MapMember(m => m.GrowTolerance).SetSerializer(new EnumToStringArraySerializer<GrowToleranceEnum>());
-                p.MapProperty(m => m.Tags).SetDefaultValue(new List<string>());
-                p.MapProperty(m => m.Colors).SetDefaultValue(new List<string>());
-                p.MapProperty(m => m.Sources).SetDefaultValue(new List<string>());
-            });
-        }
-
     }
 
 }
