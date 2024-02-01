@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using PlantHarvest.Contract.Enum;
+using System.Reflection;
 using Xunit.Abstractions;
 
 namespace GardenLog.InfrastructureTest;
@@ -18,8 +19,8 @@ public class PlantHarvestSplitUpTest
     [Fact]
     public void ReadPlantHarvestFromStore()
     {
-        var client = new MongoClient("mongodb+srv://glUser:Mglu123@gardenlog2024-cluster.v95zx5v.mongodb.net/");
-        var database = client.GetDatabase("GardenLogDB");
+        var client = new MongoClient("mongodb+srv://<user>:<password>Mplant123@gardenlog2023-cluster.rln8w5k.mongodb.net/");
+        var database = client.GetDatabase("GardenLog-Db");
 
         BsonClassMap.RegisterClassMap<BaseEntity>(p =>
         {
@@ -61,10 +62,31 @@ public class PlantHarvestSplitUpTest
             g.SetIgnoreExtraElements(true);
         });
 
+        BsonClassMap.RegisterClassMap<HarvestCycleDocument>(p =>
+        {
+            p.AutoMap();
+            //ignore elements not int he document 
+            p.SetIgnoreExtraElements(true);
+            p.SetDiscriminator("harvest-cycle");
+        });
+
+        BsonClassMap.RegisterClassMap<PlantHarvestCycleDocument>(g =>
+        {
+            g.AutoMap();
+
+            g.SetIgnoreExtraElements(true);
+            g.MapMember(m => m.PlantingMethod).SetSerializer(new EnumSerializer<PlantingMethodEnum>(BsonType.String));
+
+            g.MapProperty(m => m.PlantCalendar).SetDefaultValue(new List<PlantSchedule>());
+            g.MapProperty(m => m.SpacingInInches).SetDefaultValue(0);
+            g.MapProperty(m => m.PlantsPerFoot).SetDefaultValue(0.0);
+
+        });
+
         // Get references to collections
         var gardenCollection = database.GetCollection<GardenBedPlantHarvestCycle>("GardenBedUsage-Collection");
-        var plantCollection = database.GetCollection<PlantHarvestCycle>("PlantHarvestCycle-Collection");
-        var harvestCollection = database.GetCollection<HarvestCycle>("HarvestCycle-Collection");
+        var plantCollection = database.GetCollection<PlantHarvestCycleDocument>("PlantHarvestCycle-Collection");
+        var harvestCollection = database.GetCollection<HarvestCycleDocument>("HarvestCycle-Collection");
         
         var plantHarvestCollection = database.GetCollection<HarvestCycle>("PlantHarvest-Collection");
 
@@ -77,7 +99,13 @@ public class PlantHarvestSplitUpTest
             foreach(var plant in harvest.Plants)
             {
                 plant.HarvestCycleId = harvest.Id;
-                _output.WriteLine(plant.PlantName);
+
+                if(!plant.LastHarvestDate.HasValue && harvest.EndDate.HasValue)
+                {
+                    plant.LastHarvestDate = harvest.EndDate;
+                }              
+              
+                _output.WriteLine($" {plant.PlantName} - {plant.LastHarvestDate} ");
 
                 foreach(var bed in plant.GardenBedLayout)
                 {
@@ -96,8 +124,31 @@ public class PlantHarvestSplitUpTest
                         bed.EndDate = plant.LastHarvestDate;
                     }
                     _output.WriteLine($"{bed.StartDate} - {bed.EndDate}");
+                    //save bed
+                    gardenCollection.InsertOne( bed );
+                   
                 }
+                //save plant
+                plant.GardenBedLayout.Clear();
+                PlantHarvestCycleDocument plantDocument = new();
+             //copy every attribute from plant to plantDocument including PlantCalendar
+             foreach (PropertyInfo property in plant.GetType().GetProperties())
+                {
+                    plantDocument.GetType().GetProperty(property.Name)?.SetValue(plantDocument, property.GetValue(plant));
+                }
+           plantDocument.PlantCalendar = plant.PlantCalendar;
+
+                plantCollection.InsertOne(plantDocument);
+               
             }
+            //save harvest
+            HarvestCycleDocument harvestDocument = new();
+            //copy every attribute from harvest to harvestDocument
+            foreach (PropertyInfo property in harvest.GetType().GetProperties())
+            {
+                harvestDocument.GetType().GetProperty(property.Name)?.SetValue(harvestDocument, property.GetValue(harvest));
+            }
+            harvestCollection.InsertOne(harvestDocument);
         }
     }
 
