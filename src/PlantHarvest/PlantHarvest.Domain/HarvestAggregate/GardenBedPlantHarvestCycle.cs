@@ -21,11 +21,12 @@ public class GardenBedPlantHarvestCycle : BaseEntity, IEntity
 
     public double PatternWidth { get; private set; }
     public double PatternLength { get; private set; }
+    public DateTime? StartDate { get; private set; }
+    public DateTime? EndDate { get; private set; }
 
     protected GardenBedPlantHarvestCycle()
     {
     }
-
 
     public static GardenBedPlantHarvestCycle Create(CreateGardenBedPlantHarvestCycleCommand command)
     {
@@ -48,9 +49,7 @@ public class GardenBedPlantHarvestCycle : BaseEntity, IEntity
             PatternLength = command.PatternLength,
             PatternWidth = command.PatternWidth
         };
-
     }
-
 
     public void Update(UpdateGardenBedPlantHarvestCycleCommand command, Action<HarvestEventTriggerEnum, TriggerEntity> addHarvestEvent)
     {
@@ -68,6 +67,17 @@ public class GardenBedPlantHarvestCycle : BaseEntity, IEntity
             this.DomainEvents.Clear();
             addHarvestEvent(HarvestEventTriggerEnum.GardenBedPlantHarvestCycleUpdated, new TriggerEntity(EntityTypeEnum.GardenBedPlantHarvestCycle, this.Id));
         }
+    }
+
+    public void StartGardenBedUse(DateTime? dateTime)
+    {
+        this.Set<DateTime?>(() => this.StartDate, dateTime);
+    }
+
+    public void CompleteGardenBedUse(DateTime? dateTime)
+    {
+        if(!this.EndDate.HasValue)
+            this.Set<DateTime?>(() => this.EndDate, dateTime);
     }
 
     protected override void AddDomainEvent(string attributeName)

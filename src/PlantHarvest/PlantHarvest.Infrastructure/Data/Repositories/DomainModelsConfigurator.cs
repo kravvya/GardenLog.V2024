@@ -25,6 +25,7 @@ public  class DomainModelsConfigurator: IModelConfigurator
             //p.IdMemberMap.SetSerializer(new StringSerializer(BsonType.ObjectId));
             p.SetIgnoreExtraElements(true);
             p.UnmapMember(m => m.DomainEvents);
+            p.UnmapMember(m => m.IsModified);
         });
 
 
@@ -41,7 +42,7 @@ public  class DomainModelsConfigurator: IModelConfigurator
 
             var nonPublicCtors = p.ClassType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance);
             var longestCtor = nonPublicCtors.OrderByDescending(ctor => ctor.GetParameters().Length).FirstOrDefault();
-            p.MapConstructor(longestCtor, p.ClassType.GetProperties().Where(c => c.Name != "Id" && c.Name != "Plants").Select(c => c.Name).ToArray());
+            p.MapConstructor(longestCtor, p.DeclaredMemberMaps.Where(c => c.ElementName != "Id" && c.ElementName != "Plants").Select(c => c.ElementName).ToArray());
 
         });
 
@@ -78,7 +79,7 @@ public  class DomainModelsConfigurator: IModelConfigurator
 
             var nonPublicCtors = g.ClassType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance);
             var longestCtor = nonPublicCtors.OrderByDescending(ctor => ctor.GetParameters().Length).FirstOrDefault();
-            g.MapConstructor(longestCtor, g.ClassType.GetProperties().Where(c => c.Name != "Id" && c.Name != "GardenBedLayout").Select(c => c.Name).ToArray());
+            g.MapConstructor(longestCtor, g.DeclaredMemberMaps.Where(c => c.ElementName != "Id" && c.ElementName != "GardenBedLayout").Select(c => c.ElementName).ToArray());
 
         });
 

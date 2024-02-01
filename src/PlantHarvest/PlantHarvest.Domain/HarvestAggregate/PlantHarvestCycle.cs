@@ -81,7 +81,7 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         this.DesiredNumberOfPlants = desiredNumberOfPlants;
         this.SpacingInInches = spacingInInches == 0 ? null : spacingInInches;
         this.PlantsPerFoot = plantsPerFoot == 0 ? null : plantsPerFoot;
-        this._plantCalendar = plantCalendar; 
+        this._plantCalendar = plantCalendar;
     }
 
 
@@ -127,6 +127,24 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         return harvestPlant;
     }
 
+    public void CompletePlantHarvestCycle(DateTime? date, Action<HarvestEventTriggerEnum, TriggerEntity> addHarvestEvent)
+    {
+        if(!this.LastHarvestDate.HasValue)
+            this.Set<DateTime?>(() => this.LastHarvestDate, date);
+
+        foreach (var bed in this.GardenBedLayout)
+        {
+            bed.CompleteGardenBedUse(this.LastHarvestDate);
+        }
+
+        foreach (var evt in DomainEvents)
+        {
+            var trigger = ((HarvestChildEvent)evt).Trigger;
+
+            addHarvestEvent(trigger, new TriggerEntity(EntityTypeEnum.PlantHarvestCycle, this.Id));          
+        }
+    }
+
 
     public void Update(UpdatePlantHarvestCycleCommand command, Action<HarvestEventTriggerEnum, TriggerEntity> addHarvestEvent)
     {
@@ -150,7 +168,33 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         this.Set<double?>(() => this.PlantsPerFoot, command.PlantsPerFoot);
         foreach (var evt in DomainEvents)
         {
-            addHarvestEvent(((HarvestChildEvent)evt).Trigger, new TriggerEntity(EntityTypeEnum.PlantHarvestCycle, this.Id));
+            var trigger = ((HarvestChildEvent)evt).Trigger;
+
+            addHarvestEvent(trigger, new TriggerEntity(EntityTypeEnum.PlantHarvestCycle, this.Id));
+
+            if (trigger == HarvestEventTriggerEnum.PlantHarvestCycleSeeded && this.PlantingMethod == PlantingMethodEnum.DirectSeed)
+            {
+                foreach (var bed in this.GardenBedLayout)
+                {
+                    bed.StartGardenBedUse(this.SeedingDate);
+                }
+            }
+
+            if (trigger == HarvestEventTriggerEnum.PlantHarvestCycleTransplanted)
+            {
+                foreach (var bed in this.GardenBedLayout)
+                {
+                    bed.StartGardenBedUse(this.TransplantDate);
+                }
+            }
+
+            if (trigger == HarvestEventTriggerEnum.PlantHarvestCycleCompleted)
+            {
+                foreach (var bed in this.GardenBedLayout)
+                {
+                    bed.CompleteGardenBedUse(this.LastHarvestDate);
+                }
+            }
         }
     }
 

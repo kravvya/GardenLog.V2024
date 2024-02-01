@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using GardenLog.SharedKernel.Interfaces;
+﻿using GardenLog.SharedKernel.Interfaces;
 using MongoDB.Driver;
 using PlantHarvest.Api.Extensions;
 using System.Collections.ObjectModel;
@@ -97,12 +96,21 @@ public class HarvestCommandHandler : IHarvestCommandHandler
 
         _unitOfWork.Initialize(this.GetType().Name);
 
-        //no need to load plants or beds
-        var harvest = await _harvestCycleRepository.GetByIdAsync(request.HarvestCycleId);
+        //need to load plants and beds in case if we are completing the harvest
+        var harvest = await _harvestCycleRepository.ReadHarvestCycle(request.HarvestCycleId, userProfileId);
 
         harvest.Update(request.HarvestCycleName, request.StartDate, request.EndDate, request.Notes, request.GardenId);
 
         _harvestCycleRepository.Update(harvest);
+
+        foreach(var plant in harvest.Plants.Where(p => p.IsModified))
+        {
+            _plantHarvestCycleRepository.UpdatePlantHarvestCycle(plant.Id, harvest);
+            foreach(var bed in plant.GardenBedLayout.Where(b => b.IsModified))
+            {
+                _gardenBedPlantHarvestCycleRepository.UpdateGardenBedPlantHarvestCycle(bed.Id, plant.Id, harvest);
+            }
+        }
 
         await _mediator.DispatchDomainEventsAsync(harvest);
 
@@ -210,6 +218,12 @@ public class HarvestCommandHandler : IHarvestCommandHandler
         }
 
         _plantHarvestCycleRepository.UpdatePlantHarvestCycle(command.PlantHarvestCycleId, harvest);
+
+        var plant = harvest.Plants.First(p => p.Id == command.PlantHarvestCycleId);
+        foreach (var bed in plant.GardenBedLayout.Where(b => b.IsModified))
+        {
+            _gardenBedPlantHarvestCycleRepository.UpdateGardenBedPlantHarvestCycle(bed.Id, plant.Id, harvest);
+        }
 
         await _mediator.DispatchDomainEventsAsync(harvest);
 

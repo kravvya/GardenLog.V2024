@@ -45,7 +45,7 @@ public class DomainModelsConfigurator : IModelConfigurator
 
             var nonPublicCtors = p.ClassType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance);
             var longestCtor = nonPublicCtors.OrderByDescending(ctor => ctor.GetParameters().Length).FirstOrDefault();
-            p.MapConstructor(longestCtor, p.ClassType.GetProperties().Where(c => c.Name != "Id").Select(c => c.Name).ToArray());
+            p.MapConstructor(longestCtor, p.DeclaredMemberMaps.Where(c => c.ElementName != "Id").Select(c => c.ElementName).ToArray());
 
         });
 
@@ -56,6 +56,7 @@ public class DomainModelsConfigurator : IModelConfigurator
             //p.MapIdMember(c => c.Id).SetIdGenerator(MongoDB.Bson.Serialization.IdGenerators.StringObjectIdGenerator.Instance);
             //p.IdMemberMap.SetSerializer(new StringSerializer(BsonType.ObjectId));
             p.UnmapMember(m => m.DomainEvents);
+            p.UnmapMember(m => m.IsModified);
         });
 
 
@@ -152,7 +153,7 @@ public class DomainModelsConfigurator : IModelConfigurator
 
             var nonPublicCtors = p.ClassType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance);
             var longestCtor = nonPublicCtors.OrderByDescending(ctor => ctor.GetParameters().Length).FirstOrDefault();
-            p.MapConstructor(longestCtor, p.ClassType.GetProperties().Where(c => c.Name != "Id").Select(c => c.Name).ToArray());
+            p.MapConstructor(longestCtor, p.DeclaredMemberMaps.Where(c => c.ElementName != "Id").Select(c => c.ElementName).ToArray());
         });
 
         BsonClassMap.RegisterClassMap<PlantVarietyViewModel>(p =>

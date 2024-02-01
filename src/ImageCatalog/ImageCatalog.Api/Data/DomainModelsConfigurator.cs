@@ -32,6 +32,7 @@ public class DomainModelsConfigurator : IModelConfigurator
             //p.MapIdMember(c => c.Id).SetIdGenerator(MongoDB.Bson.Serialization.IdGenerators.StringObjectIdGenerator.Instance);
             //p.IdMemberMap.SetSerializer(new StringSerializer(BsonType.ObjectId));
             p.UnmapMember(m => m.DomainEvents);
+            p.UnmapMember(m => m.IsModified);
         });
 
 

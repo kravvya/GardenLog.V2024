@@ -9,6 +9,7 @@ namespace GardenLog.SharedKernel
         public string Id { get; set; } = string.Empty;
 
         public List<BaseDomainEvent> DomainEvents = new();
+        public bool IsModified { get; private set; }
 
 
         public void Set<T>(Expression<Func<T>> prop, T value)
@@ -26,6 +27,7 @@ namespace GardenLog.SharedKernel
                 || currentValue != null &&!currentValue.Equals(value))
             {
                 mem.SetValue(this, value);
+                IsModified = true;
                 AddDomainEvent(mem.Name);
             }
         }
@@ -60,6 +62,7 @@ namespace GardenLog.SharedKernel
 
             if (changed)
             {
+                IsModified = true;
                 AddDomainEvent(propertyName);
             }
         }

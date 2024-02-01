@@ -33,7 +33,7 @@ namespace PlantHarvest.Domain.HarvestAggregate
             this.StartDate = startDate;
             this.EndDate = endDate;
             this.Notes = notes;
-            this.GardenId = gardenId; 
+            this.GardenId = gardenId;
         }
 
         public static HarvestCycle Create(
@@ -77,8 +77,11 @@ namespace PlantHarvest.Domain.HarvestAggregate
             this.Set<string>(() => this.Notes, notes);
             this.Set<string>(() => this.GardenId, gardenId);
 
-            this.DomainEvents.Add(
-          new HarvestEvent(this, HarvestEventTriggerEnum.HarvestCycleUpdated, new TriggerEntity(EntityTypeEnum.HarvestCyce, this.Id)));
+            if(this.DomainEvents.FirstOrDefault(evt => evt is HarvestEvent && (((HarvestEvent)evt).Trigger) == HarvestEventTriggerEnum.HarvestCycleCompleted)!= null)
+            {
+                this.Plants.ToList().ForEach(p => p.CompletePlantHarvestCycle(this.EndDate, AddChildDomainEvent));
+            }
+         
         }
 
         public void Delete()
@@ -90,8 +93,15 @@ namespace PlantHarvest.Domain.HarvestAggregate
         #region Events
         protected override void AddDomainEvent(string attributeName)
         {
-            this.DomainEvents.Add(
-              new HarvestEvent(this, HarvestEventTriggerEnum.HarvestCycleUpdated, new TriggerEntity(EntityTypeEnum.HarvestCyce, this.Id)));
+            switch (attributeName)
+            {
+                case "EndDate":
+                    this.DomainEvents.Add(new HarvestEvent(this, HarvestEventTriggerEnum.HarvestCycleCompleted, new TriggerEntity(EntityTypeEnum.HarvestCyce, this.Id)));
+                    break;
+                default:
+                    this.DomainEvents.Add(new HarvestEvent(this, HarvestEventTriggerEnum.HarvestCycleUpdated, new TriggerEntity(EntityTypeEnum.HarvestCyce, this.Id)));
+                    break;
+            }
         }
 
         private void AddChildDomainEvent(HarvestEventTriggerEnum trigger, TriggerEntity entity)
@@ -141,7 +151,7 @@ namespace PlantHarvest.Domain.HarvestAggregate
 
             var plant = _plants.First(p => p.Id == command.PlantHarvestCycleId);
 
-           string scheduleId = plant.AddPlantSchedule(command);
+            string scheduleId = plant.AddPlantSchedule(command);
 
             this.DomainEvents.Add(
              new HarvestEvent(this, HarvestEventTriggerEnum.PlantScheduleCreated, new TriggerEntity(EntityTypeEnum.PlantSchedule, scheduleId)));

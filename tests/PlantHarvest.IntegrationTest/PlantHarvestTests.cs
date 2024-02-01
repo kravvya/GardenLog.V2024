@@ -75,7 +75,7 @@ public partial class PlantHarvestTests : IClassFixture<PlantHarvestServiceFixtur
     {
         var harvest = await GetHarvestCycleToWorkWith(TEST_HARVEST_CYCLE_NAME);
 
-        harvest.Notes = harvest.Notes.Length<900? $"{harvest.Notes} last pdated: {DateTime.Now.ToString()}" : $"{harvest.Notes.Substring(0, 100)} last pdated: {DateTime.Now.ToString()}";
+        harvest.Notes = harvest.Notes.Length < 900 ? $"{harvest.Notes} last pdated: {DateTime.Now.ToString()}" : $"{harvest.Notes.Substring(0, 100)} last pdated: {DateTime.Now.ToString()}";
 
         var response = await _plantHarvestClient.UpdateHarvestCycle(harvest);
 
@@ -100,6 +100,27 @@ public partial class PlantHarvestTests : IClassFixture<PlantHarvestServiceFixtur
 
         Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
         Assert.NotEmpty(returnString);
+    }
+
+    [Fact]
+    public async Task End_HarvestCycle_ShouldCompleteAllPlants()
+    {
+        var harvest = await GetHarvestCycleToWorkWith(TEST_DELETE_HARVEST_CYCLE_NAME);
+        var plant = await _plantHarvestClient.GetPlantHarvestCycleToWorkWith(harvest.HarvestCycleId, TEST_DELETE_PLANT_ID, TEST_DELETE_VARIETY_ID);
+        await CreateGardenBedPlantHarvestCycleToWorkWith(plant);
+
+        harvest.EndDate = DateTime.Now;
+
+        var response = await _plantHarvestClient.UpdateHarvestCycle(harvest);
+
+        plant = await _plantHarvestClient.GetPlantHarvestCycleToWorkWith(harvest.HarvestCycleId, TEST_DELETE_PLANT_ID, TEST_DELETE_VARIETY_ID);
+        var bed = plant.GardenBedLayout.FirstOrDefault();
+
+        Assert.True(plant.LastHarvestDate.HasValue);
+        Assert.NotNull(bed);
+        Assert.True(bed.EndDate.HasValue);
+
+        await _plantHarvestClient.DeleteHarvestCycle(harvest.HarvestCycleId);
     }
 
     [Fact]
@@ -156,7 +177,6 @@ public partial class PlantHarvestTests : IClassFixture<PlantHarvestServiceFixtur
         var harvestCycleId = await _plantHarvestClient.CreatePlantHarvestCycleToWorkWith(harvestId, TEST_PLANT_ID, TEST_PLANT_VARIETY_ID);
         Assert.NotNull(harvestCycleId);
     }
-
 
     [Fact]
     public async Task Get_PlantHarvestCycle_ByHarvestId()
@@ -336,7 +356,7 @@ public partial class PlantHarvestTests : IClassFixture<PlantHarvestServiceFixtur
             gardenBedPlant = plant.GardenBedLayout.FirstOrDefault();
         }
 
-        gardenBedPlant!.X ++;
+        gardenBedPlant!.X++;
 
         var response = await _plantHarvestClient.UpdateGardenBedPlantHarvestCycle(gardenBedPlant);
 

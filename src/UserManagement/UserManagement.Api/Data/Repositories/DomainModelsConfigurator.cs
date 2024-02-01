@@ -42,7 +42,7 @@ public class DomainModelsConfigurator : IModelConfigurator
             p.MapProperty(m => m.Width).SetDefaultValue(0);
             var nonPublicCtors = p.ClassType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance);
             var longestCtor = nonPublicCtors.OrderByDescending(ctor => ctor.GetParameters().Length).FirstOrDefault();
-            p.MapConstructor(longestCtor, p.ClassType.GetProperties().Where(c => c.Name != "Id").Select(c => c.Name).ToArray());
+            p.MapConstructor(longestCtor, p.DeclaredMemberMaps.Where(c => c.ElementName != "Id").Select(c => c.ElementName).ToArray());
         });
 
         BsonClassMap.RegisterClassMap<GardenBase>(p =>
