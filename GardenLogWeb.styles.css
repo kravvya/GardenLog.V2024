@@ -1,0 +1,559 @@
+@import '_content/Blazored.Toast/Blazored.Toast.bundle.scp.css';
+
+/* /Pages/GardenLayout/Components/DraggableSelector.razor.rz.scp.css */
+svg .selector[b-b1eu6fojp0] {
+    fill: #709a41;
+}
+
+rect.selector[b-b1eu6fojp0], line.selector[b-b1eu6fojp0] {
+    stroke-width: 3;
+    stroke-dasharray: 14, 5;
+    stroke: #709a41;
+    fill: none;
+}
+
+svg .rotator[b-b1eu6fojp0] {
+    fill: #FF7300;
+}
+
+svg .top-left-resizer[b-b1eu6fojp0] {
+    cursor: nw-resize;
+}
+
+svg .null-left-resizer[b-b1eu6fojp0] {
+    cursor: w-resize;
+}
+
+svg .bottom-left-resizer[b-b1eu6fojp0] {
+    cursor: sw-resize;
+}
+
+svg .bottom-null-resizer[b-b1eu6fojp0] {
+    cursor: s-resize;
+}
+
+svg .bottom-right-resizer[b-b1eu6fojp0] {
+    cursor: se-resize;
+}
+
+svg .null-right-resizer[b-b1eu6fojp0] {
+    cursor: e-resize;
+}
+
+svg .top-right-resizer[b-b1eu6fojp0] {
+    cursor: ne-resize;
+}
+
+svg .top-null-resizer[b-b1eu6fojp0] {
+    cursor: n-resize;
+}
+/* /Pages/GardenLayout/Components/GardenHorizontalRuler.razor.rz.scp.css */
+.garden-plan .label[b-uc5uotjnmg] {
+    font-size: 11px;
+    font-family: monospace;
+}
+/* /Pages/GardenLayout/Components/GardenLayout.razor.rz.scp.css */
+#smallrect rect[b-nk5vnj32xk] {
+    stroke: saddlebrown;
+    fill: tan;
+}
+
+#bigrect rect[b-nk5vnj32xk] {
+    stroke: saddlebrown
+}
+/* /Pages/GardenLayout/Components/GardenLayoutView.razor.rz.scp.css */
+
+#collapse1[b-o7e16haq02] {
+    overflow-y: scroll;
+    height: 247px;
+}
+
+.btn[b-o7e16haq02]{
+    max-height: 40px;
+
+}
+
+.vertical-ruler-div[b-o7e16haq02] {
+    margin-right: -18px;
+    margin-top: 24px;
+}
+
+.garden-facts_list .garden-facts_term[b-o7e16haq02] {
+    color: #709a41;
+    text-transform: uppercase;
+}
+
+.garden-facts_list .garden-facts-item[b-o7e16haq02] {
+    border-bottom: 2px solid #c5c5c5;
+}
+/* /Pages/GardenLayout/Components/GardenVerticalRuler.razor.rz.scp.css */
+.garden-plan .label[b-usku2q1xli] {
+    font-size: 11px;
+    font-family: monospace;
+}
+/* /Pages/GardenLayout/Components/RectGardenBed.razor.rz.scp.css */
+
+rect.InGroundBed[b-mcdhcszdo5] {
+    stroke-width: 6;
+    stroke: rgba(145, 84, 6, 0.75);
+}
+
+rect.RaisedBed[b-mcdhcszdo5] {
+    stroke-width: 6;
+    stroke: rgba(153, 177, 179, 0.89);
+}
+/* /Pages/Harvest/Components/PlantHarvestList.razor.rz.scp.css */
+.plant-list li[b-3g2l5ue8cg] {
+    color: #666;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.plant-list ul[b-3g2l5ue8cg] {
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+h1[b-3g2l5ue8cg], h2[b-3g2l5ue8cg], h3[b-3g2l5ue8cg], h4[b-3g2l5ue8cg], h5[b-3g2l5ue8cg], h6[b-3g2l5ue8cg] {
+    font-weight: 600;
+    color: #333;
+}
+
+.search-result[b-3g2l5ue8cg] {
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.plant-search-filter[b-3g2l5ue8cg] {
+    background: #f7f7f7;
+    padding: 20px;
+}
+
+.widget[b-3g2l5ue8cg] {
+    background: #fff;
+    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1);
+    padding: 25px 10px 10px;
+    margin-bottom: 10px;
+    border-radius: 2px;
+}
+
+.widget-header[b-3g2l5ue8cg] {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #dedede;
+}
+
+.widget.plant-list ul li:not(:last-child)[b-3g2l5ue8cg] {
+    border-bottom: 1px solid #F4F7F9;
+}
+
+.widget.plant-list ul li a[b-3g2l5ue8cg] {
+    padding: 8px 0;
+    display: block;
+    transition: all linear 0.3s;
+}
+
+    .widget.plant-list ul li a span[b-3g2l5ue8cg] {
+        float: right;
+        font-size: 10px;
+        background: #F4F7F9;
+        border-radius: 10px;
+        padding: 3px 8px;
+        color: #84919B;
+    }
+
+.widget.product-shorting .form-check[b-3g2l5ue8cg] {
+    margin-bottom: 4px;
+}
+/* /Pages/HarvestGardenLayout/Components/DraggablePlantSelector.razor.rz.scp.css */
+svg .selector[b-reab0licoy] {
+    fill: #709a41;
+}
+
+rect.selector[b-reab0licoy], line.selector[b-reab0licoy] {
+    stroke-width: 3;
+    stroke-dasharray: 14, 5;
+    stroke: #709a41;
+    fill: none;
+}
+
+
+svg .null-left-resizer[b-reab0licoy] {
+    cursor: w-resize;
+}
+
+svg .bottom-null-resizer[b-reab0licoy] {
+    cursor: s-resize;
+}
+
+svg .null-right-resizer[b-reab0licoy] {
+    cursor: e-resize;
+}
+
+svg .top-null-resizer[b-reab0licoy] {
+    cursor: n-resize;
+}
+/* /Pages/HarvestGardenLayout/Components/GardenBedPlantHarvestCycleForm.razor.rz.scp.css */
+#collapse1[b-5cnxqxjd6k] {
+    overflow-y: scroll;
+    height: 500px;
+}
+
+.table-active[b-5cnxqxjd6k] {
+    border: #709a41;
+}
+/* /Pages/HarvestGardenLayout/Components/HarvestGardenLayout.razor.rz.scp.css */
+#smallrect rect[b-5p3q5oghd5] {
+    stroke: saddlebrown;
+    fill: tan;
+}
+
+#bigrect rect[b-5p3q5oghd5] {
+    stroke: saddlebrown
+}
+/* /Pages/HarvestGardenLayout/Components/HarvestGardenLayoutView.razor.rz.scp.css */
+/*dl {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+dt {
+    width: 60%;
+}
+
+dd {
+    margin-left: auto;
+    width: 30%;
+}*/
+
+.body[b-gybykvzwnm] {
+    min-height: 300px;
+    min-width: 250px !important;
+    margin-right: 5px;
+}
+
+#collapse1[b-gybykvzwnm] {
+    overflow-y: scroll;
+    height: 247px;
+}
+
+.btn[b-gybykvzwnm] {
+    max-height: 40px;
+}
+
+.vertical-ruler-div[b-gybykvzwnm] {
+    margin-right: -18px;
+    margin-top: 24px;
+}
+
+.garden-facts_list .garden-facts_term[b-gybykvzwnm] {
+    color: #709a41;
+    text-transform: uppercase;
+}
+
+.garden-facts_list .garden-facts-item[b-gybykvzwnm] {
+    border-bottom: 2px solid #c5c5c5;
+}
+
+.plant-image[b-gybykvzwnm] {
+    max-height: 48px;
+    max-width: 48px;
+}
+/* /Pages/Images/Components/ImageList.razor.rz.scp.css */
+.plant-image[b-ya78yebwb8] {
+    max-width: 400px;
+}
+
+    .plant-image img[b-ya78yebwb8] {
+        width: 250px;
+    }
+
+.plant-image-thumbnail img[b-ya78yebwb8] {
+    width: 60px;
+    margin: 5px;
+}
+/* /Pages/Index.razor.rz.scp.css */
+.variety-facts-list .variety-facts-term[b-8fnu6zxx74] {
+    color: #709a41;
+    text-transform: uppercase;
+}
+
+.variety-facts-list .variety-facts-item[b-8fnu6zxx74] {
+    border-bottom: 2px solid #c5c5c5;
+}
+/* /Pages/Plants/Components/PlantGrowInstructionAccordianItemView.razor.rz.scp.css */
+.grow-facts-list .grow-facts-term[b-4wz1582hvm] {
+    color: #709a41;
+    text-transform: uppercase;
+}
+
+.grow-facts-list .grow-facts-item[b-4wz1582hvm] {
+    border-bottom: 2px solid #c5c5c5;
+}
+/* /Pages/Plants/Components/PlantVarietyForm.razor.rz.scp.css */
+.tags[b-q700gqtagr] {
+    border: 1px solid #709a41;
+    box-sizing: border-box;
+    padding: 0em 0.5em;
+    display: -webkit-box;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: inherit;
+    border-radius: 5px;
+}
+
+    .tags > ul[b-q700gqtagr] {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .tags ul li[b-q700gqtagr] {
+        margin: 0.5em 0.2em;
+        padding: 0.5em;
+        color: white;
+        background-color: #709a41;
+        border-radius: 5px;
+    }
+
+        .tags ul li a[b-q700gqtagr] {
+            padding: 0.5em;
+        }
+
+    .tags input[b-q700gqtagr] {
+        padding: 0em 0.5em;
+    }
+
+.variety-colors > .color[b-q700gqtagr] {
+    margin-right: 0.2em;
+    padding-left: 0;
+}
+
+.sources[b-q700gqtagr] {
+    box-sizing: border-box;
+    padding: 0em 0.5em;
+    display: -webkit-box;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: inherit;
+}
+
+    .sources > ul[b-q700gqtagr] {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .sources ul li[b-q700gqtagr] {
+        margin: 0.5em 0.2em;
+        padding: 0.5em;
+        color: black;
+        border: 1px solid #709a41;
+        border-radius: 5px;
+    }
+
+        .sources ul li a[b-q700gqtagr] {
+            padding: 0.5em;
+        }
+/* /Pages/Plants/Components/PlantVarietyView.razor.rz.scp.css */
+.variety-facts-list .variety-facts-term[b-5kga8drz7q] {
+    color: #709a41;
+    text-transform: uppercase;
+}
+
+.variety-facts-list .variety-facts-item[b-5kga8drz7q] {
+    border-bottom: 2px solid #c5c5c5;
+}
+.tags[b-5kga8drz7q] {
+    border: none;
+    box-sizing: border-box;
+    padding: 0em 0.5em;
+    display: -webkit-box;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: inherit;
+}
+
+    .tags > ul[b-5kga8drz7q] {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .tags ul li[b-5kga8drz7q] {
+        margin: 0.5em 0.2em;
+        padding: 0.5em;
+        color: white;
+        background-color: #709a41;
+        border-radius: 5px;
+    }
+
+        .tags ul li a[b-5kga8drz7q] {
+            padding: 0.5em;
+        }
+
+.colors[b-5kga8drz7q] {
+    border: none;
+    box-sizing: border-box;
+    padding: 0em 0.5em;
+    display: -webkit-box;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: inherit;
+}
+
+    .colors > ul[b-5kga8drz7q] {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .colors ul li[b-5kga8drz7q] {
+        margin: 0.5em 0.2em;
+        color: white;
+    }
+
+.sources[b-5kga8drz7q] {
+    box-sizing: border-box;
+    padding: 0em 0.5em;
+    display: -webkit-box;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: inherit;
+}
+
+    .sources > ul[b-5kga8drz7q] {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .sources ul li[b-5kga8drz7q] {
+        margin: 0.5em 0.2em;
+        padding: 0.5em;
+        color: black;
+        border-radius: 5px;
+    }
+
+        .sources ul li a[b-5kga8drz7q] {
+            padding: 0.5em;
+        }
+/* /Pages/Plants/Components/PlantView.razor.rz.scp.css */
+.plant-facts_list .plant-facts_term[b-afgsf7jkca] {
+    color: #709a41;
+    text-transform: uppercase;
+}
+
+.plant-facts_list .plant-facts-item[b-afgsf7jkca] {
+    border-bottom: 2px solid #c5c5c5;
+}
+/* /Pages/Plants/PlantFormPage.razor.rz.scp.css */
+.tags[b-xqtb7n7hnk] {
+    border: 1px solid #709a41;
+    box-sizing: border-box;
+    padding: 0em 0.5em;
+    display: -webkit-box;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: inherit;
+    border-radius: 5px;
+}
+
+    .tags > ul[b-xqtb7n7hnk] {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .tags ul li[b-xqtb7n7hnk] {
+        margin: 0.5em 0.2em;
+        padding: 0.5em;
+        color: white;
+        background-color: #709a41;
+        border-radius: 5px;
+    }
+    .tags ul li a[b-xqtb7n7hnk] {
+        padding: 0.5em;
+    }
+
+    .tags input[b-xqtb7n7hnk] {
+        padding: 0.9em 0.5em;
+        box-sizing: border-box;
+        -webkit-box-flex: 1;
+        flex-grow: 1;
+        border: none;
+        outline: none;
+        font-size: inherit;
+        font-family: inherit;
+        color: inherit;
+        overflow: visible;
+    }
+
+    .variety-colors > .color[b-xqtb7n7hnk]{
+        margin-right: 0.2em;
+        padding-left: 0;
+    }
+/* /Pages/Schedule/Components/Calendar.razor.rz.scp.css */
+.nowork[b-a8h5lgd26d] {
+    background-color: #edeaca;
+}
+
+.sow-indoors[b-a8h5lgd26d] {
+    background-color: #479f76;
+}
+
+
+.transplant[b-a8h5lgd26d] {
+    background-color: #ffcd39;
+}
+
+.sow-outside[b-a8h5lgd26d] {
+    background-color: #ffd800;
+}
+
+
+.harvest[b-a8h5lgd26d] {
+    background-color: #fd7e14;
+}
+/* /Pages/Schedule/Components/CalendarTable.razor.rz.scp.css */
+.nowork[b-ujk4hcd76g] {
+    background-color: #edeaca;
+}
+
+.sow-indoors[b-ujk4hcd76g] {
+    background-color: #479f76;
+}
+
+
+.transplant[b-ujk4hcd76g] {
+    background-color: #ffcd39;
+}
+
+.harvest[b-ujk4hcd76g] {
+    background-color: #fd7e14;
+}
+/* /Pages/Tasks/Components/PlantTaskList.razor.rz.scp.css */
+.task-facts_list .task-facts_term[b-m78ppq40sw] {
+    color: #709a41;
+    text-transform: uppercase;
+}
+
+.task-facts_list .task-facts-item[b-m78ppq40sw] {
+    border-bottom: 2px solid #c5c5c5;
+}
