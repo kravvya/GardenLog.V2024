@@ -1,0 +1,97 @@
+﻿@using ImageCatalog.Contract.Queries;
+@inject IImageService _imageService;
+@inject IHarvestCycleService _harvestService;
+
+<article id="imageList">
+    <div class="container">
+        <div class="row px-2">
+            <div>
+                @if (_image != null)
+                {
+                    <div class="plant-image">
+                        <img class="d-block img-fluid w-100" src="@_imageService.GetRawImageUrl(_image.FileName)" alt="@_image.Label" />
+
+                        <h5>@_image.Label</h5>
+                    </div>
+
+                    <div class="plant-image-thumbnail">
+                        @foreach (var image in _images)
+                        {
+                            <img class="img-fluid img-thumbnail" src="@_imageService.GetThumbnailImageUrl(image.FileName)" alt="@image.Label" @onclick="@(() => ReplaceImage(image))" />
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="modal-footer">
+                <span>
+                    <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() => OnCancel())">Close <span class="bi bi-x-circle">&nbsp;</span></button>
+                </span>
+            </div>
+        </div>
+    </div>
+</article>
+
+@code {
+
+    [Parameter]
+    public Func<Task>? OnClose { get; set; }
+
+    List<ImageViewModel> _images { get; set; } = new List<ImageViewModel>();
+    ImageViewModel? _image { get; set; }
+
+    public async Task Initialize(RelatedEntityTypEnum relatedEntityType, string relatedEntityId)
+    {
+        if (!string.IsNullOrEmpty(relatedEntityId))
+        {
+            _images = await _imageService.GetImages(relatedEntityType, relatedEntityId, true);
+
+            if (_images != null && _images.Count > 0)
+            {
+                _image = _images.First();
+            }
+            StateHasChanged();
+
+            if (relatedEntityType == RelatedEntityTypEnum.Plant)
+            {
+                await LoadPlantImagesWithHarvest(relatedEntityId);
+            }
+        }
+    }
+
+    protected async Task LoadPlantImagesWithHarvest(string plantId)
+    {
+        var plantHarvests = await _harvestService.GetPlantHarvestsByPLantId(plantId);
+
+        if (plantHarvests != null && plantHarvests.Count > 0)
+        {
+            var entities = new List<GetImagesByRelatedEntity>();
+            plantHarvests.ForEach(ph =>
+            {
+                entities.Add(new GetImagesByRelatedEntity(RelatedEntityTypEnum.PlantHarvestCycle, ph.PlantHarvestCycleId, true));
+            });
+
+            var images = await _imageService.GetImagesInBulk(entities);
+            if (images != null)
+            {
+                Console.WriteLine($"Number of images before the bulk {_images.Count}");
+                _images.AddRange(images);
+                Console.WriteLine($"NUmber of images after the bulk {_images.Count}");
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void ReplaceImage(ImageViewModel newImage)
+    {
+        _image = newImage;
+        StateHasChanged();
+    }
+
+    private void OnCancel()
+    {
+        if (OnClose != null)
+            OnClose();
+    }
+}

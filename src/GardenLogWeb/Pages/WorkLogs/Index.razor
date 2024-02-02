@@ -1,0 +1,101 @@
+﻿@page "/worklogs/{RelatedEntity}/{RelatedEntityId}"
+@page "/worklogs/{RelatedEntity}/{RelatedEntityId}/plants/{PlantHarvestCycleId}"
+
+
+@inject IHarvestCycleService _harvestService;
+@inject NavigationManager _navigationManager;
+
+
+<Page Title="Work Notes" Description="Review, Edit and Create Work Notes" BreadcrumbLinks="@_breadcrumbLinks">
+    <PageContent>
+        <WorkLogList @ref=_workLogList />
+    </PageContent>
+</Page>
+
+@code {
+    [Parameter]
+    public string RelatedEntity { get; set; } = string.Empty;
+
+    [Parameter]
+    public string RelatedEntityId { get; set; } = string.Empty;
+
+    [Parameter]
+    public string PlantHarvestCycleId { get; set; } = string.Empty;
+
+    private List<BreadcrumbLink> _breadcrumbLinks = new();
+    private WorkLogList? _workLogList;
+
+    private string _title = string.Empty;
+    private string _description = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(RelatedEntity))
+        {
+            string relatedEntityType = RelatedEntity.Replace("garden_plan", "HarvestCycle");
+            RelatedEntityTypEnum type;
+
+            if (Enum.TryParse<RelatedEntityTypEnum>(relatedEntityType, out type))
+            {
+                await SetupPage(type, RelatedEntityId);
+            }
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && _workLogList != null)
+        {
+            if (!string.IsNullOrEmpty(PlantHarvestCycleId))
+            {
+                _workLogList.Initialize(RelatedEntityTypEnum.PlantHarvestCycle, PlantHarvestCycleId, RelatedEntityId);
+            }
+            else
+            {
+                string relatedEntityType = RelatedEntity.Replace("garden_plan", "HarvestCycle");
+                RelatedEntityTypEnum type;
+                if (Enum.TryParse<RelatedEntityTypEnum>(relatedEntityType, out type))
+                {
+                    _workLogList.Initialize(type, RelatedEntityId, RelatedEntityId);
+                }
+            }
+        }
+    }
+
+    private async Task SetupPage(RelatedEntityTypEnum relatedEntityType, string relatedEntitytId)
+    {
+        _description = string.Empty;
+
+        switch (relatedEntityType)
+        {
+            case RelatedEntityTypEnum.HarvestCycle:
+                var harvest = await _harvestService.GetHarvest(relatedEntitytId, true);
+
+                if (!string.IsNullOrEmpty(PlantHarvestCycleId))
+                {
+                    var plantHarvest = await _harvestService.GetPlantHarvest(harvest.HarvestCycleId, PlantHarvestCycleId, false);
+                    if(plantHarvest==null)
+                    {
+                        _navigationManager.NavigateToGardenPlans();
+                        break;
+                    }
+                    _title = plantHarvest.GetPlantName();
+                }
+                else
+                {
+
+                    if (!string.IsNullOrEmpty(harvest.GardenName))
+                    {
+                        _title = $"{harvest.HarvestCycleName} at {harvest.GardenName}";
+                    }
+                    _title = harvest.HarvestCycleName;
+                }
+
+                _breadcrumbLinks.Add(new BreadcrumbLink("Garden Plans", _navigationManager.GetGardenPlansUrl(), false));
+                _breadcrumbLinks.Add(new BreadcrumbLink(harvest.HarvestCycleName, _navigationManager.GetGardenPlanUrl(relatedEntitytId), false));
+                _breadcrumbLinks.Add(new BreadcrumbLink("Work Notes", _navigationManager.GetGardenPlanWorkLogsUrl(relatedEntitytId), true));
+                break;
+        }
+
+    }
+}

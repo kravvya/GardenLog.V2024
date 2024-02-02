@@ -1,0 +1,195 @@
+﻿@inject IJSRuntime _jsRuntime;
+
+<canvas id="@Id"></canvas>
+
+
+@code {
+    public enum ChartType
+    {
+        Pie,
+        Bar,
+        HorizontalBar
+    }
+
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    [Parameter]
+    public ChartType Type { get; set; }
+
+    [Parameter]
+    public int[]? Data { get; set; }
+
+    [Parameter]
+    public string[]? Backgroundcolor { get; set; }
+
+    [Parameter]
+    public string[]? Labels { get; set; }
+
+    private object? _config;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            switch (Type)
+            {
+                case ChartType.Pie:
+                    _config = GetPieChart();
+                    break;
+                case ChartType.HorizontalBar:
+                case ChartType.Bar:
+                    _config = GetBarChart();
+                    break;
+            }
+
+            await _jsRuntime.InvokeVoidAsync("setupChart", Id, _config);
+        }
+    }
+
+    private object GetPieChart(){
+        return new
+            {
+                Type = "pie",
+                options = new
+                {
+                    maintainAspectRatio = false,
+                },
+                Data = new
+                {
+                    Datasets = new[]
+                    {
+                        new {
+                            backgroundColor = Backgroundcolor,
+                            data = Data,
+                        }
+                    },
+                    Labels = Labels
+                }
+            };
+    }
+
+    private object GetBarChart(){
+
+        string? indexAxis=string.Empty;
+        bool displayTitle=false;
+        string title=string.Empty;
+
+         if (Type == ChartType.HorizontalBar)
+        {
+            indexAxis = "y";                
+        }
+
+       return new
+            {
+                Type = "bar",
+                options = new
+                {
+                    maintainAspectRatio = false,
+                    indexAxis = indexAxis,
+                    plugins = new { 
+                            title = new {display=displayTitle},
+                            legend = new {display=displayTitle}
+                    }
+                },
+                Data = new
+                {
+                    Datasets = new[]
+                    {
+                        new {
+                            backgroundColor = Backgroundcolor,
+                            data = Data
+                        }
+                    },
+                    Labels = Labels
+                }
+            };
+
+          
+    }
+
+    //private ChartConfig? _config;
+
+    //protected override async Task OnAfterRenderAsync(bool firstRender)
+    //{
+    //    if (firstRender)
+    //    {
+    //        string type = string.Empty;
+
+    //        switch (Type)
+    //        {
+    //            case ChartType.Pie:
+    //                type = "pie";
+    //                break;
+    //            case ChartType.HorizontalBar:
+    //            case ChartType.Bar:
+    //                type = "bar";
+    //                break;
+    //        }
+    //        _config = new ChartConfig(type)
+    //            {
+    //                Options = new ChartOption()
+    //                {
+    //                    Responsive = true
+    //                },
+    //                Data = new ChartData()
+    //                {
+    //                    Labels = Labels,
+    //                    Datasets = new List<ChartDataset>{
+    //                    new ChartDataset()
+    //                    {
+    //                        Data = Data,
+    //                        BackgroundColor = Backgroundcolor
+    //                    }}
+    //                }
+    //            };
+
+    //        if (Type == ChartType.HorizontalBar)
+    //        {
+    //            _config.Options.indexAxis = "y";
+    //            _config.Data.Datasets[0].maxBarThickness = 20;
+    //            _config.Options.Plugins = new() { Title = new ChartTitle() { Display = false } };
+    //        }
+    //        await _jsRuntime.InvokeVoidAsync("setupChart", Id, _config);
+    //    }
+    //}
+
+    //private record ChartConfig(string Type)
+    //{
+    //    public ChartOption? Options { get; set; }
+    //    public ChartData? Data { get; set; }
+    //}
+
+    //private record ChartOption()
+    //{
+    //    public bool Responsive { get; set; }
+    //    public string? indexAxis { get; set; }
+    //    public ChartPlugin? Plugins { get; set; }
+    //    // public ChartScale Scales { get; set; }
+    //}
+
+    //private record ChartData()
+    //{
+    //    public string[]? Labels { get; set; }
+    //    public List<ChartDataset>? Datasets { get; set; }
+    //}
+
+    //private record ChartDataset()
+    //{
+    //    public int[]? Data { get; set; }
+    //    public string[]? BackgroundColor { get; set; }
+    //    public double maxBarThickness { get; set; }
+    //}
+
+    //private record ChartPlugin()
+    //{
+    //    public ChartTitle? Title { get; set; }
+    //}
+
+    //private record ChartTitle()
+    //{
+    //    public bool Display { get; set; }
+    //    public string? Text { get; set; }
+    //}
+
+}

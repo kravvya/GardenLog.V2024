@@ -1,0 +1,198 @@
+﻿@inject IGardenLogToastService _toastService;
+@inject ILogger<GardenBedPlantHarvestCycleForm> _logger;
+@inject IVerifyService _verifyService;
+@inject IHarvestCycleService _harvestCycleService;
+@inject IGardenService _gardenService;
+
+<article id="addPlantToGardenBedForm">
+    <div class="container">
+        @if (_gardenBedPlant != null)
+        {
+            <EditForm EditContext="@_editContext" OnValidSubmit="@HandleValidSubmitAsync" OnInvalidSubmit="@HandleInValidSubmit">
+                <FluentValidationValidator />
+                <CustomValidation @ref="customValidation" />
+                <ValidationSummary />
+
+                <div class="row">
+                    <div class="col-md-7">
+                        <label for="NumberOfPlants">Number of Plants</label>
+                        <InputNumber class="form-control" @bind-Value="@_gardenBedPlant.NumberOfPlants" style="max-width:100px;" />
+                        <ValidationMessage For="@(() => _gardenBedPlant.NumberOfPlants)" />
+                        <div class="form-text">Available number of plants: @_availablePlants</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="collapse1" class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Type</th>
+                                        <th scope="col">Size</th>
+                                        <th scope="col">Can Plant </th>
+                                        <th scope="col">In Use</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (_gardenBeds != null)
+                                    {
+                                        @foreach (var bed in _gardenBeds)
+                                        {
+                                            @if (IsVisible(bed))
+                                            {
+                                                <tr @onclick="() => GardenBedSelected(bed)" class="@GetTableClass(bed)">
+                                                    <td>@bed.RowNumber</td>
+                                                    <td>@bed.Name</td>
+                                                    <td>@(
+                                                _verifyService.GetDescription<GardenBedTypeEnum>(bed.Type)
+                                                )</td>
+                                                    <td>@bed.GetWidthDisplay() x @bed.GetLengthDisplay()</td>
+                                                    <td>@_gardenBedPlant.NumberOfPlantsPerBed(bed.Length, bed.Width)</td>
+                                                    <td>@GetInUseStatus(bed)</td>
+                                                </tr>
+                                            }
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <ValidationMessage For="@(() => _gardenBedPlant.GardenBedId)" />
+                    </div>
+                </div>
+                <div class="col-12 py-2">
+                    <div class="d-flex justify-content-end ">
+                        <InputSelect class="form-select" @bind-Value="_gardenBedGridFilter" style="max-width:250px">
+                            <option Value="available">Only Available Garden Beds</option>
+                            <option Value="all">All Garden Beds</option>
+                        </InputSelect>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary" title="Add Plant to Garden Bed">
+                            <span class="bi bi-file-earmark-post">&nbsp;</span> Add
+                        </button>
+
+                        <button type="button" class="btn btn-danger" @onclick="@(() => OnClose(_gardenBedPlant))">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                    </div>
+                </div>
+            </EditForm>
+        }
+    </div>
+</article>
+
+@code {
+    [Parameter] public Func<GardenBedPlantHarvestCycleModel, Task> OnClose { get; set; } = null!;
+
+    private GardenBedPlantHarvestCycleModel? _gardenBedPlant;
+    private int? _availablePlants;
+    private List<GardenBedModel>? _gardenBeds;
+    private List<PlantHarvestCycleModel>? _harvestPlants;
+    private string _gardenBedGridFilter = "available";
+
+    private EditContext? _editContext;
+    private CustomValidation? customValidation;
+
+    public async Task InitialitzeAsync(GardenBedPlantHarvestCycleModel gardenBedPlant, int? availablePlants)
+    {
+        _harvestPlants = await _harvestCycleService.GetPlantHarvests(gardenBedPlant.HarvestCycleId, false);
+        _gardenBeds = await _gardenService.GetGardenBeds(gardenBedPlant.GardenId, true);
+
+        _editContext = new(gardenBedPlant);
+        _editContext.SetFieldCssClassProvider(new BootstrapValidationFieldClassProvider());
+        _availablePlants = availablePlants;
+        if (_availablePlants < 0) _availablePlants = 0;
+        _gardenBedPlant = gardenBedPlant;
+        StateHasChanged();
+    }
+
+    private bool IsVisible(GardenBedModel bed)
+    {
+        if (_gardenBedGridFilter.Equals("all")) return true;
+
+        if (_gardenBedGridFilter.Equals("available") && _harvestPlants!= null)
+        {
+
+            //var usedArea = _harvestPlants.SelectMany(g => g.GardenBedLayout).Where(c => c.GardenBedId == bed.GardenBedId).Sum(g => g.Length * g.Width);
+            double usedArea = 0;
+            foreach (var plant in _harvestPlants.SelectMany(g => g.GardenBedLayout).Where(c => c.GardenBedId == bed.GardenBedId))
+            {
+                usedArea += plant.Length * plant.Width;
+
+            }
+           
+            //bed is in In and plants are in ft
+            return bed.Length * bed.Width - usedArea*144 > 144; //only return if at least 1 sq ft is open
+        }
+
+        return false;
+    }
+
+    private void GardenBedSelected(GardenBedModel bed)
+    {
+        if (_gardenBedPlant != null)
+        {
+            _gardenBedPlant.GardenBedId = bed.GardenBedId;
+            if (_harvestPlants != null)
+            {
+                var plant = _harvestPlants.FirstOrDefault(p => p.PlantHarvestCycleId == _gardenBedPlant.PlantHarvestCycleId);
+                if (plant != null && plant.NumberOfPlantsLeftToAddToGardenBedLayout <= _gardenBedPlant.NumberOfPlantsPerBed(bed.Length, bed.Width))
+                {
+                    _gardenBedPlant.NumberOfPlants = plant.NumberOfPlantsLeftToAddToGardenBedLayout;
+                }
+                else
+                {
+                    _gardenBedPlant.NumberOfPlants = Convert.ToInt32(plant?.GetPlantsPerFoot() >= 1 ? plant.GetPlantsPerFoot() : 1);
+                }
+            }
+            _gardenBedPlant.SetLengthAndWidth(bed.Length, bed.Width);
+        }
+    }
+
+    private string GetTableClass(GardenBedModel bed)
+    {
+        if (_gardenBedPlant == null) return string.Empty;
+        return _gardenBedPlant.GardenBedId == bed.GardenBedId ? "table-active" : string.Empty;
+    }
+
+    private string GetInUseStatus(GardenBedModel bed)
+    {
+        if (_harvestPlants == null) return "Unknown";
+        var plants = _harvestPlants.SelectMany(g => g.GardenBedLayout).Where(c => c.GardenBedId == bed.GardenBedId).ToList();
+        if (plants.Count == 0) return "Open";
+
+        System.Text.StringBuilder sb = new();
+        foreach (var plant in plants)
+        {
+            sb.AppendLine($"{plant.GetPlantName()} - {plant.NumberOfPlants}. ");
+        }
+        return sb.ToString();
+    }
+
+    protected async Task HandleValidSubmitAsync()
+    {
+        _logger.Log(LogLevel.Information, "Garden Bed Plant Harvest Cycle Form passed validations");
+        customValidation?.ClearErrors();
+
+        if (_gardenBeds == null || _gardenBedPlant == null) return;
+
+        ApiResponse response = await _harvestCycleService.CreateGardenBedPlantHarvestCycle(_gardenBedPlant);
+
+        if (response.ValidationProblems != null)
+        {
+            customValidation?.DisplayErrors(response.ValidationProblems);
+        }
+
+        if (response.IsSuccess)
+        {
+            await OnClose(_gardenBedPlant);
+        }
+    }
+
+    protected void HandleInValidSubmit()
+    {
+        _toastService.ShowToast("Changes can not be saved. Please correct validation errors.", GardenLogToastLevel.Error);
+    }
+}

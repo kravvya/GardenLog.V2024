@@ -1,0 +1,20 @@
+﻿<!-- The main page footer can contain items such as copyright and contact information. It can also contain a duplicated navigation of your site which is not usually contained within a <nav> -->
+<!-- ARIA: the landmark role "contentinfo" is added here as it contains metadata that applies to the parent document -->
+<!-- Footer-->
+<footer role="contentinfo" class="mt-3 p-3 bg-dark text-white text-center position-relative">
+    <address>
+        <p>
+            For further information, please
+            <a href="mailto:admin@example.com" class="text-white">contact us</a>.
+        </p>
+    </address>
+
+    <small class="lead">Copyright © <time>@_year</time></small>
+    <a href="#" class="position-absolute bottom-0 end-0 p-5">
+        <i class="bi bi-arrow-up-circle text-white-50 h2"></i>
+    </a>
+</footer>
+
+@code {
+    private int _year = DateTime.Now.Year;
+}

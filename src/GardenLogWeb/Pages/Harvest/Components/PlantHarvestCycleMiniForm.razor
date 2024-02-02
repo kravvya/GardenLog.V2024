@@ -1,0 +1,278 @@
+﻿@inject IHarvestCycleService _harvestService;
+@inject IToastService _toastService;
+@inject ILogger<PlantHarvestCycleMiniForm> _logger;
+
+<article id="plantHarvestCycleMiniForm">
+    <div class="container">
+        @if (_isInitialized && _plantHarvestMini != null)
+        {
+            <EditForm EditContext="@_editContext" OnValidSubmit="@HandleValidSubmitAsync" OnInvalidSubmit="@HandleInValidSubmit">
+                <FluentValidationValidator />
+                <CustomValidation @ref="customValidation" />
+
+                <div class="row mt-3" id="seeding-container" hidden="@_hideSeedDetails">
+                    <div class="col-11">
+                        <FormCard Class="border-info" HeaderClass="text-bg-info">
+                            <Header>
+                                <label for="NumberOfSeeds" class="card-subtitle mb-2 text-light">Seeding Detail</label>
+                            </Header>
+                            <Body>
+                                <div class="d-flex justify-content-start align-items-center flex-wrap mb-3">
+                                    <div class="px-2">
+                                        <label for="NumberOfSeeds">Number of seeds</label>
+                                        <InputNumber Class="form-control" @bind-Value="@_plantHarvestMini.NumberOfSeeds" id="NumberOfSeeds" />
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvestMini.NumberOfSeeds)" /></div>
+                                    </div>
+
+                                    <div class="px-2">
+                                        <label for="SeedingDateTime">Seeding Date</label>
+                                        <InputDate Class="form-control" @bind-Value="@_plantHarvestMini.SeedingDate" id="SeedingDateTime" />
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvestMini.SeedingDate)" /></div>
+                                    </div>
+
+                                    @if (_seedVendors != null)
+                                    {
+                                        <div class="px-2">
+
+                                            <label for="SeedVendor" class="form-label">Seed Vendor</label>
+                                            <InputSelect class="form-select" @bind-Value="_plantHarvestMini.SeedVendorId" id="SeedVendor">
+                                                @foreach (var item in _seedVendors)
+                                                {
+                                                    <option Value="@item.SeedVendorId">@item.Name</option>
+                                                }
+                                            </InputSelect>
+                                            <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvestMini.SeedVendorName)" /></div>
+                                        </div>
+                                    }
+                                </div>
+                            </Body>
+                        </FormCard>
+                    </div>
+                </div>
+
+                <div class="row mt-3" id="seeding-container" hidden="@_hideGerminateDetails">
+                    <div class="col-11">
+                        <FormCard Class="border-info" HeaderClass="text-bg-info">
+                            <Header>
+                                <label for="NumberOfSeeds" class="card-subtitle mb-2 text-light">Seeding Detail</label>
+                            </Header>
+                            <Body>
+                                <div class="d-flex justify-content-start align-items-center flex-wrap mb-3">
+                                    <div class="px-2">
+                                        <label for="GerminationDateTime">Germination Date</label>
+                                        <InputDate Class="form-control" @bind-Value="@_plantHarvestMini.GerminationDate" id="GerminationDateTime" />
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvestMini.GerminationDate)" /></div>
+                                    </div>
+
+                                    <div class="px-2">
+                                        <label for="GerminationRate">Germination Rate (%)</label>
+                                        <InputNumber Class="form-control" @bind-Value="@_plantHarvestMini.GerminationRate" id="GerminationRate" />
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvestMini.GerminationRate)" /></div>
+                                    </div>
+
+                                </div>
+                            </Body>
+                        </FormCard>
+                    </div>
+                </div>
+
+                <div class="row mt-3" id="transplants-container" hidden="@_hideTransplantDetails">
+                    <div class="col-11">
+                        <FormCard Class="border-info" HeaderClass="text-bg-info">
+                            <Header>
+                                <label for="Transplant" class="card-subtitle mb-2 text-light">Transplant</label>
+                            </Header>
+                            <Body>
+                                <div class="d-flex justify-content-start align-items-center flex-wrap">
+                                    <div class="px-2">
+                                        <label for="TransplantDateTime">Transplant Date</label>
+                                        <InputDate Class="form-control" @bind-Value="@_plantHarvestMini.TransplantDate" id="TransplantDateTime" />
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvestMini.TransplantDate)" /></div>
+                                    </div>
+
+                                    <div class="px-2">
+                                        <label for="numberOfPlants">Number of transplants</label>
+                                        <InputNumber Class="form-control" @bind-Value="@_plantHarvestMini.NumberOfTransplants" id="NumberOfTransplants" />
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvestMini.NumberOfTransplants)" /></div>
+                                    </div>
+                                </div>
+                            </Body>
+                        </FormCard>
+                    </div>
+                </div>
+
+                <div class="row mt-3" id="harvest-container" hidden="@_hideHarvestDetails">
+                    <div class="col-11">
+                        <FormCard Class="border-info" HeaderClass="text-bg-info">
+                            <Header>
+                                <label for="HarvestDate" class="card-subtitle mb-2 text-light">Harvest</label>
+                            </Header>
+                            <Body>
+                                <div class="d-flex justify-content-start align-items-center flex-wrap">
+                                    <div class="px-2">
+                                        <label for="IsLastHarvest">Last Harvest?</label>
+                                        <InputCheckbox Class="form-control" @bind-Value="@_plantHarvestMini.IsLastHarvest" id="IsLastHarvest" />
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvestMini.IsLastHarvest)" /></div>
+                                    </div>
+
+                                    <div class="px-2">
+                                        <label for="FirstHarvestDate">Harvest Date</label>
+                                        <InputDate Class="form-control" @bind-Value="@_plantHarvestMini.HarvestDate" id="HarvestDate" />
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvestMini.HarvestDate)" /></div>
+                                    </div>
+
+
+                                    <div class="px-2">
+                                        <label for="TotalWeightInPounds">Weight (lb)</label>
+                                        <InputNumber Class="form-control" @bind-Value="@_plantHarvestMini.WeightInPounds" id="TotalWeightInPounds" />
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvestMini.WeightInPounds)" /></div>
+                                    </div>
+
+                                    <div class="px-2">
+                                        <label for="TotalItems">Items</label>
+                                        <InputNumber Class="form-control" @bind-Value="@_plantHarvestMini.Items" id="TotalItems" />
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvestMini.Items)" /></div>
+                                    </div>
+                                </div>
+                            </Body>
+                        </FormCard>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <div class="modal-footer justify-content-between">
+                        <span>
+                            <button type="submit" class="btn btn-primary" title="Save Changes">Save <span class="bi bi-file-earmark-post">&nbsp;</span></button>
+                            <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() => OnCancel())">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                        </span>
+                    </div>
+                </div>
+            </EditForm>
+        }
+    </div>
+</article>
+
+@code {
+    [Parameter] public Func<PlantHarvestCycleModel?, Task>? OnClose { get; set; }
+
+    private bool _isInitialized = false;
+
+    private PlantHarvestCycleModel? _plantHarvest = null;
+    private PlantHarvestCycleMiniModel? _plantHarvestMini = null;
+
+    private EditContext? _editContext;
+    private CustomValidation? customValidation;
+    private List<SeedVendorModel>? _seedVendors = null;
+
+    private bool _hideSeedDetails = true;
+    private bool _hideGerminateDetails = true;
+    private bool _hideTransplantDetails = true;
+    private bool _hideHarvestDetails = true;
+
+
+    public void Initialize(string harvestCyceleId, string plantHarvestId, WorkLogReasonEnum reason)
+    {
+        _plantHarvestMini = new(harvestCyceleId, plantHarvestId);
+
+        _hideSeedDetails = reason != WorkLogReasonEnum.SowOutside && reason != WorkLogReasonEnum.SowIndoors;
+        _hideGerminateDetails = reason != WorkLogReasonEnum.Information;
+        _hideTransplantDetails = reason != WorkLogReasonEnum.TransplantOutside && reason != WorkLogReasonEnum.Plant;
+        _hideHarvestDetails = reason != WorkLogReasonEnum.Harvest;
+
+        _editContext = new(_plantHarvestMini);
+        _editContext.SetFieldCssClassProvider(new BootstrapValidationFieldClassProvider());
+        _isInitialized = true;
+        StateHasChanged();
+    }
+
+    protected async Task HandleValidSubmitAsync()
+    {
+        _logger.LogInformation( "Plant Harvest Mini Form passed validations");
+        customValidation?.ClearErrors();
+        _plantHarvest = await _harvestService.GetPlantHarvest(_plantHarvestMini!.HarvestCycleId, _plantHarvestMini!.PlantHarvestCycleId, true);
+        if (_plantHarvest== null)
+        {
+            _toastService.ShowToast(ToastLevel.Error, "Oops. We enciuntered an error processing your request. Please try again later.");
+            return;    
+        }
+
+        if (!_hideSeedDetails)
+        {
+            _plantHarvest!.SeedingDate = _plantHarvestMini.SeedingDate;
+            _plantHarvest.NumberOfSeeds = _plantHarvestMini.NumberOfSeeds;
+            if(_seedVendors != null)
+            {
+                _plantHarvestMini.SeedVendorId = _plantHarvestMini.SeedVendorId;
+                _plantHarvestMini.SeedVendorName = _plantHarvestMini.SeedVendorName;
+            }
+        }
+        else if (!_hideGerminateDetails)
+        {
+            _plantHarvest.GerminationDate = _plantHarvestMini.GerminationDate;
+            _plantHarvest.GerminationRate = _plantHarvestMini.GerminationRate;
+        }
+        else if (!_hideTransplantDetails)
+        {
+            _plantHarvest.TransplantDate = _plantHarvestMini.TransplantDate;
+            _plantHarvest.NumberOfTransplants = _plantHarvestMini.NumberOfTransplants;
+        }
+        else if (!_hideHarvestDetails)
+        {
+            if (!_plantHarvest.FirstHarvestDate.HasValue)
+            {
+                _plantHarvest.FirstHarvestDate = _plantHarvestMini.HarvestDate;
+            }
+
+            if (!_plantHarvest.TotalItems.HasValue)
+            {
+                _plantHarvest.TotalItems = _plantHarvestMini.Items;
+            }
+            else
+            {
+                _plantHarvest.TotalItems += _plantHarvestMini.Items;
+            }
+
+            if (!_plantHarvest.TotalWeightInPounds.HasValue)
+            {
+                _plantHarvest.TotalWeightInPounds = _plantHarvestMini.WeightInPounds;
+            }
+            else
+            {
+                _plantHarvest.TotalWeightInPounds += _plantHarvestMini.WeightInPounds;
+            }
+            if (_plantHarvestMini.IsLastHarvest)
+            {
+                _plantHarvest.LastHarvestDate = _plantHarvestMini.HarvestDate;
+            }
+        }
+
+        var response = await _harvestService.UpdatePlantHarvest(_plantHarvest);
+
+        if (response.ValidationProblems != null)
+        {
+            customValidation?.DisplayErrors(response.ValidationProblems);
+        }
+
+        if (response.IsSuccess)
+        {
+            _plantHarvestMini = null;
+            if (OnClose != null) 
+                await OnClose(_plantHarvest);
+
+        }
+
+    }
+
+    protected void HandleInValidSubmit()
+    {
+        _toastService.ShowToast(ToastLevel.Error, "Oops. We enciuntered ane rros processing your request. Please correct validation errors.");
+    }
+
+    private void OnCancel()
+    {
+        if (OnClose != null)
+            OnClose(null);
+    }
+}
+
+

@@ -1,0 +1,182 @@
+﻿@inject IHarvestCycleService _harvestService;
+@inject NavigationManager _navigationManager
+@inject IGardenService _gardenService;
+@inject IReportService _reportService;
+
+<ModalView OnCloseModal="CloseImageFormModal" @ref="_imageFormModal">
+    <Body>
+        <ImageForm OnClose=@CloseImageFormModal @ref=_imageForm />
+    </Body>
+</ModalView>
+
+<ModalView OnCloseModal="CloseHarvestFormModal" @ref="_harvestFormModal">
+    <Body>
+        <HarvestForm OnClose=@CloseHarvestFormModal @ref=_harvestForm />
+    </Body>
+</ModalView>
+
+
+<div class="row">
+    <div id="harvests" class="col-md-9">
+        @if (_harvests == null)
+        {
+            <p><em>Empty</em></p>
+        }
+        else
+        {
+            @foreach (var harvest in _harvests)
+            {
+                <div class="card bg-light mb-2">
+                    <div class="card-header"><h5><a href="@_navigationManager.GetGardenPlanUrl(harvest.HarvestCycleId)" class="action-link">@GetTile(harvest)</a></h5></div>
+                    <div class="card-body">
+                        <div>
+                            @harvest.StartDate.ToShortDateString() @if (harvest.EndDate.HasValue)
+                            {
+                                <span>- @harvest.EndDate</span>
+                            }
+                        </div>
+                        <div>@harvest.Notes</div>
+                    </div>
+
+                    <div class="card-footer">
+                        <div class="d-flex gap-2 gy-2 d-md-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary" title="Edit Garden Plan" @onclick="@(() => onEditHarvest(harvest))">
+                                <span class="bi bi-pencil">&nbsp;</span>
+                            </button>
+                            @if (harvest.CanShowLayout)
+                            {
+                                <button type="button" class="btn btn-warning" title="Garden Plant Layout" @onclick="@(() => EditGardenPlantLayout(harvest))">
+                                    <span class="bi bi-grid-1x2-fill">&nbsp;</span>
+                                </button>
+
+                                <button type="button" class="btn btn-info" title="Download Garden Plant Layout" @onclick="@(() => DownloadHarvestPlantInGardenReport(harvest))">
+                                    <span class="bi bi-download">&nbsp;</span>
+                                </button>
+                            }
+                            <button type="button" class="btn btn-warning" title="Add Image" @onclick="@(() => onAddHarvestImage(harvest))">
+                                <span class="bi bi-card-image">&nbsp;</span>
+                            </button>
+                            <button type="button" class="btn btn-info" title="Gallery" @onclick="@(() => ViewHarvestImage(harvest))">
+                                <span class="bi bi-images" aria-hidden="true"></span>
+                            </button>
+                            <button type="button" class="btn btn-info" title="Logs" @onclick="@(() => ViewHarvestLogs(harvest))">
+                                <span class="bi bi-journal" aria-hidden="true"></span>
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        <div @onclick=@onCreateHarvest class="btn d-inline-block  btn-secondary" title="Create Garden Plan">
+            <span class="bi bi-plus-lg">Add</span>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public IList<HarvestCycleModel>? _harvests { get; set; }
+    private ModalView? _imageFormModal { get; set; }
+    private ImageForm? _imageForm { get; set; }
+    private ModalView? _harvestFormModal { get; set; }
+    private HarvestForm? _harvestForm { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _harvests = await _harvestService.GetHarvestList(false);
+
+
+        StateHasChanged();
+    }
+
+    private string GetTile(HarvestCycleModel harvest)
+    {
+
+        if (!string.IsNullOrEmpty(harvest.GardenName))
+        {
+            return $"{harvest.HarvestCycleName} at {harvest.GardenName}";
+        }
+        return harvest.HarvestCycleName;
+    }
+
+    private async Task onAddHarvestImage(HarvestCycleViewModel harvest)
+    {
+        if (_imageForm != null && _imageFormModal!=null)
+        {
+            List<RelatedEntity> relatedEntities = new() { new RelatedEntity(RelatedEntityTypEnum.HarvestCycle, harvest.HarvestCycleId, harvest.HarvestCycleName) };
+
+            _imageForm.Initialize(RelatedEntityTypEnum.HarvestCycle, harvest.HarvestCycleId, relatedEntities);
+            await _imageFormModal.OpenModal(harvest.HarvestCycleName, GlobalConstants.MODAL_FORM_COLOR);
+            StateHasChanged();
+        }
+    }
+
+
+    private async Task onEditHarvest(HarvestCycleModel harvest)
+    {
+        if (_harvestForm != null && _harvestFormModal != null)
+        {
+            _harvestForm.Initialize(harvest);
+            await _harvestFormModal.OpenModal(harvest.HarvestCycleName, GlobalConstants.MODAL_FORM_COLOR);
+            StateHasChanged();
+        }
+    }
+
+    private async Task onCreateHarvest()
+    {
+        if (_harvestForm != null && _harvestFormModal != null)
+        {
+            _harvestForm.Initialize(null);
+            await _harvestFormModal.OpenModal("Create Garden Plan", GlobalConstants.MODAL_FORM_COLOR);
+            StateHasChanged();
+        }
+    }
+
+
+    private async Task CloseHarvestFormModal()
+    {
+        await _harvestFormModal!.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task CloseHarvestFormModal(HarvestCycleModel harvest)
+    {
+        await _harvestFormModal!.CloseModal();
+        _harvests = await _harvestService.GetHarvestList(false);
+        StateHasChanged();
+    }
+
+    private async Task CloseImageFormModal()
+    {
+        await _imageFormModal!.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task CloseImageFormModal(ImageViewModel image)
+    {
+        await _imageFormModal!.CloseModal();
+        StateHasChanged();
+    }
+
+    private void ViewHarvestImage(HarvestCycleViewModel harvest)
+    {
+        _navigationManager.NavigateToGardenPlanImages(harvest.HarvestCycleId);
+    }
+
+    private void ViewHarvestLogs(HarvestCycleViewModel harvest)
+    {
+        _navigationManager.NavigateToGardenPlanWorkLogs(harvest.HarvestCycleId);
+    }
+
+    private void EditGardenPlantLayout(HarvestCycleModel harvest)
+    {
+        _navigationManager.NavigateToGardenPlanLayout(harvest.HarvestCycleId);
+    }
+
+    private void DownloadHarvestPlantInGardenReport(HarvestCycleModel harvest)
+    {
+        _reportService.DownloadHarvestPlantInGardenReport(harvest.HarvestCycleId);
+    }
+
+}

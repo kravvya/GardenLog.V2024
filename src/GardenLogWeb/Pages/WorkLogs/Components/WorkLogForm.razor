@@ -1,0 +1,100 @@
+﻿@inject ILogger<WorkLogForm> _logger;
+@inject IHarvestCycleService _harvestService;
+@inject IWorkLogService _workLogService;
+@inject IVerifyService _verifyService;
+
+<article id="workLogForm">
+    <div class="container">
+        @if (_isInitialized && _workLog != null)
+        {
+            <EditForm EditContext="@_editContext" OnValidSubmit="@HandleValidSubmit" class="row g-3">
+                <FluentValidationValidator />
+                <CustomValidation @ref="_customValidation" />
+                <ValidationSummary />
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="eventDate">Date</label>
+                        <InputDate class="form-control" id="eventDate" @bind-Value="@_workLog.EventDateTime" />
+                        <ValidationMessage For="@(() => _workLog.EventDateTime)" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="reason">Reason</label>
+                        <InputSelect class="form-select" @bind-Value="_workLog.Reason">
+                            @foreach (var item in Enum.GetValues<WorkLogReasonEnum>().Where(p => p != WorkLogReasonEnum.Unspecified))
+                            {
+                                <option Value="@item">@(_verifyService.GetDescription(item))</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => _workLog.Reason)" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-10">
+                        <label for="log">Note</label>
+                        <InputTextArea Class="form-control" Id="log" @bind-Value="@_workLog.Log" />
+                        <ValidationMessage For="@(() => _workLog.Log)" />
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="modal-footer">
+                        <span>
+                            <button type="submit" class="btn btn-primary" title="Save Changes">Save <span class="bi bi-file-earmark-post">&nbsp;</span></button>
+                            <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() => OnCancel())">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                        </span>
+                    </div>
+                </div>
+            </EditForm>
+        }
+    </div>
+</article>
+@code {
+    [Parameter] public Func<WorkLogModel?, Task>? OnClose { get; set; }
+
+    private WorkLogModel? _workLog;
+    private CustomValidation? _customValidation;
+    private EditContext? _editContext;
+
+    private bool _isInitialized = false;
+
+    public void Initialize(List<RelatedEntity> relatedEntities, WorkLogReasonEnum? reason = null)
+    {
+        _workLog = new WorkLogModel();
+        _workLog.RelatedEntities = relatedEntities;
+        _workLog.EnteredDateTime = DateTime.Now;
+        _workLog.EventDateTime = DateTime.Now;
+
+        if (reason != null) _workLog.Reason = reason.Value;
+
+        _editContext = new(_workLog);
+        _editContext.SetFieldCssClassProvider(new BootstrapValidationFieldClassProvider());
+        _isInitialized = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        _logger.LogInformation("Work Log Form passed valdiate");
+
+        _customValidation?.ClearErrors();
+
+        ApiResponse response = await _workLogService.CreateWorkLog(_workLog!);
+
+        if (response.ValidationProblems != null)
+        {
+            _customValidation?.DisplayErrors(response.ValidationProblems);
+        }
+
+        if (response.IsSuccess)
+        {
+            if (OnClose != null) await OnClose(_workLog);
+        }
+    }
+
+    private void OnCancel()
+    {
+        if (OnClose != null)
+            OnClose(null);
+    }
+
+}

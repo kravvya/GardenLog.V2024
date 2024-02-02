@@ -1,0 +1,164 @@
+﻿@page "/images/{RelatedEntity}/{RelatedEntityId}"
+@using ImageCatalog.Contract.Queries;
+@inject IImageService _imageService;
+@inject IHarvestCycleService _harvestService;
+@inject IGardenService _gardenService;
+@inject NavigationManager _navigationManager;
+@inject IJSRuntime JsRuntime;
+@inject ILogger<Index> _logger;
+
+<Page Title="@_title" Description="@_description" BreadcrumbLinks="@_breadcrumbLinks">
+    <PageContent>
+        <div class="container">
+            <div style="margin: 20px">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div id="carouselImages" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-indicators">
+                                @for (int index = 0; index < _images.Count; index++)
+                                {
+                                    <button type="button" data-bs-target="#carouselImages" data-bs-slide-to="@index" class="@(index==0?"active":"")" aria-current="@(index==0)" aria-label="@_images[index].Label"></button>
+                                }
+                            </div>
+                            <div class="carousel-inner">
+                                @foreach (var (image, index) in _images.Select((img, i) => (img, i)))
+                                {
+                                    <div class="carousel-item @(index==0 ? "active" : "")">
+                                        <img src="@_imageService.GetRawImageUrl(image.FileName)" alt="@image.Label" class="d-block w-100 img-fluid">
+                                        <div class="carousel-caption d-none d-md-block">
+                                            <h5>@image.Label</h5>
+                                            <p>@image.CreatedDateTimeUtc.ToShortDateString()</p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselImages" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carouselImages" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </PageContent>
+</Page>
+
+
+@code {
+    [Parameter]
+    public string RelatedEntity { get; set; } = string.Empty;
+
+    [Parameter]
+    public string RelatedEntityId { get; set; } = string.Empty;
+
+    private List<ImageViewModel> _images { get; set; } = new();
+    private List<BreadcrumbLink> _breadcrumbLinks = new();
+
+    //private bool _firstRender = true;
+    private bool _firstImage = false;
+    private string _title = string.Empty;
+    private string _description = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(RelatedEntity))
+        {
+            string relatedEntityType = RelatedEntity.Replace("garden_plan", "HarvestCycle");
+            RelatedEntityTypEnum type;
+
+            if (Enum.TryParse<RelatedEntityTypEnum>(relatedEntityType, out type))
+            {
+                _firstImage = true;
+
+                await SetupPageTitleAndBreadCrumb(type, RelatedEntityId);
+
+                _images = await _imageService.GetImages(type, RelatedEntityId, true);
+
+                if (type == RelatedEntityTypEnum.Plant)
+                {
+                    await LoadPlantImagesWithHarvest(RelatedEntityId);
+                }
+
+                //if (_firstRender)
+                //{
+                //    Console.WriteLine("Start carousel");
+                //    await JsRuntime.InvokeAsync<object>("initializeCarouselImages");
+                //    _firstRender = false;
+                //}
+            }
+        }
+    }
+
+    protected string GetActiveClass()
+    {
+        if (_firstImage)
+        {
+            _firstImage = false;
+            return "active";
+        }
+
+        return "";
+    }
+
+    private async Task SetupPageTitleAndBreadCrumb(RelatedEntityTypEnum relatedEntityType, string relatedEntitytId)
+    {
+        _description = string.Empty;
+
+        switch (relatedEntityType)
+        {
+            case RelatedEntityTypEnum.HarvestCycle:
+                var harvest = await _harvestService.GetHarvest(relatedEntitytId, true);
+                if (!string.IsNullOrEmpty(harvest.GardenName))
+                {
+                    _title = $"{harvest.HarvestCycleName} at {harvest.GardenName}";
+                }
+                _title = harvest.HarvestCycleName;
+
+                _breadcrumbLinks.Add(new BreadcrumbLink("Garden Plans", _navigationManager.GetGardenPlansUrl(), false));
+                _breadcrumbLinks.Add(new BreadcrumbLink(harvest.HarvestCycleName, _navigationManager.GetGardenPlanUrl(relatedEntitytId), false));
+                _breadcrumbLinks.Add(new BreadcrumbLink("Gallery", _navigationManager.GetGardenPlanImagesUrl(relatedEntitytId), true));
+                break;
+            case RelatedEntityTypEnum.Garden:
+                var garden = await _gardenService.GetGarden(relatedEntitytId, true);
+                if (garden != null)
+                {
+                    _title = garden.Name;
+
+                    _breadcrumbLinks.Add(new BreadcrumbLink("Gardens", _navigationManager.GetGardensUrl(), false));
+                    _breadcrumbLinks.Add(new BreadcrumbLink("Gallery", _navigationManager.GetGardenImagesUrl(relatedEntitytId), true));
+                }
+                break;
+        }
+
+    }
+    //TODO - We can simplify this code. As long as we add plantId to the list of RelatedEntities for PlantHarvest images, this additional lookup is not needed.
+    protected async Task LoadPlantImagesWithHarvest(string plantId)
+    {
+        var plantHarvests = await _harvestService.GetPlantHarvestsByPLantId(plantId);
+
+        if (plantHarvests != null && plantHarvests.Count > 0)
+        {
+            var entities = new List<GetImagesByRelatedEntity>();
+            plantHarvests.ForEach(ph =>
+            {
+                entities.Add(new GetImagesByRelatedEntity(RelatedEntityTypEnum.PlantHarvestCycle, ph.PlantHarvestCycleId, true));
+            });
+
+            var images = await _imageService.GetImagesInBulk(entities);
+            if (images != null)
+            {
+                _logger.LogDebug($"Number of images before the bulk {_images.Count}");
+                _images.AddRange(images);
+                _logger.LogDebug($"NUmber of images after the bulk {_images.Count}");
+                StateHasChanged();
+            }
+        }
+    }
+
+
+}

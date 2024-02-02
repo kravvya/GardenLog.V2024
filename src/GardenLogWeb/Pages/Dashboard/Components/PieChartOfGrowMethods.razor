@@ -1,0 +1,26 @@
+<div class="chart-container" style="position: relative; height:300px;">
+    @if (_data != null)
+    {
+        <Chart Id="growMethodsPie" Type="Chart.ChartType.Pie" Labels="@_labels" Data="@_data" BackgroundColor="@_colors" />
+    }
+</div>
+
+@code {
+    [Parameter] public List<PlantHarvestCycleModel>? HarvestPlants { get; set; }
+
+    private int[]? _data;
+    private string[] _labels = new[] { "Start Seed Indoors", "Direct Seed Outside", "Transplant" };
+    private string[] _colors = new[] { "#e35d6a", "#479f76", "#fd9843" };
+
+    protected override void OnParametersSet()
+    {
+        if (HarvestPlants == null) return;
+
+        int seededInside = HarvestPlants.Where(p => p.PlantingMethod == PlantingMethodEnum.SeedIndoors).Count();
+        int seededOutside = HarvestPlants.Where(p => p.PlantingMethod == PlantingMethodEnum.DirectSeed).Count();
+        int tranplanting = HarvestPlants.Where(p => p.PlantingMethod == PlantingMethodEnum.Transplanting).Count();
+
+        _data = new[] { seededInside, seededOutside, tranplanting };
+        StateHasChanged();
+    }
+}

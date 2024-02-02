@@ -1,0 +1,229 @@
+﻿@inject IVerifyService _verifyService;
+@inject NavigationManager _navigationManager;
+
+@if (GrowInstruction != null)
+{
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="@GetAccordionId(GrowInstruction.PlantGrowInstructionId)header">
+            <button class="accordion-button @(IsCollapsed())" type="button" data-bs-toggle="collapse" data-bs-target="#@GetAccordionId(GrowInstruction.PlantGrowInstructionId)" aria-expanded="@IsOpen.ToString()" aria-controls="@GetAccordionId(GrowInstruction.PlantGrowInstructionId)">
+                <span class="lead fw-bold">@(_verifyService.GetDescription<PlantCatalog.Contract.Enum.PlantingMethodEnum>(GrowInstruction.PlantingMethod)) to harvest in the @(_verifyService.GetDescription<HarvestSeasonEnum>(GrowInstruction.HarvestSeason))</span>
+            </button>
+        </h2>
+        <div id="@GetAccordionId(GrowInstruction.PlantGrowInstructionId)" class="accordion-collapse collapse @(IsShow())" aria-labelledby="@GetAccordionId(GrowInstruction.PlantGrowInstructionId)" data-bs-parent="#growInstructions">
+            <div class="accordion-body">
+                <dl class="row grow-facts-list">
+                    <div class="grow-facts-item row">
+                        <dt class="col-sm-3 grow-facts-term">@_verifyService.GetDescription(GrowInstruction.PlantingMethod)</dt>
+                        <dd class="col-sm-9">@GetHarvestDetail(GrowInstruction)</dd>
+                    </div>
+
+                    @if (GrowInstruction.StartSeedWeeksAheadOfWeatherCondition.HasValue)
+                    {
+                        <div class="grow-facts-item row">
+                            <dt class="col-sm-3 grow-facts-term">Start Seeding</dt>
+                            <dd class="col-sm-9 grow-facts-definition">@GetSeedingDetails(GrowInstruction)</dd>
+                        </div>
+                        <div class="grow-facts-item row">
+                            <dt class="col-sm-3 grow-facts-term">Seeding</dt>
+                            <dd class="col-sm-9 grow-facts-definition">@GrowInstruction.StartSeedInstructions</dd>
+                        </div>
+
+                        @if (GrowInstruction.FertilizerForSeedlings != FertilizerEnum.Unspecified)
+                        {
+                            <div class="grow-facts-item row">
+                                <dt class="col-sm-3 grow-facts-term">Fertilize Sidlings</dt>
+                                <dd class="col-sm-9 grow-facts-definition">@GetSidlingsFertilizeDetail(GrowInstruction)</dd>
+                            </div>
+                        }
+
+                        @if (GrowInstruction.DaysToSproutMax.HasValue && GrowInstruction.DaysToSproutMin.HasValue)
+                        {
+                            <div class="grow-facts-item row">
+                                <dt class="col-sm-3 grow-facts-term">Sprout</dt>
+                                <dd class="col-sm-9 grow-facts-definition">@GrowInstruction.DaysToSproutMin to @GrowInstruction.DaysToSproutMax days</dd>
+                            </div>
+                        }
+                    }
+                    @if (GrowInstruction.TransplantWeeksAheadOfWeatherCondition.HasValue)
+                    {
+                        <div class="grow-facts-item row">
+                            <dt class="col-sm-3 grow-facts-term">Transplant</dt>
+                            <dd class="col-sm-9 grow-facts-definition">@GetTransplantDetails(GrowInstruction)</dd>
+                        </div>
+                    }
+                    <div class="grow-facts-item row">
+                        <dt class="col-sm-3 grow-facts-term">Planting</dt>
+                        <dd class="col-sm-9 grow-facts-definition">@GetPlantingDetail(GrowInstruction)</dd>
+                    </div>
+
+                    @if (GrowInstruction.Fertilizer != FertilizerEnum.Unspecified)
+                    {
+                        <div class="grow-facts-item row">
+                            <dt class="col-sm-3 grow-facts-term">Fertilize</dt>
+                            <dd class="col-sm-9 grow-facts-definition">@GetFertilizeDetail(GrowInstruction)</dd>
+                        </div>
+                    }
+
+                    <div class="grow-facts-item row">
+                        <dt class="col-sm-3 grow-facts-term">Notes</dt>
+                        <dd class="col-sm-9 grow-facts-definition">@GrowInstruction.GrowingInstructions</dd>
+                    </div>
+                    <div class="grow-facts-item row">
+                        <dt class="col-sm-3 grow-facts-term">Harvesting</dt>
+                        <dd class="col-sm-9 grow-facts-definition">@GrowInstruction.HarvestInstructions</dd>
+                    </div>
+                    <AuthorizeView Roles="@(GlobalConstants.ROLE_MASTER_GARDENER + ", " + GlobalConstants.ROLE_WRITE_GROW_INSTRUCTIONS)">
+                        <div class="mt-2">
+                            <dt></dt>
+                            <dd class="d-flex justify-content-end">
+                                <button type="button" class="btn btn-secondary" title="Edit Grow Instruction" @onclick="@(() => EditPlantGrowInstruction(GrowInstruction))">
+                                    <span class="bi bi-pencil" aria-hidden="true"></span>
+                                </button>
+                            </dd>
+                        </div>
+                    </AuthorizeView>
+                </dl>
+            </div>
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter] public PlantGrowInstructionViewModel? GrowInstruction { get; set; }
+    [Parameter] public bool IsOpen { get; set; }
+
+    private string GetHarvestDetail(PlantGrowInstructionViewModel grow)
+    {
+        System.Text.StringBuilder sb = new();
+        sb.Append($"{grow.Name} for ");
+        sb.Append(_verifyService.GetDescription<HarvestSeasonEnum>(grow.HarvestSeason));
+        sb.AppendLine(" harvest.");
+        return sb.ToString();
+    }
+
+    private string GetFertilizeDetail(PlantGrowInstructionViewModel grow)
+    {
+        System.Text.StringBuilder sb = new();
+        sb.Append($"{_verifyService.GetDescription(grow.Fertilizer)}");
+        if (grow.FertilizeFrequencyInWeeks.HasValue)
+        {
+            sb.Append($" every {grow.FertilizeFrequencyInWeeks.Value.ToString()} ");
+            sb.AppendFormat(" {0}.", GetWeeks(grow.FertilizeFrequencyInWeeks.Value));
+        }
+        return sb.ToString();
+    }
+
+    private string GetSidlingsFertilizeDetail(PlantGrowInstructionViewModel grow)
+    {
+        System.Text.StringBuilder sb = new();
+        sb.Append($"{_verifyService.GetDescription(grow.FertilizerForSeedlings)}");
+        if (grow.FertilizerFrequencyForSeedlingsInWeeks.HasValue)
+        {
+            sb.Append($"  every {grow.FertilizerFrequencyForSeedlingsInWeeks.Value} ");
+            sb.AppendFormat(" {0}.", GetWeeks(grow.FertilizerFrequencyForSeedlingsInWeeks.Value));
+        }
+        return sb.ToString();
+    }
+
+    private string GetPlantingDetail(PlantGrowInstructionViewModel grow)
+    {
+        System.Text.StringBuilder sb = new();
+        if (grow.PlantingDepthInInches.Equals("Unspecified"))
+        {
+            sb.Append("Sow seed ");
+            sb.Append(_verifyService.GetDescription<PlantingDepthEnum>(grow.PlantingDepthInInches));
+            sb.AppendLine("deep.");
+        }
+        if (grow.SpacingInInches.HasValue)
+        {
+            sb.Append("Plants should be ");
+            sb.AppendLine(grow.SpacingInInches.Value.ToString());
+            sb.AppendLine("in apart");
+        }
+
+        return sb.ToString();
+    }
+
+    private string GetSeedingDetails(PlantGrowInstructionViewModel grow)
+    {
+
+        System.Text.StringBuilder sb = new();
+        if (grow.StartSeedWeeksAheadOfWeatherCondition.HasValue)
+        {
+            sb.Append(grow.StartSeedWeeksAheadOfWeatherCondition.Value.ToString());
+            sb.AppendFormat(" {0} ", GetWeeks(grow.StartSeedWeeksAheadOfWeatherCondition.Value));
+            sb.Append(_verifyService.GetDescription<WeatherConditionEnum>(grow.StartSeedAheadOfWeatherCondition));
+            if (grow.StartSeedWeeksRange.HasValue && grow.StartSeedWeeksRange.Value != 0)
+            {
+                sb.Append(" for ");
+                sb.Append(grow.StartSeedWeeksRange.Value.ToString());
+                sb.AppendFormat(" {0}.", GetWeeks(grow.StartSeedWeeksRange.Value));
+            }
+            if (grow.DaysToSproutMax.HasValue && grow.DaysToSproutMin.HasValue)
+            {
+                sb.Append($"Will germinate in {grow.DaysToSproutMin} to {grow.DaysToSproutMax} days");
+            }
+            sb.AppendLine(". ");
+        }
+        return sb.ToString();
+    }
+
+    private string GetTransplantDetails(PlantGrowInstructionViewModel grow)
+    {
+
+        System.Text.StringBuilder sb = new();
+        if (grow.TransplantWeeksAheadOfWeatherCondition.HasValue)
+        {
+            if (grow.TransplantWeeksAheadOfWeatherCondition.HasValue && grow.TransplantWeeksAheadOfWeatherCondition.Value != 0)
+            {
+                sb.Append(grow.TransplantWeeksAheadOfWeatherCondition.Value.ToString());
+                sb.AppendFormat(" {0} ", GetWeeks(grow.TransplantWeeksAheadOfWeatherCondition.Value));
+            }
+            sb.AppendLine(_verifyService.GetDescription<WeatherConditionEnum>(grow.TransplantAheadOfWeatherCondition));
+            if (grow.TransplantWeeksRange.HasValue && grow.TransplantWeeksRange.Value != 0)
+            {
+                sb.Append(" for ");
+                sb.Append(grow.TransplantWeeksRange.Value.ToString());
+                sb.AppendFormat(" {0}.", GetWeeks(grow.TransplantWeeksRange.Value));
+            }
+            if (!string.IsNullOrEmpty(grow.TransplantInstructions))
+            {
+                sb.AppendLine("");
+                sb.AppendLine(grow.TransplantInstructions);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private string GetWeeks(int value)
+    {
+        return value == 1 ? "week" : "weeks";
+    }
+
+    private string IsCollapsed()
+    {
+        return !IsOpen ? "collapsed" : "";
+    }
+
+    private string IsShow()
+    {
+        return IsOpen ? "show" : "";
+    }
+
+    private string GetAccordionId(string guid)
+    {
+        return String.Format("a{0}", guid);
+    }
+    private void EditPlantGrowInstruction(PlantGrowInstructionViewModel grow)
+    {
+        _navigationManager.NavigateToEditPlantGrowInstruction(grow.PlantId, grow.PlantGrowInstructionId);
+    }
+
+    private void OpenPlantGrowInstructionView(PlantGrowInstructionViewModel grow)
+    {
+        _navigationManager.NavigateToPlantGrowInstruction(grow.PlantId, grow.PlantGrowInstructionId);
+    }
+}
+

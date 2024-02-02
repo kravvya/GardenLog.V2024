@@ -1,0 +1,401 @@
+﻿@page "/addplant/garden_plan/{HarvestCycleId}"
+@page "/editplant/garden_plan/{HarvestCycleId}/plant/{PlantHarvestCycleId}"
+@page "/addplant/garden_plan/{HarvestCycleId}/addplant/{PlantId}/addvariety/{PlantVarietyId}"
+
+@inject ILogger<PlantHarvestFormPage> _logger;
+@inject NavigationManager _navigationManager;
+@inject IHarvestCycleService _harvestService;
+@inject IVerifyService _verifyService;
+@inject IPlantService _plantService;
+
+<Page Title="@_title" Description="@_description" BreadcrumbLinks="@_breadcrumbLinks">
+    <PageContent>
+        <article id="plantHarvestForm">
+            <div class="container">
+                @if (isInitialized && _plantHarvest != null)
+                {
+                    <EditForm EditContext="@editContext" OnValidSubmit="@HandleValidSubmit" class="row g-3">
+                        <FluentValidationValidator />
+                        <CustomValidation @ref="customValidation" />
+
+                        <div class="row mt-3" id="product-variety-grow-container">
+                            <div class="col-11">
+                                <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                    <Header>
+                                        <label for="Plant" class="card-subtitle mb-2 text-light">Plant Detail</label>
+                                    </Header>
+                                    <Body>
+                                        <div class="row mb-3">
+                                            <div class="col-md-2">
+                                                <label for="DesiredNumberOfPlants" class="form-label">Qty</label>
+                                                <InputNumber Class="form-control" @bind-Value="@_plantHarvest.DesiredNumberOfPlants" id="DesiredNumberOfPlants" />
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.DesiredNumberOfPlants)" /></div>
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label for="Plant" class="form-label">Plant</label>
+                                                <InputSelect class="form-select" @bind-Value="_plantHarvest.PlantId" id="Plant" @oninput="@ReloadPlantOptions" disabled="@_isEdit">
+                                                    @if (_plants != null)
+                                                    {
+                                                        @foreach (var item in _plants)
+                                                        {
+                                                            <option Value="@item.PlantId">@item.Name</option>
+                                                        }
+                                                    }
+                                                </InputSelect>
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.PlantName)" /></div>
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <label for="PlantVariety" class="form-label">Variety</label>
+                                                <InputSelect class="form-select" @bind-Value="_plantHarvest.PlantVarietyId" id="PlantVariety">
+                                                    <option value="">Select Variety</option>
+                                                    @if (_varieties != null)
+                                                    {
+                                                        @foreach (var item in _varieties)
+                                                        {
+                                                            <option Value="@item.PlantVarietyId">@item.Name</option>
+                                                        }
+                                                    }
+                                                </InputSelect>
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.PlantVarietyId)" /></div>
+                                            </div>
+
+                                            <div class="col-md-5">
+                                                <label for="GrowthInstruction" class="form-label">Planting Method</label>
+                                                <InputSelect class="form-select" @bind-Value="_plantHarvest.PlantGrowthInstructionId" id="GrowthInstruction" @oninput="@ReloadGrowOptions" disabled="@_isEdit">
+                                                    @if (_growInstructions != null)
+                                                    {
+                                                        @foreach (var item in _growInstructions)
+                                                        {
+                                                            <option Value="@item.PlantGrowInstructionId">@GetGrowInstructionTitle(item)</option>
+                                                        }
+                                                    }
+                                                </InputSelect>
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.PlantGrowthInstructionId)" /></div>
+                                            </div>
+                                        </div>
+                                    </Body>
+                                </FormCard>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3" id="seeding-container" hidden="@_hideSeedDetails">
+                            <div class="col-11">
+                                <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                    <Header>
+                                        <label for="NumbeOfSeeds" class="card-subtitle mb-2 text-light">Seeding Detail</label>
+                                    </Header>
+                                    <Body>
+                                        <div class="d-flex justify-content-start align-items-center flex-wrap mb-3">
+                                            <div class="px-2">
+                                                <label for="NumberOfSeeds">Number of seeds</label>
+                                                <InputNumber Class="form-control" @bind-Value="@_plantHarvest.NumberOfSeeds" id="NumberOfSeeds" />
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.NumberOfSeeds)" /></div>
+                                            </div>
+
+                                            <div class="px-2">
+                                                <label for="SeedingDate">Seeding Date</label>
+                                                <InputDate Class="form-control" @bind-Value="@_plantHarvest.SeedingDate" id="SeedingDate" />
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.SeedingDate)" /></div>
+                                            </div>
+
+                                            <div class="px-2">
+                                                <label for="GerminationDateTime">Germination Date</label>
+                                                <InputDate Class="form-control" @bind-Value="@_plantHarvest.GerminationDate" id="GerminationDateTime" />
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.GerminationDate)" /></div>
+                                            </div>
+
+                                            <div class="px-2">
+                                                <label for="GerminationRate">Germination Rate (%)</label>
+                                                <InputNumber Class="form-control" @bind-Value="@_plantHarvest.GerminationRate" id="GerminationRate" />
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.GerminationRate)" /></div>
+                                            </div>
+
+                                            @if (_seedVendors != null)
+                                            {
+                                                <div class="px-2">
+
+                                                    <label for="SeedVendor" class="form-label">Seed Vendor</label>
+                                                    <InputSelect class="form-select" @bind-Value="_plantHarvest.SeedVendorId" id="SeedVendor">
+                                                        @foreach (var item in _seedVendors)
+                                                        {
+                                                            <option Value="@item.SeedVendorId">@item.Name</option>
+                                                        }
+                                                    </InputSelect>
+                                                    <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.SeedVendorName)" /></div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </Body>
+                                </FormCard>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3" id="transplants-container" hidden="@_hideTransplantDetails">
+                            <div class="col-11">
+                                <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                    <Header>
+                                        <label for="Transplant" class="card-subtitle mb-2 text-light">Transplant</label>
+                                    </Header>
+                                    <Body>
+                                        <div class="d-flex justify-content-start align-items-center flex-wrap">
+                                            <div class="px-2">
+                                                <label for="TransplantDateTime">Transplant Date</label>
+                                                <InputDate Class="form-control" @bind-Value="@_plantHarvest.TransplantDate" id="TransplantDateTime" />
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.TransplantDate)" /></div>
+                                            </div>
+
+                                            <div class="px-2">
+                                                <label for="numberOfPlants">Number of transplants</label>
+                                                <InputNumber Class="form-control" @bind-Value="@_plantHarvest.NumberOfTransplants" id="NumberOfTransplants" />
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.NumberOfTransplants)" /></div>
+                                            </div>
+                                        </div>
+                                    </Body>
+                                </FormCard>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3" id="harvest-container">
+                            <div class="col-11">
+                                <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                    <Header>
+                                        <label for="FirstHarvestDate" class="card-subtitle mb-2 text-light">Harvest</label>
+                                    </Header>
+                                    <Body>
+                                        <div class="d-flex justify-content-start align-items-center flex-wrap">
+                                            <div class="px-2">
+                                                <label for="FirstHarvestDate">First Harvest Date</label>
+                                                <InputDate Class="form-control" @bind-Value="@_plantHarvest.FirstHarvestDate" id="FirstHarvestDate" />
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.FirstHarvestDate)" /></div>
+                                            </div>
+
+                                            <div class="px-2">
+                                                <label for="LastHarvestDate">Last Harvest Date</label>
+                                                <InputDate Class="form-control" @bind-Value="@_plantHarvest.LastHarvestDate" id="LastHarvestDate" />
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.LastHarvestDate)" /></div>
+                                            </div>
+
+                                            <div class="px-2">
+                                                <label for="TotalWeightInPounds">Total Weight (lb)</label>
+                                                <InputNumber Class="form-control" @bind-Value="@_plantHarvest.TotalWeightInPounds" id="TotalWeightInPounds" />
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.TotalWeightInPounds)" /></div>
+                                            </div>
+
+                                            <div class="px-2">
+                                                <label for="TotalItems">Total Items</label>
+                                                <InputNumber Class="form-control" @bind-Value="@_plantHarvest.TotalItems" id="TotalItems" />
+                                                <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.TotalItems)" /></div>
+                                            </div>
+                                        </div>
+                                    </Body>
+                                </FormCard>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3" id="notes-container">
+                            <div class="col-11">
+                                <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                    <Header>
+                                        <label for="Notes" class="card-subtitle mb-2 text-light">Notes</label>
+                                    </Header>
+                                    <Body>
+                                        <InputTextArea Class="form-control" Id="Notes" @bind-Value="@_plantHarvest.Notes" rows="3" />
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plantHarvest.Notes)" /></div>
+                                    </Body>
+                                </FormCard>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-3">
+                            <div class="modal-footer justify-content-between">
+                                @* <button type="button" class="btn btn-default text-danger disabled">Delete</button>*@
+                                <span>
+                                    <button type="submit" class="btn btn-primary" title="Save Changes">Save <span class="bi bi-file-earmark-post">&nbsp;</span></button>
+                                    <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() => ClosePage())">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                                </span>
+                            </div>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </article>
+    </PageContent>
+</Page>
+
+@code {
+    [Parameter]
+    public string PlantHarvestCycleId { get; set; } = string.Empty;
+    [Parameter]
+    public string HarvestCycleId { get; set; } = string.Empty;
+    [Parameter]
+    public string? PlantId { get; set; } = string.Empty;
+    [Parameter]
+    public string? PlantVarietyId { get; set; } = string.Empty;
+
+    private List<BreadcrumbLink> _breadcrumbLinks = new();
+    private string _title = string.Empty;
+    private string _description = string.Empty;
+    private bool isInitialized = false;
+    private bool _isEdit => !string.IsNullOrWhiteSpace(PlantHarvestCycleId) ? true : false;
+    private bool _hideSeedDetails = true;
+    private bool _hideTransplantDetails = true;
+
+    private CustomValidation? customValidation;
+    private EditContext? editContext;
+
+    private PlantHarvestCycleModel? _plantHarvest;
+    private List<PlantGrowInstructionViewModel>? _growInstructions;
+    private HarvestCycleModel? _harvest;
+
+    private List<PlantModel>? _plants;
+    private List<PlantVarietyModel>? _varieties = null;
+    private List<SeedVendorModel>? _seedVendors = null;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        _breadcrumbLinks.Add(new BreadcrumbLink("Garden Plans", _navigationManager.GetGardenPlansUrl(), false));
+        _harvest = await _harvestService.GetHarvest(HarvestCycleId, true);
+
+        _breadcrumbLinks.Add(new BreadcrumbLink(_harvest.HarvestCycleName, _navigationManager.GetGardenPlanUrl(HarvestCycleId), false));
+
+        if (_isEdit)
+        {
+            _plantHarvest = await _harvestService.GetPlantHarvest(HarvestCycleId, PlantHarvestCycleId, true);
+
+            if (_plantHarvest == null)
+            {
+                ClosePage();
+                return;
+            }
+            await ReloadPlantOptions(null);
+            _title = string.IsNullOrEmpty(_plantHarvest.PlantVarietyId) ? _plantHarvest.PlantName : $"{_plantHarvest.PlantName} - {_plantHarvest.PlantVarietyName}";
+            _description = "";
+            _breadcrumbLinks.Add(new BreadcrumbLink(_title, _navigationManager.GetGardenPlanEditPlantUrl(HarvestCycleId, PlantHarvestCycleId), true));
+        }
+        else
+        {
+            _plantHarvest = new();
+            _plantHarvest.HarvestCycleId = HarvestCycleId;
+
+            if (!string.IsNullOrWhiteSpace(PlantId))
+            {
+                _plantHarvest.PlantId = PlantId;
+                await ReloadPlantOptions(new ChangeEventArgs() { Value = PlantId });
+            }
+
+            if (!string.IsNullOrWhiteSpace(PlantVarietyId))
+            {
+                _plantHarvest.PlantVarietyId = PlantVarietyId;
+            }
+
+            _title = "Add Plant";
+            _description = "";
+            _breadcrumbLinks.Add(new BreadcrumbLink("Add Plant", _navigationManager.GetGardenPlanAddPlantUrl(HarvestCycleId), true));
+        }
+
+        _plants = await _plantService.GetPlants(false);
+
+        editContext = new(_plantHarvest);
+        editContext.SetFieldCssClassProvider(new BootstrapValidationFieldClassProvider());
+        isInitialized = true;
+        StateHasChanged();
+    }
+
+    protected async Task ReloadPlantOptions(ChangeEventArgs? e)
+    {
+        _varieties = null;
+        _growInstructions = null;
+
+        string? plantId = (e != null && e.Value != null ? (string)e.Value : _plantHarvest?.PlantId);
+
+        if (!string.IsNullOrWhiteSpace(plantId))
+        {
+            var getGrowInstructions = _plantService.GetPlantGrowInstructions(plantId, true);
+            var getVarieties = _plantService.GetPlantVarieties(plantId, true);
+
+            await Task.WhenAll(getGrowInstructions, getVarieties);
+
+            _growInstructions = getGrowInstructions.Result;
+            _varieties = getVarieties.Result;
+
+            if (_plantHarvest != null && _growInstructions?.Count > 0)
+            {
+                //if we are in edit mode and there is already Grow instruction selected. Do not overwrite with first default option
+                if(_plantHarvest.PlantGrowthInstructionId == null)
+                {
+                    _plantHarvest.PlantGrowthInstructionId = _growInstructions.First().PlantGrowInstructionId;
+                }
+               
+                ReloadGrowOptions(new ChangeEventArgs() { Value = _plantHarvest.PlantGrowthInstructionId });
+            }
+        }
+        StateHasChanged();
+    }
+
+    protected void ReloadGrowOptions(ChangeEventArgs e)
+    {
+        if (e == null || e.Value == null) return;
+        string growId = (string)e.Value;
+
+        if (_growInstructions != null && !string.IsNullOrEmpty(growId))
+        {
+            var grow = _growInstructions.First(g => g.PlantGrowInstructionId == growId);
+
+            _hideSeedDetails = grow.PlantingMethod == PlantCatalog.Contract.Enum.PlantingMethodEnum.Transplanting;
+            _hideTransplantDetails = grow.PlantingMethod == PlantCatalog.Contract.Enum.PlantingMethodEnum.DirectSeed;
+        }
+    }
+
+    private string GetGrowInstructionTitle(PlantGrowInstructionViewModel grow)
+    {
+        System.Text.StringBuilder sb = new();
+        sb.Append($"{grow.Name} for ");
+        sb.Append(_verifyService.GetDescription<HarvestSeasonEnum>(grow.HarvestSeason));
+        sb.AppendLine(" harvest.");
+        return sb.ToString();
+    }
+
+    protected async Task HandleValidSubmit()
+    {
+        _logger.Log(LogLevel.Information, "Plant Harvest Form passed validations");
+        customValidation?.ClearErrors();
+
+
+        if (!string.IsNullOrWhiteSpace(_plantHarvest!.PlantVarietyId) && _varieties != null)
+        {
+            _plantHarvest.PlantVarietyName = _varieties.First(p => p.PlantVarietyId == _plantHarvest.PlantVarietyId).Name;
+        }
+
+        if (!_isEdit)
+        {
+            _plantHarvest.PlantName = _plants!.First(p => p.PlantId == _plantHarvest.PlantId).Name;
+            _plantHarvest.PlantGrowthInstructionName = _growInstructions!.First(p => p.PlantGrowInstructionId == _plantHarvest.PlantGrowthInstructionId).Name;
+            _plantHarvest.SpacingInInches = _growInstructions!.First(g => g.PlantGrowInstructionId == _plantHarvest.PlantGrowthInstructionId).SpacingInInches;
+            _plantHarvest.PlantsPerFoot = _growInstructions!.First(g => g.PlantGrowInstructionId == _plantHarvest.PlantGrowthInstructionId).PlantsPerFoot;
+            _plantHarvest.PlantingMethod = (PlantHarvest.Contract.Enum.PlantingMethodEnum)Enum.ToObject(typeof(PlantHarvest.Contract.Enum.PlantingMethodEnum), (int)_growInstructions!.First(p => p.PlantGrowInstructionId == _plantHarvest.PlantGrowthInstructionId).PlantingMethod);
+        }
+
+        ApiResponse response = (_isEdit) ? await _harvestService.UpdatePlantHarvest(_plantHarvest) : await _harvestService.CreatePlantHarvest(_plantHarvest);
+
+        if (response.ValidationProblems != null)
+        {
+            customValidation?.DisplayErrors(response.ValidationProblems);
+        }
+
+        if (response.IsSuccess)
+        {
+            ClosePage();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    protected void ClosePage()
+    {
+        _navigationManager.NavigateToGardenPlan(HarvestCycleId);
+
+    }
+
+}

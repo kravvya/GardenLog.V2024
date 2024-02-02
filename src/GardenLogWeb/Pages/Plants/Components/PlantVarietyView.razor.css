@@ -1,0 +1,88 @@
+﻿.variety-facts-list .variety-facts-term {
+    color: #709a41;
+    text-transform: uppercase;
+}
+
+.variety-facts-list .variety-facts-item {
+    border-bottom: 2px solid #c5c5c5;
+}
+.tags {
+    border: none;
+    box-sizing: border-box;
+    padding: 0em 0.5em;
+    display: -webkit-box;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: inherit;
+}
+
+    .tags > ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .tags ul li {
+        margin: 0.5em 0.2em;
+        padding: 0.5em;
+        color: white;
+        background-color: #709a41;
+        border-radius: 5px;
+    }
+
+        .tags ul li a {
+            padding: 0.5em;
+        }
+
+.colors {
+    border: none;
+    box-sizing: border-box;
+    padding: 0em 0.5em;
+    display: -webkit-box;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: inherit;
+}
+
+    .colors > ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .colors ul li {
+        margin: 0.5em 0.2em;
+        color: white;
+    }
+
+.sources {
+    box-sizing: border-box;
+    padding: 0em 0.5em;
+    display: -webkit-box;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: inherit;
+}
+
+    .sources > ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .sources ul li {
+        margin: 0.5em 0.2em;
+        padding: 0.5em;
+        color: black;
+        border-radius: 5px;
+    }
+
+        .sources ul li a {
+            padding: 0.5em;
+        }

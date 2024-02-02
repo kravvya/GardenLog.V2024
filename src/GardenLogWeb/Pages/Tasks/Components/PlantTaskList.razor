@@ -1,0 +1,433 @@
+﻿@inject IPlantTaskService _taskService;
+@inject IVerifyService _verifyService;
+@inject IHarvestCycleService _harvestService;
+@inject NavigationManager _navigationManager;
+
+<ModalView OnCloseModal="ClosePlantTaskFormModal" @ref="_plantTaskFormModal">
+    <Body>
+        <PlantTaskForm OnClose=@ClosePlantTaskForm @ref=_plantTaskForm />
+    </Body>
+</ModalView>
+
+<ModalView OnCloseModal="ClosePlantHarvestMiniFormModal" @ref="_plantHarvestMiniFormModal">
+    <Body>
+        <PlantHarvestCycleMiniForm OnClose=@ClosePlantHarvestCycleMiniForm @ref=_plantHarvestMiniForm />
+    </Body>
+</ModalView>
+<ModalView OnCloseModal="CloseWorkLogFormModal" @ref="_workLogFormModal">
+    <Body>
+        <WorkLogForm OnClose=@CloseWorkLogForm @ref=_workLogForm />
+    </Body>
+</ModalView>
+
+<div class="row">
+
+    <div id="task-filter" class="col-md-2 d-md-block collapse">
+        <h3 class="text-uppercase text-primary d-none d-md-block">Filters</h3>
+        <EditForm Model=@_filter>
+            <div class="d-flex flex-wrap">
+
+                <div id="plantname-filter" class="my-3 mx-1">
+                    <h5 class="text-uppercase text-primary">Plant</h5>
+                    <InputText class="form-control" @bind-Value=_filter!.PlantName />
+                    <a id="clear-name" role='button' onclick=@(() => ClearName())>Clear</a>
+                </div>
+
+                <div id="status-filter" class="my-3 mx-1">
+                    <h5 class="text-uppercase text-primary">Status</h5>
+                    <div class="form-check">
+                        <InputCheckbox class="form-check-input" type="checkbox" @bind-Value="_filter.IsPastDue" id="pastDue"/>
+                        <label class="form-check-label" for="pastDue">
+                            Is Past Due
+                        </label>
+                    </div>
+                     <div class="form-check">
+                        <InputCheckbox class="form-check-input" type="checkbox" @bind-Value="_filter.IsDueSoon" id="dueSoon"/>
+                        <label class="form-check-label" for="dueSoon">
+                            Due in couple days
+                        </label>
+                    </div>
+                    <a id="clear-name" role='button' onclick=@(() => ClearStatus())>Clear</a>
+                </div>
+
+                <div id="type-filter" class="my-3 mx-1">
+                    <h5 class="text-uppercase text-primary">Type</h5>
+                    @foreach (var type in _filter.WorkLogReasonEnum)
+                    {
+                        @if (_tasks.Any(t => t.Type.ToString().Equals(type.EnumItem.Key)))
+                        {
+                            <div class="form-check">
+                                <InputCheckbox class="form-check-input" type="checkbox" @bind-Value="type.IsSelected" id="@type.EnumItem.Key" />
+                                <label class="form-check-label" for="@type.EnumItem.Key">
+                                    @type.EnumItem.Value
+                                </label>
+                            </div>
+                        }
+                    }
+                    <a id="clear-type" role='button' onclick=@(() => Clear(_filter.WorkLogReasonEnum))>Clear</a>
+                </div>
+
+                <div id="Completed-filter" class="my-3 mx-1">
+                    <h5 class="text-uppercase text-primary">Completed Tasks</h5>
+                    <div class="form-check">
+                        <InputCheckbox class="form-check-input" type="checkbox" @bind-Value="_filter.ShowCompletedTasks" id="showCompletedTasks" />
+                        <label class="form-check-label" for="showCompletedTasks">
+                            Show Completed Tasks
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+    <div id="toggle-filter" class="d-md-none py-2">
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#task-filter" aria-expanded="false" aria-controls="task-filter">Filters</button>
+    </div>
+
+    <div id="tasks" class="col-md-9">
+        <section>
+            <article id="taskList">
+                @if (FilteredTasks == null)
+                {
+                    <p><em>Empty</em></p>
+                    <div class="my-2"><div @onclick="(() => AddTask())" class="btn d-inline-block  btn-secondary"><span class="bi bi-plus-lg">Add</span></div></div>
+                }
+                else
+                {
+                    <div class="table-responsive-md  d-none d-sm-block">
+                        <div class="d-flex justify-content-end"><div @onclick="(() => AddTask())" class="btn d-inline-block  btn-secondary"><span class="bi bi-plus-lg">Add Custom Task</span></div></div>
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col"></th>
+                                    <th scope="col">Reason</th>
+                                    <th scope="col">Plant</th>
+                                    <th scope="col">Start</th>
+                                    <th scope="col">End</th>
+                                    <th scope="col">Note</th>
+                                    <th scope="col">Completed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var task in FilteredTasks.OrderBy(c => c.TargetDateStart))
+                                {
+                                    <tr class="@GetTableClass(task, "row")">
+                                        <td class="@GetTableClass(task, "column")">&nbsp;&nbsp;</td>
+                                        <td>
+                                            @(
+                                                _verifyService.GetDescription<WorkLogReasonEnum>(task.Type)
+                                                )
+                                        </td>
+                                        <td><a @onclick=@(() => ViewPlantHarvestCycle(task)) class="text-dark" role='button'><span class="fw-semibold">@task.PlantName</span></a></td>
+                                        <td>@task.TargetDateStart.ToString("MM/dd")</td>
+                                        <td>@task.TargetDateEnd.ToString("MM/dd")</td>
+                                        <td colspan="1">@task.Notes</td>
+                                        <td class="align-middle">
+                                            @if (task.CompletedDateTime.HasValue)
+                                            {
+                                                @task.CompletedDateTime.Value.ToShortDateString()
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-info" type="button" role="navigation" @onclick=@(() => ResolveTask(task))>
+                                                    <span class="bi bi-check-lg">&nbsp;</span>
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row d-block d-sm-none">
+                        @foreach (var task in FilteredTasks.OrderBy(c => c.TargetDateStart))
+                        {
+                            <div class="col-sm-6">
+                                <div class="card mb-2 @GetCardClass(task)">
+                                    <div class="card-header">
+                                        @task.Title
+                                    </div>
+                                    <div class="card-body row task-facts_list ">
+                                        <dl class="col">
+                                            <dt class="task-facts_term">Plant:</dt>
+                                            <dd class="task-facts-item"><a @onclick=@(() => ViewPlantHarvestCycle(task)) class="text-dark" role='button'><span class="fw-semibold">@task.PlantName</span></a></dd>
+                                            <dt class="task-facts_term">Task Due:</dt>
+                                            <dd class="task-facts-item"> @task.TargetDateStart.ToShortDateString() - @task.TargetDateEnd.ToShortDateString()</dd>
+                                            <dt class="task-facts_term">Notes:</dt>
+                                            <dd class="task-facts-item">@task.Notes</dd>
+                                        </dl>
+                                    </div>
+                                    <div class="card-footer">
+                                        @if (task.CompletedDateTime.HasValue)
+                                        {
+                                            <div class="card-body row task-facts_list ">
+                                                <dl class="col">
+                                                    <dt class="task-facts_term">Completed On:</dt>
+                                                    <dd class="task-facts-item">@task.CompletedDateTime.Value.ToShortDateString()</dd>
+                                                </dl>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-info" type="button" role="navigation" @onclick=@(() => ResolveTask(task))>
+                                                <span class="bi bi-check-lg">&nbsp;</span>
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-end">
+                            <button @onclick="(() => AddTask())" class="btn btn-secondary"><span class="bi bi-plus-lg">Add</span></button>
+                        </div>
+
+                    </div>
+                }
+            </article>
+        </section>
+    </div>
+</div>
+
+
+@code {
+    private ModalView? _plantTaskFormModal;
+    private PlantTaskForm? _plantTaskForm;
+    private ModalView? _plantHarvestMiniFormModal;
+    private PlantHarvestCycleMiniForm? _plantHarvestMiniForm;
+    private ModalView? _workLogFormModal;
+    private WorkLogForm? _workLogForm;
+    private TaskFilter? _filter;
+    private DateTime _now = DateTime.Now;
+
+    private List<PlantTaskModel> _tasks { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        _filter = new TaskFilter(_verifyService, ShowCompletedTasksChanged);
+
+    }
+
+    public async void Initialize()
+    {
+        _tasks = await _taskService.GetActivePlantTasks(false);
+
+        StateHasChanged();
+    }
+
+    private IQueryable<PlantTaskModel>? FilteredTasks
+    {
+        get
+        {
+            var result = _tasks.AsEnumerable();
+
+            if (_filter == null) return result.AsQueryable();
+
+            if (_filter.WorkLogReasonEnum.Exists(cb => cb.IsSelected))
+            {
+                result = _tasks?.Where(t => _filter.WorkLogReasonEnum.Exists(cb => cb.IsSelected && cb.EnumItem.Key.Equals(t.Type.ToString())));
+            }
+
+
+            if (!string.IsNullOrEmpty(_filter.PlantName))
+            {
+                result = result?.Where(t => t.PlantName.Contains(_filter.PlantName, StringComparison.CurrentCultureIgnoreCase));
+            }
+
+
+            if (_filter.IsDueSoon || _filter.IsPastDue)
+            {
+                result = result?.Where(t => _filter.IsPastDue && t.TargetDateStart < _now || _filter.IsDueSoon &&  t.TargetDateStart > _now && t.TargetDateStart < _now.AddDays(2));
+            }
+
+            return result?.AsQueryable();
+        }
+    }
+
+    public void ClearName()
+    {
+        if (_filter == null) return;
+        _filter.PlantName = string.Empty;
+    }
+
+    private void ClearStatus()
+    {
+        if (_filter == null) return;
+        _filter.IsDueSoon = false;
+        _filter.IsPastDue = false;
+    }
+
+    public void Clear(List<CheckableEnum> options)
+    {
+        options.ForEach(o => o.IsSelected = false);
+    }
+
+    private async Task ShowCompletedTasksChanged(bool showCompeltedTasks)
+    {
+        if (showCompeltedTasks)
+            _tasks = await _taskService.GetPlantTasks(false);
+        else
+        {
+            _tasks = await _taskService.GetActivePlantTasks(false);
+        }
+        StateHasChanged();
+    }
+
+    private async Task AddTask()
+    {
+        if (_plantTaskForm == null || _plantTaskFormModal == null) return;
+
+        _plantTaskForm.Initialize();
+        await _plantTaskFormModal.OpenModal("Add new task", GlobalConstants.MODAL_FORM_COLOR);
+        StateHasChanged();
+    }
+
+    private async Task ResolveTask(PlantTaskViewModel task)
+    {
+        if (_workLogForm == null || _workLogFormModal == null || _plantHarvestMiniForm == null || _plantHarvestMiniFormModal == null) return;
+
+        switch (task.Type)
+        {
+            case WorkLogReasonEnum.FertilizeIndoors:
+            case WorkLogReasonEnum.FertilizeOutside:
+            case WorkLogReasonEnum.IssueResolution:
+            case WorkLogReasonEnum.Maintenance:
+                _workLogForm.Initialize(await _harvestService.BuildRelatedEntities(RelatedEntityTypEnum.PlantHarvestCycle, task.PlantHarvestCycleId, task.HarvestCycleId), task.Type);
+                await _workLogFormModal.OpenModal("Add new note", GlobalConstants.MODAL_FORM_COLOR);
+                break;
+            case WorkLogReasonEnum.Harden:
+                _workLogForm.Initialize(await _harvestService.BuildRelatedEntities(RelatedEntityTypEnum.PlantHarvestCycle, task.PlantHarvestCycleId, task.HarvestCycleId), task.Type);
+                await _workLogFormModal.OpenModal("Harden Off", GlobalConstants.MODAL_FORM_COLOR);
+                break;
+            default:
+                _plantHarvestMiniForm.Initialize(task.HarvestCycleId, task.PlantHarvestCycleId, task.Type);
+                await _plantHarvestMiniFormModal.OpenModal("Resolve task", GlobalConstants.MODAL_FORM_COLOR);
+                break;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task ClosePlantTaskFormModal()
+    {
+        if (_plantTaskFormModal == null) return;
+        await _plantTaskFormModal.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task ClosePlantTaskForm(PlantTaskModel task)
+    {
+        if (_plantTaskFormModal == null) return;
+        await _plantTaskFormModal.CloseModal();
+
+        if (_filter == null) return;
+
+        if (_filter.ShowCompletedTasks)
+            _tasks = await _taskService.GetPlantTasks(false);
+        else
+            _tasks = await _taskService.GetActivePlantTasks(false);
+
+
+        StateHasChanged();
+    }
+
+    private async Task ClosePlantHarvestMiniFormModal()
+    {
+        if (_plantHarvestMiniFormModal == null) return;
+
+        await _plantHarvestMiniFormModal.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task ClosePlantHarvestCycleMiniForm(PlantHarvestCycleModel task)
+    {
+        if (_plantHarvestMiniFormModal == null) return;
+
+        await _plantHarvestMiniFormModal.CloseModal();
+
+        if (_filter == null) return;
+
+        if (_filter.ShowCompletedTasks)
+            _tasks = await _taskService.GetPlantTasks(true);
+        else
+            _tasks = await _taskService.GetActivePlantTasks(true);
+
+
+        StateHasChanged();
+    }
+
+    private string GetTableClass(PlantTaskModel task, string level)
+    {
+        if (level.Equals("row")&& !task.CompletedDateTime.HasValue)
+        {
+            //we are past due - red alert
+            if (task.TargetDateStart < _now) return "table-danger";
+
+            if (task.TargetDateStart < _now.AddDays(2)) return "table-warning";
+        }
+        else
+        {
+            switch (task.Type)
+            {
+                case WorkLogReasonEnum.Harvest:
+                    return "table-success";
+                case WorkLogReasonEnum.Issue:
+                    return "table-danger";
+                case WorkLogReasonEnum.IssueResolution:
+                    return "table-warning";
+            }
+        }
+
+        return "";
+    }
+
+    private string GetCardClass(PlantTaskModel task)
+    {
+        if (!task.CompletedDateTime.HasValue)
+        {
+            //we are past due - red alert
+            if (task.TargetDateStart < _now) return "text-bg-danger";
+
+            if (task.TargetDateStart < _now.AddDays(2)) return "text-bg-warning";
+        }
+
+        switch (task.Type)
+        {
+            case WorkLogReasonEnum.Harvest:
+                return "text-bg-success";
+            case WorkLogReasonEnum.Issue:
+                return "text-bg-danger";
+            case WorkLogReasonEnum.IssueResolution:
+                return "text-bg-warning";
+            default:
+                return "bg-light";
+        }
+    }
+
+    private async Task CloseWorkLogFormModal()
+    {
+        if (_workLogFormModal == null) return;
+
+        await _workLogFormModal.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task CloseWorkLogForm(WorkLogModel workLog)
+    {
+        if (_workLogFormModal == null) return;
+        await _workLogFormModal.CloseModal();
+
+        if (_filter == null) return;
+
+        if (_filter.ShowCompletedTasks)
+            _tasks = await _taskService.GetPlantTasks(true);
+        else
+            _tasks = await _taskService.GetActivePlantTasks(true);
+
+        StateHasChanged();
+    }
+
+    protected void ViewPlantHarvestCycle(PlantTaskModel task)
+    {
+        _navigationManager.NavigateToGardenPlanEditPlant(task.HarvestCycleId, task.PlantHarvestCycleId);
+    }
+}

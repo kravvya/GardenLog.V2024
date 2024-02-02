@@ -1,0 +1,17 @@
+﻿<div id="page-title">
+    <h1> @Title</h1>
+    <p>@Description</p>
+</div>
+
+<PageTitle>@Title</PageTitle>
+
+<HeadContent>
+    <meta name="description" content="@Description">
+</HeadContent>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+    [Parameter]
+    public string Description { get; set; } = string.Empty;
+}

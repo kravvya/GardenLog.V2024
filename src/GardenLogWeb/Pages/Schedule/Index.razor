@@ -1,0 +1,120 @@
+﻿@page "/schedule/{HarvestCycleId}"
+@page "/schedule"
+@using GardenLogWeb.Pages.Schedule.Components;
+
+@inject IHarvestCycleService _harvestService;
+@inject NavigationManager _navigationManager;
+@inject IToastService _toastService;
+
+<Page Title="Calendar" Description="Garden Plan Schedule" BreadcrumbLinks="@_breadcrumbLinks">
+    <PageContent>
+        <div class="d-flex flex-row text-center justify-content-start">
+            <button type="button" class="btn btn-outline-primary m-1" title="View Calendar Graph" onclick="@(() => LoadGraph())"><span class="bi bi-bar-chart-steps">&nbsp;</span></button>
+            <button type="button" class="btn btn-outline-primary m-1" title="View Calendar Table" onclick="@(() => LoadTable())"><span class="bi bi-table">&nbsp;</span></button>
+        </div>
+        <Calendar @ref=_calendar />
+        <CalendarTable @ref=_calendarTable  />
+    </PageContent>
+</Page>
+
+@code {
+    [Parameter]
+    public string HarvestCycleId { get; set; } = string.Empty;
+
+    private List<BreadcrumbLink> _breadcrumbLinks = new();
+    private Calendar? _calendar;
+    private CalendarTable? _calendarTable;
+
+    private bool _isViewGraph = true;
+    private string _title=string.Empty;
+    private string _description=string.Empty;
+
+    private HarvestCycleModel? _harvest;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SetupPage();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (_harvest != null && _calendar != null && !_calendar.IsInitialized && _isViewGraph)
+            _calendar.Initialize(_harvest);
+    }
+
+    private async Task SetupPage()
+    {
+        _description = string.Empty;
+
+        await GetHarvest();
+
+        if (_harvest == null) return;
+
+        if (!string.IsNullOrEmpty(_harvest.GardenName))
+        {
+            _title = $"{_harvest.HarvestCycleName} at {_harvest.GardenName}";
+        }
+        else
+        {
+            _title = _harvest.HarvestCycleName;
+        }
+        _breadcrumbLinks.Add(new BreadcrumbLink("Garden Plans", _navigationManager.GetGardenPlansUrl(), false));
+        _breadcrumbLinks.Add(new BreadcrumbLink(_harvest.HarvestCycleName, _navigationManager.GetGardenPlanUrl(_harvest.HarvestCycleId), false));
+        _breadcrumbLinks.Add(new BreadcrumbLink("Calendar", _navigationManager.GetGardenScheduleUrl(_harvest.HarvestCycleId), true));
+
+
+    }
+
+    private async Task GetHarvest()
+    {
+        if (string.IsNullOrWhiteSpace(HarvestCycleId))
+        {
+            var harvests = await _harvestService.GetHarvestList(false);
+
+            if (harvests.Count == 0)
+            {
+                _toastService.ShowWarning("Please create Garden Plan before trying to use Scheduler.");
+            }
+
+            if (harvests.Count == 1)
+            {
+                _harvest = harvests[0];
+                return;
+            }
+
+            _harvest = harvests.Where(h => !h.EndDate.HasValue).FirstOrDefault();
+            if (_harvest == null)
+            {
+                _harvest = harvests.OrderByDescending(h => h.StartDate).First();
+            }
+        }
+        else
+        {
+            _harvest = await _harvestService.GetHarvest(HarvestCycleId, true);
+        }
+    }
+
+    private void LoadGraph()
+    {
+        if (_isViewGraph) return;
+
+        if (_harvest != null && _calendar!= null && !_calendar.IsInitialized)
+            _calendar.Initialize(_harvest);
+
+        if (_calendarTable!=null) _calendarTable.Hide();
+        _isViewGraph = true;
+        StateHasChanged();
+    }
+
+    private void LoadTable()
+    {
+        if (!_isViewGraph) return;
+
+        if (_harvest != null && _calendarTable!= null && !_calendarTable.IsInitialized)
+            _calendarTable.Initialize(_harvest);
+
+        if (_calendar != null) _calendar.Hide();
+        _isViewGraph = false;
+        StateHasChanged();
+    }
+}

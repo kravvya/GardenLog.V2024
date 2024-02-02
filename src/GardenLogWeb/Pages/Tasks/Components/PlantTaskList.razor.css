@@ -1,0 +1,8 @@
+﻿.task-facts_list .task-facts_term {
+    color: #709a41;
+    text-transform: uppercase;
+}
+
+.task-facts_list .task-facts-item {
+    border-bottom: 2px solid #c5c5c5;
+}

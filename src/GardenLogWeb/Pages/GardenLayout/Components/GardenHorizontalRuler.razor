@@ -1,0 +1,34 @@
+﻿@if (Garden != null && Settings!= null)
+{
+    <svg width="@Settings.SvgWidth" height="20" viewBox="@Settings.StartX @Settings.StartY @Settings.ViewBoxX 15">
+        <g id="tick-groups">
+
+            <line x1="0" y1="0" x2="@Settings.SvgWidth" y2="0" stroke="#000000" stroke-width="1"></line>
+
+            @for (int i = 0; i <= Garden.Width; i++)
+            {
+                <line x1="@(i*GardenPlanSettings.TickFootWidth)" y1="0" x2="@(i*GardenPlanSettings.TickFootWidth)" y2="@Settings.TickLength" stroke="#000000" stroke-width="1"></line>
+            }
+
+            <text x="4" y="15" class="label" fill="#000000" stroke-width="1">ft</text>
+
+            @for (int i = 1; i <= Garden.Width; i++)
+            {
+                <text><text x="@(4+GardenPlanSettings.TickFootWidth*i)" y="15" class="label" fill="#000000" stroke-width="1">@i</text></text>
+            }
+        </g>
+
+        <g id="division-tick-groups" stroke="#000000">
+            @for (int i = 0; i <= Garden.Width * 12; i++)
+            {
+                <line x1="@(i*@Settings.TickInchHeight)" y1="0" x2="@(i*@Settings.TickInchHeight)" y2="@Settings.DivisionLength"></line>
+            }
+        </g>
+    </svg>
+}
+@code {
+    [Parameter] public GardenModel? Garden { get; set; }
+
+    [Parameter] public GardenPlanSettings? Settings { get; set; }
+
+}    

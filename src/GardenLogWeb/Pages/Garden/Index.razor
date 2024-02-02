@@ -1,0 +1,23 @@
+﻿@page "/gardens"
+
+@inject IGardenService _gardenService;
+@inject NavigationManager _navigationManager;
+
+<Page Title="My Gardens" Description="Review, Edit and Create Gardens" BreadcrumbLinks="@_breadcrumbLinks">
+    <PageContent>
+        <GardenList @ref=_gardenList />
+    </PageContent>
+</Page>
+
+@code {
+    private List<BreadcrumbLink> _breadcrumbLinks = new();
+
+    private GardenList? _gardenList;
+
+    protected override void OnInitialized()
+    {
+        _breadcrumbLinks.Add(new BreadcrumbLink("Gardens", _navigationManager.GetGardensUrl(), true)); ;
+
+    }
+}
+ 

@@ -1,0 +1,85 @@
+﻿@page "/userAuth"
+@using System.Security.Claims
+@*//@inject IAuthorizationService AuthorizationService*@
+@*@inject IAccessTokenProvider TokenProvider*@
+
+<PageTitle>Index</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        The user (context.User.FindFirst(ClaimTypes.Name)?.Value): @(context.User.FindFirst(ClaimTypes.Name)?.Value) is authorized
+        <br/>
+        The other user (context.User.Identity): @context.User.Identity?.Name!
+         <br/>
+        @foreach (var claim in context.User.Claims)
+        {
+                <p>@claim.Type - @claim.Value</p>
+        }
+    </Authorized>
+    <NotAuthorized>
+        Please login to see all the claims, <a href="authentication/login">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
+
+<AuthorizeView Roles="master-gardener">
+    Only Administrators can see this.
+</AuthorizeView>
+
+<AuthorizeView Roles="write:plants">
+   Only write-plants see this
+</AuthorizeView>
+
+<br/>
+<button @onclick="@DoSomething">Do something important</button>
+
+
+<p>@auth</p>
+<p>@role</p>
+<p>@role2</p>
+<p>@userId</p>
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+
+    private string auth = "";
+    private string role = "";
+    private string role2 = "";
+    private string userId = "";
+
+    private async Task DoSomething()
+    {
+        if (authenticationState is not null)
+        {
+            var authState = await authenticationState;
+            var user = authState?.User;
+
+
+            if (user is not null)
+            {
+                if (user.Identity is not null && user.Identity.IsAuthenticated)
+                {
+                    auth = "authenitcated";
+                }
+
+                if (user.IsInRole("master-gardener"))
+                {
+                    role = "master-gardener";
+                }
+
+                if (user.IsInRole("write:grow-instructions"))
+                {
+                    role2 = "write:grow-instructions";
+                }
+
+                if (user.Claims != null)
+                {
+                    userId = user.Claims.FirstOrDefault(c => c.Type == "sub")!.Value;
+                }
+            }
+        }
+
+      
+    }
+}

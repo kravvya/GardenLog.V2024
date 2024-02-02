@@ -1,0 +1,27 @@
+﻿svg .selector {
+    fill: #709a41;
+}
+
+rect.selector, line.selector {
+    stroke-width: 3;
+    stroke-dasharray: 14, 5;
+    stroke: #709a41;
+    fill: none;
+}
+
+
+svg .null-left-resizer {
+    cursor: w-resize;
+}
+
+svg .bottom-null-resizer {
+    cursor: s-resize;
+}
+
+svg .null-right-resizer {
+    cursor: e-resize;
+}
+
+svg .top-null-resizer {
+    cursor: n-resize;
+}

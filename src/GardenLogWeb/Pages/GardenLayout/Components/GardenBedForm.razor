@@ -1,0 +1,140 @@
+﻿@inject IGardenLogToastService _toastService;
+@inject ILogger<GardenBedForm> _logger;
+@inject IGardenService _gardenService;
+@inject IVerifyService _verifyService;
+
+<article id="gardenBedForm">
+    <div class="container">
+        @if (_isInitialized && _gardenBed != null)
+        {
+            <EditForm EditContext="@_editContext" OnValidSubmit="@HandleValidSubmitAsync" OnInvalidSubmit="@HandleInValidSubmit">
+                <FluentValidationValidator />
+                <CustomValidation @ref="customValidation" />
+
+                <div class="row">
+
+                    <div class="col-md-10">
+                        <label for="Type" class="form-label">Type</label>
+                        <InputSelect class="form-select" @bind-Value="_gardenBed.Type">
+                            @foreach (var item in Enum.GetValues<GardenBedTypeEnum>().Where(p => p != GardenBedTypeEnum.Unspecified))
+                            {
+                                <option Value="@item">@(_verifyService.GetDescription(item))</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => _gardenBed.Type)" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="RowNumber">Row Number</label>
+                        <InputNumber class="form-control" id="RowNumber" @bind-Value="@_gardenBed.RowNumber" />
+                        <ValidationMessage For="@(() => _gardenBed.RowNumber)" />
+                    </div>
+                    <div class="col-md-8">
+                        <label for="name">Name</label>
+                        <InputText class="form-control" id="name" @bind-Value="@_gardenBed.Name" />
+                        <ValidationMessage For="@(() => _gardenBed.Name)" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="Length">Length (in)</label>
+                        <InputNumber T="double" class="form-control" id="Length" @bind-Value="@_gardenBed.Length" />
+                        <ValidationMessage For="@(() => _gardenBed.Length)" />
+                    </div>
+                    <div class="col-md-6">
+                        <label for="Width">Width (in)</label>
+                        <InputNumber T="double" class="form-control" id="Width" @bind-Value="@_gardenBed.Width" />
+                        <ValidationMessage For="@(() => _gardenBed.Width)" />
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <label for="description">Description</label>
+                    <InputTextArea Class="form-control" Id="description" @bind-Value="@_gardenBed.Notes" rows="5" />
+                    <ValidationMessage For="@(() => _gardenBed.Notes)" />
+                </div>
+
+                <div class="col-12">
+                    <div class="modal-footer">
+                        @if (_isEdit)
+                        {
+                            <button type="submit" class="btn btn-primary" title="Save Changes">
+                                <span class="bi bi-file-earmark-post">&nbsp;</span> Save
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="submit" class="btn btn-primary" title="Create Garden">
+                                <span class="bi bi-file-earmark-post">&nbsp;</span> Add
+                            </button>
+                        }
+                        <button type="button" class="btn btn-danger" @onclick="@(() => OnCancel())">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                    </div>
+                </div>
+            </EditForm>
+        }
+    </div>
+</article>
+
+@code {
+
+    [Parameter] public Func<GardenBedModel, Task>? OnClose { get; set; }
+
+    private bool _isInitialized = false;
+    private GardenBedModel? _gardenBed = null;
+    private GardenModel? _garden = null;
+    private EditContext? _editContext;
+    private bool _isEdit = false;
+    private CustomValidation? customValidation;
+
+    public void Initialize(GardenBedModel? gardenBed, GardenModel garden, double x, double y)
+    {
+        _gardenBed = gardenBed;
+        _garden = garden;
+
+        if (_gardenBed == null)
+        {
+            _gardenBed = new GardenBedModel();
+            _gardenBed.GardenId = garden.GardenId;
+            _gardenBed.X = x;
+            _gardenBed.Y = y;
+            _gardenBed.Rotate = 0;
+        }
+
+        _isEdit = !string.IsNullOrEmpty(_gardenBed.GardenBedId);
+
+        _editContext = new(_gardenBed);
+        _editContext.SetFieldCssClassProvider(new BootstrapValidationFieldClassProvider());
+        _isInitialized = true;
+        StateHasChanged();
+    }
+
+    protected async Task HandleValidSubmitAsync()
+    {
+        _logger.Log(LogLevel.Information, "Garden Bed Form passed validations");
+        customValidation?.ClearErrors();
+
+        ApiResponse response = (_isEdit) ? await _gardenService.UpdateGardenBed(_gardenBed!) : await _gardenService.CreateGardenBed(_gardenBed!);
+
+        if (response.ValidationProblems != null)
+        {
+            customValidation?.DisplayErrors(response.ValidationProblems);
+        }
+
+        if (response.IsSuccess)
+        {
+            if (OnClose!= null && _gardenBed!=null) await OnClose(_gardenBed);
+        }
+    }
+
+    protected void HandleInValidSubmit()
+    {
+        _toastService.ShowToast("Garden Bed can not be save. Please correct validation errors.", GardenLogToastLevel.Error);
+    }
+
+    private async Task OnCancel()
+    {
+        if (OnClose != null && _gardenBed != null) await OnClose(_gardenBed);
+    }
+}

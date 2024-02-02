@@ -1,0 +1,121 @@
+﻿@inject NavigationManager _navigationManager
+@inject IImageService _imageService
+@inject IHarvestCycleService _harvestService;
+
+@if (PlantVariety != null && !string.IsNullOrWhiteSpace(PlantVariety.PlantVarietyId))
+{
+    <ModalView OnCloseModal="CloseImageFormModal" @ref="_imageFormModal">
+        <Body>
+            <ImageForm OnClose=@CloseImageFormModal @ref=_imageForm />
+        </Body>
+    </ModalView>
+    <div class="row">
+        <div class="d-flex gap-2 flex-nowrap justify-content-md-start">
+            <AuthorizeView Roles="@(GlobalConstants.ROLE_MASTER_GARDENER + ", " + GlobalConstants.ROLE_WRITE_PLANT_VARIETIES)">
+                <button type="button" class="btn btn-secondary" title="Edit Variety" @onclick="@(() => OnEdit())"><span class="bi bi-pencil">&nbsp;</span></button>
+                <button type="button" class="btn btn-warning" @onclick="@(() => OnAddPlantVarietyImage())"><span class="bi bi-card-image">&nbsp;</span></button>
+            </AuthorizeView>
+            @if (!string.IsNullOrWhiteSpace(_activeHarvestCycle))
+            {
+                <button type="button" class="btn btn-secondary" title="Add Variety to Garden Plan" @onclick="@(() => AddToGardenPlan())"><span class="bi bi-plus">&nbsp;</span></button>
+            }
+            <button type="button" class="btn btn-danger" title="Close" @onclick="@(() => OnCancel())"><span class="bi bi-x-circle">&nbsp;</span></button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public PlantModel? Plant { get; set; }
+
+    [Parameter]
+    public PlantVarietyModel? PlantVariety { get; set; }
+
+    [Parameter]
+    public Func<Task>? OnClose { get; set; }
+
+    private ModalView? _imageFormModal { get; set; }
+    private ImageForm? _imageForm { get; set; }
+
+    private string? _activeHarvestCycle = null;
+
+    protected async override Task OnParametersSetAsync()
+    {
+        var harvest = await _harvestService.GetActiveHarvestCycle();
+        if (harvest != null)
+        {
+            _activeHarvestCycle = harvest.HarvestCycleId;
+        }
+    }
+
+    private void AddToGardenPlan()
+    {
+        if (Plant != null && PlantVariety != null
+            && !string.IsNullOrWhiteSpace(_activeHarvestCycle) && !string.IsNullOrWhiteSpace(Plant.PlantId) && !string.IsNullOrWhiteSpace(PlantVariety.PlantVarietyId))
+        {
+            _navigationManager.NavigateToGardenPlanAddPlant(_activeHarvestCycle, Plant.PlantId, PlantVariety.PlantVarietyId);
+        }
+    }
+
+    private async Task OnAddPlantVarietyImage()
+    {
+        if (_imageForm == null || _imageFormModal == null || Plant == null || PlantVariety == null ) return;
+
+        List<RelatedEntity> relatedEntities = new();
+        relatedEntities.Add(new RelatedEntity(RelatedEntityTypEnum.PlantVariety, PlantVariety.PlantVarietyId, PlantVariety.Name));
+        relatedEntities.Add(new RelatedEntity(RelatedEntityTypEnum.Plant, PlantVariety.PlantId, Plant.Name));
+        _imageForm.Initialize(RelatedEntityTypEnum.PlantVariety, PlantVariety.PlantVarietyId, relatedEntities);
+        await _imageFormModal.OpenModal(PlantVariety.Name, Plant.Color);
+        StateHasChanged();
+    }
+
+    private void OnEdit()
+    {
+        if (PlantVariety != null)
+        {
+            _navigationManager.NavigateToEditPlantVariety(PlantVariety.PlantId, PlantVariety.PlantVarietyId);
+        }
+    }
+
+    private async Task CloseImageFormModal()
+    {
+        await _imageFormModal!.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task CloseImageFormModal(ImageViewModel image)
+    {
+        await _imageFormModal!.CloseModal();
+
+        if (PlantVariety == null) return;
+
+        if (PlantVariety.ImageFileName == ImageService.NO_IMAGE)
+        {
+            PlantVariety.ImageFileName = image.FileName;
+            PlantVariety.ImageLabel = image.Label;
+        }
+
+        if (PlantVariety.Images == null) PlantVariety.Images = new();
+
+        PlantVariety.Images.Add(image);
+        //var images = await _imageService.GetImages(ImageEntityEnum.PlantVariety, PlantVariety.PlantVarietyId, false);
+
+        //if (images.Count > 0)
+        //{
+        //    PlantVariety.Images = images;
+        //    var image = PlantVariety.Images.FirstOrDefault();
+        //    if (image != null && string.IsNullOrWhiteSpace(PlantVariety.ImageFileName))
+        //    {
+        //        PlantVariety.ImageFileName = image.FileName;
+        //        PlantVariety.ImageLabel = image.Label;
+        //    }
+        //}
+        StateHasChanged();
+    }
+
+    private void OnCancel()
+    {
+        if (OnClose != null)
+            OnClose();
+    }
+}

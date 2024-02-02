@@ -1,0 +1,92 @@
+﻿@using PlantHarvest.Contract.Base;
+@inject IHarvestCycleService _harvestService;
+@inject IGardenService _gardenService;
+@inject NavigationManager _navigationManager;
+
+<div>
+    @if (IsInitialized)
+    {
+        @if (_plants == null || _plants.Count == 0)
+        {
+            <p><em>Empty</em></p>
+        }
+
+        else
+        {
+            <div class="table-responsive d-none d-sm-block">
+                <table class="table table-borderless align-middle text-center ">
+                    <thead class="table-primary" style="border-width: 2px;">
+                        <tr>
+                            <th scope="col"><span class="fw-semibold">Plant</span></th>
+                            <th scope="col"><span class="fw-semibold">Sow Indors</span></th>
+                            <th scope="col"><span class="fw-semibold">Transplant</span></th>
+                            <th scope="col"><span class="fw-semibold">Sow Outside</span></th>
+                            <th scope="col"><span class="fw-semibold">Harvest</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var plant in _plants)
+                        {
+                            <tr style="border-width: 2px;" @key="@plant.GetPlantName()">
+                                <td class="col-2 text-start "><a @onclick=@(() => ViewPlant(plant)) class="text-dark" role="button"><span class="fw-semibold">@plant.GetPlantName()</span></a></td>
+                                <td class="col-1">@GetDateRange(plant, WorkLogReasonEnum.SowIndoors)</td>
+                                <td class="col-1">@GetDateRange(plant, WorkLogReasonEnum.TransplantOutside)</td>
+                                <td class="col-1">@GetDateRange(plant, WorkLogReasonEnum.SowOutside)</td>
+                                <td class="col-1">@GetDateRange(plant, WorkLogReasonEnum.Harvest)</td>
+                            </tr>
+
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private HarvestCycleModel? _harvest;
+    private List<PlantHarvestCycleModel>? _plants;
+
+    private GardenModel? _garden;
+    public bool IsInitialized = false;
+    private DateTime _lastFrostDate;
+    private DateTime _firstFrostDate;
+
+    public async void Initialize(HarvestCycleModel harvest)
+    {
+        _harvest = harvest;
+        _plants = await _harvestService.GetPlantHarvests(_harvest.HarvestCycleId, false);
+
+        _garden = await _gardenService.GetGarden(_harvest.GardenId, true);
+
+        if (_garden != null)
+        {
+            _lastFrostDate = new DateTime(DateTime.Now.Year, _garden.LastFrostDate.Month, _garden.LastFrostDate.Day);
+            _firstFrostDate = new DateTime(DateTime.Now.Year, _garden.FirstFrostDate.Month, _garden.FirstFrostDate.Day);
+        }
+        IsInitialized = true;
+
+        StateHasChanged();
+    }
+
+    public void Hide()
+    {
+        IsInitialized = false;
+        StateHasChanged();
+    }
+
+    private string GetDateRange(PlantHarvestCycleModel plant, WorkLogReasonEnum taskType)
+    {
+        var schedule = plant.PlantCalendar.FirstOrDefault(p => p.TaskType == taskType);
+        if (schedule != null)
+        {
+            return $"{schedule.StartDate.ToString("MM/dd")} - {schedule.EndDate.ToString("MM/dd")}";
+        }
+        return string.Empty;
+    }
+
+    protected void ViewPlant(PlantHarvestCycleModel plant)
+    {
+        _navigationManager.NavigateToViewPlant(plant.PlantId);
+    }
+}

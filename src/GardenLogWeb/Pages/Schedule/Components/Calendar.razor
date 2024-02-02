@@ -1,0 +1,214 @@
+﻿@using PlantHarvest.Contract.Base;
+@inject IHarvestCycleService _harvestService;
+@inject IGardenService _gardenService;
+@inject NavigationManager _navigationManager;
+@inject ILogger<Calendar> _logger;
+
+<div>
+    @if (IsInitialized)
+    {
+        @if (_plants == null || _plants.Count == 0)
+        {
+            <p><em>Empty</em></p>
+        }
+
+        else
+        {
+            <div class="row flex-nowrap">
+                <div class="col-2">&nbsp;</div>
+                <div id="icon-legend" class="col-10">
+                    <div class="d-flex flex-row text-center justify-content-end">
+                        <div class="p-2"><small class="p-2 text-light sow-indoors">Sow Indoors</small></div>
+                        <div class="p-2"><small class="p-2 text-light transplant">Transplant</small></div>
+                        <div class="p-2"><small class="p-2 text-light sow-outside">Sow Outside</small></div>
+                        <div class="p-2"><small class="p-2 text-light harvest">Harvest</small></div>
+                        <div class="p-2"><small class="p-2 text-light bg-danger ">First/Last Frost Dates</small></div>
+                        <div class="p-2"><small class="p-2 text-light bg-info">Current Date</small></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row flex-nowrap" id="calendar-header">
+                <div class="col-2">&nbsp;</div>
+
+                <div class="col-10">
+                    <div class="row flex-nowrap months-header g-0 text-center fw-semibold">
+                        <div class="col month pe-1"><small>Jan</small></div>
+                        <div class="col month pe-1"><small>Feb</small></div>
+                        <div class="col month pe-1"><small>Mar</small></div>
+                        <div class="col month pe-1"><small>Apr</small></div>
+                        <div class="col month pe-1"><small>May</small></div>
+                        <div class="col month pe-1"><small>Jun</small></div>
+                        <div class="col month pe-1"><small>Jul</small></div>
+                        <div class="col month pe-1"><small>Aug</small></div>
+                        <div class="col month pe-1"><small>Sep</small></div>
+                        <div class="col month pe-1"><small>Oct</small></div>
+                        <div class="col month pe-1"><small>Nov</small></div>
+                        <div class="col month pe-1"><small>Dec</small></div>
+                    </div>
+                </div>
+            </div>
+
+            @foreach (var plant in _plants)
+            {
+                <div class="row flex-nowrap plant-schedule">
+                    <div class="col-2 plant-name mb-1  "><a @onclick=@(() => ViewPlant(plant)) class="text-dark" role="button"><small>@plant.GetPlantName()</small></a></div>
+                    <div class="col-10 plant-calendar ">
+                        <div class="row flex-nowrap year g-0 mb-1  " id="@plant.GetPlantName()-year">
+                            @for (int month = 1; month < 13; month++)
+                            {
+
+                                <div class="col month pe-1" id="@plant.GetPlantName()-month-@month">
+                                    <div class="row flex-nowrap weeks g-0">
+                                        @for (int week = 1; week <= GetNumberOfMondays(month); week++)
+                                        {
+                                            <div class="col week @GetTaskClass(month, week, plant)" id="@plant.GetPlantName()-@week"><span>&nbsp;</span></div>
+                                        }
+                                    </div>
+                                </div>
+
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+        }
+
+    }
+</div>
+
+@code {
+    private HarvestCycleModel? _harvest;
+    private List<PlantHarvestCycleModel>? _plants;
+    private Dictionary<int, int> _mondaysPerMonth = new();
+    private Dictionary<string, DateRange> _weeksPerMonth = new();
+    private GardenModel? _garden;
+    public bool IsInitialized = false;
+    private DateTime _lastFrostDate;
+    private DateTime _firstFrostDate;
+    private DateTime _lastDate;
+
+    public async void Initialize(HarvestCycleModel harvest)
+    {
+        _harvest = harvest;
+        _plants = await _harvestService.GetPlantHarvests(_harvest.HarvestCycleId, false);
+
+        _garden = await _gardenService.GetGarden(_harvest.GardenId, true);
+
+        if (_garden == null) return;
+
+        _lastFrostDate = new DateTime(DateTime.Now.Year, _garden.LastFrostDate.Month, _garden.LastFrostDate.Day);
+        _firstFrostDate = new DateTime(DateTime.Now.Year, _garden.FirstFrostDate.Month, _garden.FirstFrostDate.Day);
+
+        IsInitialized = true;
+        StateHasChanged();
+    }
+
+    public void Hide()
+    {
+        IsInitialized = false;
+        StateHasChanged();
+    }
+
+    private int GetNumberOfMondays(int month)
+    {
+        int numberOfMondays = 0;
+
+        if (!_mondaysPerMonth.TryGetValue(month, out numberOfMondays))
+        {
+            int year = DateTime.Now.Year;
+
+            for (int day = 1; day <= DateTime.DaysInMonth(year, month); day++)
+            {
+                if (new DateTime(year, month, day).DayOfWeek == DayOfWeek.Monday)
+                {
+                    numberOfMondays++;
+                }
+            }
+
+            _mondaysPerMonth.Add(month, numberOfMondays);
+            _logger.LogDebug($"There is {numberOfMondays} Mondays in {month}");
+        }
+        return numberOfMondays;
+    }
+
+    private string GetTaskClass(int month, int week, PlantHarvestCycleModel plant)
+    {
+        string taskClass = "nowork";
+        string key = $"{month}-{week}";
+        DateRange? dateRange;
+
+        DateTime now = DateTime.Today;
+
+        if (!_weeksPerMonth.TryGetValue(key, out dateRange))
+        {
+            int year = now.Year;
+            DateTime firstDayOfMonth = new DateTime(year, month, 1);
+
+            int firstDayOfWeek = (int)firstDayOfMonth.DayOfWeek;
+
+            int dayOfWeek = 1;
+
+            DateTime targetDate = firstDayOfMonth.AddDays((week - 1) * 7 + dayOfWeek - firstDayOfWeek);
+            //if we ended up in the previous month - lets roll to current month
+            if (_lastDate > targetDate)
+            {
+                targetDate = targetDate.AddDays(7);
+            }
+            DateTime targetDateEnd = targetDate.AddDays(6);
+            _lastDate = targetDateEnd;
+            dateRange = new DateRange() { StartDate = targetDate, EndDate = targetDateEnd };
+
+            _weeksPerMonth.Add(key, dateRange);
+        }
+        
+
+        var schedule = plant.PlantCalendar.FirstOrDefault(p => (dateRange.StartDate <= p.StartDate && p.StartDate <= dateRange.EndDate)
+                                                                    || (p.StartDate <= dateRange.StartDate && dateRange.EndDate <= p.EndDate)
+                                                                    || (dateRange.StartDate <= p.EndDate && p.EndDate <= dateRange.EndDate)
+                                                            );
+
+        if (schedule != null)
+        {
+            _logger.LogDebug($"Found match - {schedule}");
+            switch (schedule.TaskType)
+            {
+                case WorkLogReasonEnum.SowIndoors:
+                    taskClass = "sow-indoors";
+                    break;
+                case WorkLogReasonEnum.TransplantOutside:
+                    taskClass = "transplant";
+                    break;
+                case WorkLogReasonEnum.SowOutside:
+                    taskClass = "sow-outside";
+                    break;
+                case WorkLogReasonEnum.Harvest:
+                    taskClass = "harvest";
+                    break;
+            }
+        }
+        _logger.LogDebug($"Considering date - {dateRange.StartDate} to {dateRange.EndDate} - today is {now}");
+
+
+        if ((dateRange.StartDate <= _lastFrostDate && _lastFrostDate <= dateRange.EndDate)
+           || (dateRange.StartDate <= _firstFrostDate && _firstFrostDate <= dateRange.EndDate))
+        {
+            _logger.LogDebug($"Found frost date");
+            return taskClass + " border-end border-danger border-5";
+        }
+
+        if (dateRange.StartDate <= now && now <= dateRange.EndDate)
+        {
+            _logger.LogDebug($"Found now");
+            return taskClass + " border-start border-info border-5";
+        }
+
+        return taskClass;
+    }
+
+    protected void ViewPlant(PlantHarvestCycleModel plant)
+    {
+        _navigationManager.NavigateToViewPlant(plant.PlantId);
+    }
+}
+

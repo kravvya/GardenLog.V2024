@@ -1,0 +1,91 @@
+﻿@page "/plantvariety/{PlantId}/variety/{PlantVarietyId}"
+
+
+@inject ILogger<PlantVarietyFormPage> _logger
+@inject IPlantService _plantService
+@inject NavigationManager _navigationManager
+
+<Page Title="@_title" Description="@_description" BreadcrumbLinks="@_breacrumbLinks">
+    <PageContent>
+        <div class="container">
+            <PlantVarietyView OnClose=@ClosePage @ref="_plantVarietyView" />
+
+            <PlantVarietyViewFooter Plant=@_plant PlantVariety=@_plantVariety OnClose=@ClosePage />
+        </div>
+    </PageContent>
+</Page>
+
+@code {
+    [Parameter] public string PlantId { get; set; } = string.Empty;
+    [Parameter] public string PlantVarietyId { get; set; } = string.Empty;
+
+    private List<BreadcrumbLink> _breacrumbLinks = new();
+
+    private PlantModel? _plant { get; set; }
+    private PlantVarietyModel? _plantVariety { get; set; }
+    private PlantVarietyView? _plantVarietyView { get; set; }
+
+    private string _title { get; set; } = string.Empty;
+    private string _description { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _plant = await GetPlant(PlantId);
+
+        if (_plant == null)
+        {
+            NavigateToPlants();
+            return;
+        }
+
+        _breacrumbLinks.Add(new BreadcrumbLink("Plants", _navigationManager.GetPlantsUrl(), false));
+        _breacrumbLinks.Add(new BreadcrumbLink(_plant.Name, _navigationManager.GetViewPlantUrl(PlantId), false));
+
+        _plantVariety = await GetPlantVariety(PlantId, PlantVarietyId);
+
+        if (_plantVariety == null)
+        {
+            NavigateToPlants();
+            return;
+        }
+
+        _breacrumbLinks.Add(new BreadcrumbLink($"{_plantVariety.Name}", _navigationManager.GetEditPlantVarietyUrl(PlantId, PlantVarietyId), true));
+        _title = $"{_plantVariety.Name}";
+        _description = "";// $"Add {plant.Name} Variety";
+        if (_plantVarietyView != null) _plantVarietyView.Initialize(_plantVariety, _plant);
+
+        StateHasChanged();
+    }
+
+    private async Task<PlantModel?> GetPlant(string plantId)
+    {
+        PlantModel? plant = null;
+
+        if (!string.IsNullOrWhiteSpace(plantId))
+        {
+            plant = await _plantService.GetPlant(plantId, false);
+        }
+        return plant;
+    }
+
+    private async Task<PlantVarietyModel?> GetPlantVariety(string plantId, string plantVarietyId)
+    {
+        PlantVarietyModel? plantVariety = null;
+
+        plantVariety = await _plantService.GetPlantVariety(plantId, plantVarietyId);
+
+        return plantVariety;
+    }
+
+    protected async Task ClosePage()
+    {
+        await Task.Delay(1);
+        _navigationManager.NavigateToViewPlant(PlantId);
+    }
+
+    protected void NavigateToPlants()
+    {
+        _navigationManager.NavigateToPlants();
+
+    }
+}

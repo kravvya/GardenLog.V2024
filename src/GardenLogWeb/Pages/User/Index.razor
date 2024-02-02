@@ -1,0 +1,69 @@
+﻿@page "/user"
+@page "/userRegistration"
+
+@using GardenLogWeb.Pages.User.Components;
+
+@inject IUserProfileService _userService;
+@inject NavigationManager _navigationManager;
+
+
+<AuthorizeView>
+    <Authorized>
+        <Page Title="@(context.User.Identity?.Name!)" Description="Manage Profile" BreadcrumbLinks="@_breadcrumbLinks">
+            <PageContent>
+                <UserProfileForm @ref="_editProfileForm" />
+            </PageContent>
+        </Page>
+    </Authorized>
+    <NotAuthorized>
+        <Page Title="User Registration" Description="" BreadcrumbLinks="@_breadcrumbLinks">
+            <PageContent>
+                <UserProfileForm @ref="_registrationForm" />
+            </PageContent>
+        </Page>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+
+    private List<BreadcrumbLink> _breadcrumbLinks = new();
+    private UserProfileForm? _editProfileForm;
+    private UserProfileForm? _registrationForm;
+
+    private UserProfileModel? _userProfile;
+
+    protected async override Task OnInitializedAsync()
+    {
+
+        if (authenticationState is not null)
+        {
+            var authState = await authenticationState;
+            var user = authState?.User;
+
+            if (user is not null && user.Identity is not null && user.Identity.IsAuthenticated)
+            {
+                _userProfile = await _userService.GetUserProfile(true);
+
+            }
+        }
+        _breadcrumbLinks.Add(new BreadcrumbLink("Profile", _navigationManager.GetUserProfileUrl(), true)); ;
+
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+
+        if (_userProfile == null && _registrationForm != null && !_registrationForm.IsInitialized)
+        {
+            _registrationForm.Initialize(null);
+        }
+        else if (_userProfile != null  && _editProfileForm != null && !_editProfileForm.IsInitialized)
+        {
+            _editProfileForm.Initialize(_userProfile);
+        }
+    }
+}
+

@@ -1,0 +1,395 @@
+﻿@using System.Text;
+@inject IPlantService _plantService;
+@inject IHarvestCycleService _harvestService;
+@inject IGardenService _gardenService;
+@inject ICacheService _cacheService;
+@inject ILogger<PlantHarvestList> _logger;
+
+@inject NavigationManager _navigationManager;
+
+<div>
+    @if (_harvest != null)
+    {
+        @if (_harvestPlants == null)
+        {
+            <p><em>Empty</em></p>
+        }
+        else
+        {
+            <ModalView OnCloseModal="CloseImageFormModal" @ref="_imageFormModal">
+                <Body>
+                    <ImageForm OnClose=@CloseImageFormModal @ref=_imageForm />
+                </Body>
+            </ModalView>
+
+            <ModalView OnCloseModal="@CloseImageListModal" @ref="_imageListModal">
+                <Body>
+                    <ImageList OnClose=@CloseImageListModal @ref=_imageList />
+                </Body>
+            </ModalView>
+
+            <ModalView OnCloseModal="@ClosePlantViewModal" @ref="_plantViewModal">
+                <Body>
+                    <PlantView Plant=@_plantInView IsInsideModal="true" />
+                </Body>
+                <Footer>
+                    <PlantViewFooter Plant=@_plantInView Close="@ClosePlantView" />
+                </Footer>
+            </ModalView>
+
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="d-md-none">
+                        <a href="javascript: void(0)" @onclick="@ToggleFilter">@_filterTtile</a>
+                    </div>
+                    <div class="@_filterCssClass">
+                        <div class="plant-sidebar">
+
+                            <div class="widget plant-list">
+                                <h4 class="widget-header">Plants</h4>
+                                <ul class="plant-list">
+                                    @foreach (var plant in _plants.Where(c => c.NumberOfPlants > 0).OrderBy(c => c.Name))
+                                    {
+                                        <li><a class="text-dark" role="button" @onclick=@(()=> _filter.SetValue("PlantId", plant.PlantId))>@plant.Name <span>@plant.NumberOfPlants</span></a></li>
+                                    }
+                                    <li><a role="button" @onclick=@(()=> _filter.SetValue("PlantId", null))>Reset </a></li>
+                                </ul>
+                            </div>
+
+
+                            <div class="widget product-shorting">
+                                <h4 class="widget-header">Growing Options</h4>
+                                <div class="form-check">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="checkbox" value="@_filter.IsStartIndoors" @onchange="@(e => _filter.SetValue("IsStartIndoors", e.Value))" />
+                                        Start Indoors
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="checkbox" value="@_filter.IsDirectSow" @onchange="@(e => _filter.SetValue("IsDirectSow", e.Value))" />
+                                        Direct Sow
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="checkbox" value="@_filter.IsTransplant" @onchange="@(e => _filter.SetValue("IsTransplant", e.Value))" />
+                                        Transplant
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-10">
+                    <div class="plant-search-filter">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <strong>@_filteredHarvestPlants.Count Results on @DateTime.Now.ToShortDateString() @_filterDescription</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="col-xs-5 fw-semibold ">Plant</th>
+                                <th class="col-xs-1 fw-semibold">Seeding Date</th>
+                                <th class="col-xs-1 fw-semibold">Transplant Date</th>
+                                <th class="col-xs-1 fw-semibold">Qty</th>
+                                <th class="col-xs-3 fw-semibold">Location</th>
+                                <th class="col-xs-1"><button type="button" class="btn d-inline-block  btn-secondary" title="Add Plant" data-dismiss="modal" @onclick="@(() => AddPlantToHarvest())"><span class="bi bi-plus-lg">Add</span></button></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var plant in _filteredHarvestPlants)
+                            {
+                                <tr style="border-bottom: 5px solid @GetColor(plant);">
+                                    <td class="col-xs-5" style="border-left: 5px solid @GetColor(plant);">
+                                        <a class="text-dark" role="button" @onclick="@(() => ViewPlant(plant))">
+                                            <span class="fw-semibold">@GetPlantName(plant)</span>
+                                        </a>
+                                    </td>
+                                    <td class="col-xl-1">@GetDateValue(plant.SeedingDate)</td>
+                                    <td class="col-xl-1">@GetDateValue(plant.TransplantDate)</td>
+                                    <td class="col-xs-1">@plant.DesiredNumberOfPlants</td>
+                                    <td class="col-xs-3">@GetPlantGardenBedLocation(plant)</td>
+                                    <td class="col-xs-1">
+
+                                        <button type="button" class="btn btn-secondary" title="Edit" @onclick="@(() => EditPlantHarvest(plant))">
+                                            <span class="bi bi-pencil">&nbsp;</span>
+                                        </button>
+                                        <button type="button" class="btn btn-warning" title="Add Image" @onclick="@(() => AddPlantHarvestImage(plant))">
+                                            <span class="bi bi-card-image">&nbsp;</span>
+                                        </button>
+                                        <button type="button" class="btn btn-info" title="Gallery" @onclick="@(() => ViewPlantHarvestImage(plant))">
+                                            <span class="bi bi-images" aria-hidden="true">&nbsp;</span>
+                                        </button>
+                                        <button type="button" class="btn btn-info" title="Logs" @onclick="@(() => ViewPlantHarvestLogs(plant))">
+                                            <span class="bi bi-journal" aria-hidden="true"></span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5" />
+                                <td><button type="button" class="btn d-inline-block  btn-secondary" title="Add Plant" data-dismiss="modal" @onclick="@(() => AddPlantToHarvest())"><span class="bi bi-plus-lg">Add</span></button></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private HarvestCycleModel? _harvest;
+    private List<PlantHarvestCycleModel> _harvestPlants = new();
+    private IList<GardenBedModel>? _gardenBeds;
+
+    private ModalView? _imageFormModal;
+    private ImageForm? _imageForm;
+
+    private ModalView? _imageListModal;
+    private ImageList? _imageList;
+
+    private PlantModel? _plantInView;
+    private ModalView? _plantViewModal;
+
+    private List<PlantNameModel> _plants = new();
+    private IList<PlantHarvestCycleModel> _filteredHarvestPlants = new List<PlantHarvestCycleModel>();
+
+    private bool _collapseNavMenu = true;
+    private string _filterCssClass = "d-none d-md-block";
+    private string _filterTtile = "Show Filters";
+    private string _filterCacheKey = "PlantHarvestFilter";
+
+
+    protected PlantHarvestFilter _filter { get; set; } = new();
+    protected string _filterDescription { get; set; } = string.Empty;
+
+
+
+    private void ToggleFilter()
+    {
+        _collapseNavMenu = !_collapseNavMenu;
+        _filterCssClass = _collapseNavMenu ? "d-none d-md-block" : ".d-block";
+        _filterTtile = _collapseNavMenu ? "Show Filters" : "Hide Filters";
+        StateHasChanged();
+    }
+
+    private async Task AddPlantHarvestImage(PlantHarvestCycleModel harvestPlant)
+    {
+        if (_imageForm == null || _imageFormModal == null) return;
+
+        List<RelatedEntity> relatedEntities = new();
+        relatedEntities.Add(new RelatedEntity(RelatedEntityTypEnum.PlantHarvestCycle, harvestPlant.PlantHarvestCycleId, harvestPlant.GetPlantName()));
+        relatedEntities.Add(new RelatedEntity(RelatedEntityTypEnum.Plant, harvestPlant.PlantId, harvestPlant.PlantName));
+        if (!string.IsNullOrWhiteSpace(harvestPlant.PlantVarietyId)) relatedEntities.Add(new RelatedEntity(RelatedEntityTypEnum.PlantVariety, harvestPlant.PlantVarietyId, harvestPlant.PlantVarietyName!));
+
+        _imageForm.Initialize(RelatedEntityTypEnum.PlantHarvestCycle, harvestPlant.PlantHarvestCycleId, relatedEntities);
+        await _imageFormModal.OpenModal(GetPlantName(harvestPlant), GetColor(harvestPlant));
+        StateHasChanged();
+    }
+
+    private async Task ViewPlantHarvestImage(PlantHarvestCycleModel harvestPlant)
+    {
+        if (_imageList == null || _imageListModal == null) return;
+
+        await _imageList.Initialize(RelatedEntityTypEnum.PlantHarvestCycle, harvestPlant.PlantHarvestCycleId);
+        await _imageListModal.OpenModal(GetPlantName(harvestPlant), GetColor(harvestPlant));
+
+        StateHasChanged();
+    }
+
+    protected string GetDateValue(DateTime? dateValue)
+    {
+        return dateValue.HasValue ? dateValue.Value.ToShortDateString() : string.Empty;
+    }
+
+    private string GetPlantName(PlantHarvestCycleModel plant)
+    {
+        return string.IsNullOrWhiteSpace(plant.PlantVarietyName) ? plant.PlantName : $"{plant.PlantName} - {plant.PlantVarietyName}";
+    }
+
+    private string GetColor(PlantHarvestCycleModel harvestPlant)
+    {
+        var plant = _plants.FirstOrDefault(p => p.PlantId == harvestPlant.PlantId);
+        return plant == null ? "black" : plant.Color;
+    }
+
+    public async void Initialize(HarvestCycleModel harvest)
+    {
+
+        _harvestPlants = (await _harvestService.GetPlantHarvests(harvest.HarvestCycleId, false));
+        _plants = await _plantService.GetPlantNames(false);
+
+        if (!string.IsNullOrWhiteSpace(harvest.GardenId))
+        {
+            _gardenBeds = await _gardenService.GetGardenBeds(harvest.GardenId, true);
+        }
+
+        _plants.ForEach(p => p.NumberOfPlants = _harvestPlants.Where(h => h.PlantId == p.PlantId).Count());
+        _filteredHarvestPlants = _harvestPlants;
+
+        //_filter = new PlantHarvestFilter();
+        if (_cacheService.TryGetValue(_filterCacheKey, out PlantHarvestFilter? filter))
+        {
+            _filter = filter!;
+            FilterChanged(this, new EventArgs());
+            _cacheService.Remove(_filterCacheKey);
+        }
+        _filter!.ModelChanged += FilterChanged!;
+
+        _harvest = harvest;
+        StateHasChanged();
+    }
+
+    private async Task CloseImageFormModal()
+    {
+        await _imageFormModal!.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task CloseImageFormModal(ImageViewModel image)
+    {
+        await _imageFormModal!.CloseModal();
+
+        if (image != null)
+        {
+            var harvestPlant = _harvestPlants.FirstOrDefault(p => p.PlantHarvestCycleId == image.RelatedEntityId);
+
+            //only add image if there is already a list of them
+            if (harvestPlant != null && harvestPlant.Images?.Count > 0)
+            {
+                harvestPlant.Images.Add(image);
+            }
+        }
+        StateHasChanged();
+    }
+
+    private async Task CloseImageListModal()
+    {
+        await _imageListModal!.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task ViewPlant(PlantHarvestCycleModel plant)
+    {
+        _plantInView = await _plantService.GetPlant(plant.PlantId, true);
+
+
+        if (_plantViewModal == null || _plantInView == null) return;
+
+        await _plantViewModal.OpenModal(_plantInView.Name, _plantInView.Color);
+
+        StateHasChanged();
+    }
+
+    private async Task ClosePlantViewModal()
+    {
+        await _plantViewModal!.CloseModal();
+        _plantInView = null;
+        StateHasChanged();
+    }
+
+    private void ClosePlantView()
+    {
+        ClosePlantViewModal().GetAwaiter();
+    }
+
+    private void EditPlantHarvest(PlantHarvestCycleModel plant)
+    {
+        _cacheService.Set(_filterCacheKey, _filter);
+        _navigationManager.NavigateToGardenPlanEditPlant(plant.HarvestCycleId, plant.PlantHarvestCycleId);
+    }
+
+    private void AddPlantToHarvest()
+    {
+        if (_harvest != null)
+            _navigationManager.NavigateToGardenPlanAddPlant(_harvest.HarvestCycleId);
+    }
+
+    private void FilterChanged(object sender, EventArgs e)
+    {
+        _logger.LogDebug("Inside FilterChanged");
+        StringBuilder description = new StringBuilder();
+
+        IList<PlantHarvestCycleModel> harvestPlants = _harvestPlants;
+
+        if (!string.IsNullOrEmpty(_filter.PlantId))
+        {
+            description.Append(" (");
+            description.Append(_plants.FirstOrDefault(cat => cat.PlantId == _filter.PlantId)?.Name);
+            harvestPlants = harvestPlants.Where(p => p.PlantId == _filter.PlantId).ToList();
+        }
+
+        if (_filter.IsStartIndoors)
+        {
+            description.Append(description.Length == 0 ? " (Start indoors" : " and start indoors");
+            harvestPlants = harvestPlants.Where(p => p.PlantingMethod == PlantHarvest.Contract.Enum.PlantingMethodEnum.SeedIndoors).ToList();
+        }
+
+        if (_filter.IsDirectSow)
+        {
+            description.Append(description.Length == 0 ? " (Direct sow" : " and direct sow");
+            harvestPlants = harvestPlants.Where(p => p.PlantingMethod == PlantHarvest.Contract.Enum.PlantingMethodEnum.DirectSeed).ToList();
+        }
+
+        if (_filter.IsTransplant)
+        {
+            description.Append(description.Length == 0 ? " (Transplant" : " and transplant");
+            harvestPlants = harvestPlants.Where(p => p.PlantingMethod == PlantHarvest.Contract.Enum.PlantingMethodEnum.Transplanting).ToList();
+        }
+
+        if (description.Length > 0)
+        {
+            description.Append(")");
+        }
+
+        _filterDescription = description.ToString();
+        _filteredHarvestPlants = harvestPlants;
+              
+        base.StateHasChanged();
+    }
+
+    private string GetPlantGardenBedLocation(PlantHarvestCycleModel harvestPlant)
+    {
+        if (_gardenBeds == null) return string.Empty;
+
+        StringBuilder sb = new();
+
+        if (harvestPlant.GardenBedLayout.Count > 2) return "Multiple locations";
+
+        foreach (var bed in harvestPlant.GardenBedLayout)
+        {
+            var location = _gardenBeds.FirstOrDefault(b => b.GardenBedId == bed.GardenBedId);
+            if (location != null)
+            {
+                if (sb.Length > 0) sb.Append(",");
+
+                sb.AppendLine(location.Name);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private void ViewPlantHarvestLogs(PlantHarvestCycleModel harvest)
+    {
+        _cacheService.Set(_filterCacheKey, _filter);
+        _navigationManager.NavigateToGardenPlanWorkLogsForPlant(harvest.HarvestCycleId, harvest.PlantHarvestCycleId);
+    }
+
+    public void Dispose()
+    {        
+        _filter.ModelChanged -= FilterChanged!;
+    }
+
+}
+
+
+

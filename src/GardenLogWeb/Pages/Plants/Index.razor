@@ -1,0 +1,14 @@
+﻿@page "/plants"
+
+@inject IPlantService _plantService;
+@inject NavigationManager _navigationManager;
+
+<Page Title="Manage Plants" Description="Review, Edit and Create Plants" BreadcrumbLinks="@breacrubLinks">
+    <PageContent>
+        <PlantList />
+    </PageContent>
+</Page>
+
+@code {
+    private List<BreadcrumbLink> breacrubLinks = new() { new BreadcrumbLink("Plants", "plants", true)};
+}

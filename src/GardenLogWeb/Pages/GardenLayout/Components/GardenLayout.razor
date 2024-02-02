@@ -1,0 +1,118 @@
+﻿@inject IMouseService _mouseService;
+@inject IKeyService _keyService;
+@inject IGardenService _gardenService;
+@inject ILogger<GardenLayout> _logger;
+
+@implements IDisposable;
+
+@if (GardenBeds != null && Settings!= null)
+{
+    <svg width="@Settings.SvgWidth" height="@Settings.SvgHeight" viewBox="@Settings.StartX @Settings.StartY @Settings.ViewBoxX @Settings.ViewBoxY"
+     @onkeydown=@(e => _keyService.KeyDown(this, e))
+     @onmousemove=@(e => _mouseService.MouseMove(this, e))
+     @onmouseup=@(e => _mouseService.MouseUp(this, e))
+     @onmouseout=@(e => _mouseService.MouseLeave(this, e))
+     tabindex="0">
+        <defs>
+            @*small background box*@
+            <pattern id="smallrect" x="0" y="0" width="48" height="48" viewBox="0 0 48 48" patternUnits="userSpaceOnUse">
+                <rect x="0" y="0" width="48" height="48" stroke-width="0.4"></rect>
+            </pattern>
+            @*group of small background boxes*@
+            <pattern id="bigrect" x="0" y="0" width="240" height="240" viewBox="0 0 240 240" patternUnits="userSpaceOnUse">
+                <rect x="0" y="0" width="240" height="240" fill="url(#smallrect)" stroke-width="1"></rect>
+            </pattern>
+            @*garden bed background box*@
+            <pattern id="bed-pat" x="0" y="0" width="48" height="48" viewBox="0 0 48 48" patternUnits="userSpaceOnUse">
+                <image x="0" y="0" width="48" height="48" href=" images/garden-bed-background.png"></image>
+            </pattern>
+        </defs>
+        <rect x="0" y="0" width="@(Settings.GardenLayoutWidth)" height="@(Settings.GardenLayoutHeight)" fill="url(#bigrect)" id="bg" @onmousedown=@(e => ComponentNotSelected(false))></rect>
+
+        <g>
+            @foreach (var bed in GardenBeds)
+            {
+                <RectGardenBed Component=@bed ComponentSelected=@ComponentSelected Settings=@Settings fill="url(#bed-pat)"></RectGardenBed>                
+            }
+        </g>
+        <DraggableSelector @ref=_draggableComponent Component=@_selected />
+    </svg>
+}
+
+@code {
+    [Parameter, EditorRequired] public GardenModel? Garden { get; set; }
+
+    [Parameter, EditorRequired] public GardenPlanSettings? Settings { get; set; }
+
+    [Parameter, EditorRequired] public Func<GardenBedModel?, bool, Task>? GardenBedSelected { get; set; }
+
+    [Parameter, EditorRequired] public Func<string, Task>? GardenBedDeleted { get; set; }
+
+    [Parameter, EditorRequired] public List<GardenBedModel>? GardenBeds { get; set; }
+
+    DraggableSelector? _draggableComponent;
+    IVisualComponent? _selected;
+
+    protected override void OnInitialized()
+    {
+        _keyService.OnKeyDown += OnKeyDown;
+    }
+
+    public void SelectCompoenent(GardenBedModel gardenBed)
+    {
+        if (_draggableComponent != null && Settings != null && GardenBedSelected!= null)
+        {
+            _logger.LogDebug("GardenLayout - SelectCompoenent");
+            _selected = gardenBed;
+            _draggableComponent.Intitialize(_selected, Settings, null);
+            GardenBedSelected(gardenBed, false);
+        }
+    }
+
+    protected void ComponentSelected(IVisualComponent selected, MouseEventArgs e)
+    {
+        if (_draggableComponent != null && Settings != null && GardenBedSelected != null)
+        {
+            _logger.LogDebug("GardenLayout - ComponentSelected");
+            _selected = selected;
+            _draggableComponent.Intitialize(_selected, Settings, e);
+            GardenBedSelected((GardenBedModel)selected, false);
+        }
+    }
+
+    protected async Task ComponentNotSelected(bool skipUpdate)
+    {
+        if (_draggableComponent != null && Settings != null && GardenBedSelected != null)
+        {
+            _logger.LogDebug("GardenLayout - ComponentNotSelected");
+            _draggableComponent.Intitialize(null, Settings, null);
+            _selected = null;
+
+            await GardenBedSelected(null, skipUpdate);
+        }
+    }
+
+    void OnKeyDown(object? _, KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Delete":
+                if (_selected != null && GardenBedDeleted != null)
+                {
+                    _logger.LogDebug("Delete bed - GardenLayout");
+                    string _gardenBedId = _selected.Id;
+                    _selected = null;
+                    ComponentNotSelected(true).GetAwaiter();
+                    GardenBedDeleted(_gardenBedId);
+                }
+                break;
+        }
+    }
+
+
+    public void Dispose()
+    {
+        _keyService.OnKeyDown -= OnKeyDown;
+    }
+}
+

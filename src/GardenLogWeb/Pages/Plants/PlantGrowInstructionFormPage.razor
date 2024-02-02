@@ -1,0 +1,97 @@
+﻿@page "/addplantgrow/{PlantId}"
+@page "/editplantgrow/{PlantId}/grow/{PlantGrowInstructionId}"
+
+@inject ILogger<PlantVarietyFormPage> _logger
+@inject IPlantService _plantService
+@inject NavigationManager _navigationManager
+
+<Page Title="@_title" Description="@_description" BreadcrumbLinks="@_breacrumbLinks">
+    <PageContent>
+        <PlantGrowInstructionForm OnClose=@ClosePage @ref="_plantGrowInstructionForm" />
+    </PageContent>
+</Page>
+
+@code {
+    [Parameter] public string PlantId { get; set; } = string.Empty;
+    [Parameter] public string PlantGrowInstructionId { get; set; } = string.Empty;
+
+    private List<BreadcrumbLink> _breacrumbLinks = new();
+
+    private PlantModel? _plant { get; set; }
+    private PlantGrowInstructionViewModel? _plantGrowInstruction { get; set; }
+    private PlantGrowInstructionForm? _plantGrowInstructionForm { get; set; }
+
+    private string _title = string.Empty;
+    private string _description = string.Empty;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        _plant = await GetPlant(PlantId);
+
+        if (_plant == null)
+        {
+            NavigateToPlants();
+            return;
+        }
+
+        _breacrumbLinks.Add(new BreadcrumbLink("Plants", _navigationManager.GetPlantsUrl(), false));
+        _breacrumbLinks.Add(new BreadcrumbLink(_plant.Name, _navigationManager.GetViewPlantUrl(PlantId), false));
+
+        if (string.IsNullOrWhiteSpace(PlantGrowInstructionId))
+        {
+            _breacrumbLinks.Add(new BreadcrumbLink($"Add {_plant.Name} Grow Instruction", _navigationManager.GetCreatePlantGrowInstructionUrl(PlantId), true));
+            _title = $"Add {_plant.Name} Grow Instruction";
+            _description = "";// $"Add {plant.Name} Variety";
+            if (_plantGrowInstructionForm!= null) _plantGrowInstructionForm.Initialize(null, _plant);
+        }
+        else
+        {
+            _plantGrowInstruction = await GetPlantGrowInstruction(PlantId, PlantGrowInstructionId);
+            _breacrumbLinks.Add(new BreadcrumbLink($"Edit {_plantGrowInstruction.Name}", _navigationManager.GetEditPlantGrowInstructionUrl(PlantId, PlantGrowInstructionId), true));
+            _title = $"Edit {_plantGrowInstruction.Name}";
+            _description = "";// $"Add {plant.Name} Variety";
+            if (_plantGrowInstructionForm != null) _plantGrowInstructionForm.Initialize(_plantGrowInstruction, _plant);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task<PlantModel> GetPlant(string plantId)
+    {
+        PlantModel? plant = null;
+
+        if (!string.IsNullOrWhiteSpace(plantId))
+        {
+            plant = await _plantService.GetPlant(plantId, false);
+        }
+
+        if (plant == null) _navigationManager.NavigateToPlants();
+
+        return plant ?? new PlantModel();
+    }
+
+    private async Task<PlantGrowInstructionViewModel> GetPlantGrowInstruction(string plantId, string plantGrowInstructionId)
+    {
+        PlantGrowInstructionViewModel? growInstruction = null;
+
+        growInstruction = await _plantService.GetPlantGrowInstruction(plantId, plantGrowInstructionId);
+
+        if (growInstruction == null) _navigationManager.NavigateToPlants();
+
+        return growInstruction ?? new PlantGrowInstructionViewModel();
+    }
+
+    protected async Task ClosePage()
+    {
+        await Task.Delay(1);
+        _navigationManager.NavigateToViewPlant(PlantId);
+
+    }
+
+    protected void NavigateToPlants()
+    {
+        _navigationManager.NavigateToPlants();
+
+    }
+}

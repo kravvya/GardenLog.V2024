@@ -1,0 +1,29 @@
+<div class="chart-container" style="position: relative; height:300px;">
+    @if (_data != null)
+    {
+        <Chart Id="plantStatusBar" Type="Chart.ChartType.HorizontalBar" Labels="@_labels" Data="@_data" BackgroundColor="@_colors" />
+    }
+</div>
+
+@code {
+    [Parameter] public List<PlantHarvestCycleModel>? HarvestPlants { get; set; }
+
+    private int[]? _data;
+    private string[] _labels = new[] { "Selected", "Seeded Inside", "Seeded Outside", "Transplanted", "Harvesting", "Harvest Completed" };
+    private string[] _colors = new[] { "#ced4da", "#e35d6a", "#479f76", "#fd9843", "#de5c9d", "#495057" };
+
+    protected override void OnParametersSet()
+    {
+        if (HarvestPlants == null) return;
+
+        int selected = HarvestPlants.Count();
+        int seededInside = HarvestPlants.Where(p => p.PlantingMethod == PlantingMethodEnum.SeedIndoors && p.SeedingDate.HasValue).Count();
+        int seededOutside = HarvestPlants.Where(p => p.PlantingMethod == PlantingMethodEnum.DirectSeed && p.SeedingDate.HasValue).Count();
+        int tranplanted = HarvestPlants.Where(p => p.TransplantDate.HasValue).Count();
+        int harvesting = HarvestPlants.Where(p => p.FirstHarvestDate.HasValue && !p.LastHarvestDate.HasValue).Count();
+        int completed = HarvestPlants.Where(p => p.LastHarvestDate.HasValue).Count();
+
+        _data = new[] { selected, seededInside, seededOutside, tranplanted, harvesting, completed };
+        StateHasChanged();
+    }
+}

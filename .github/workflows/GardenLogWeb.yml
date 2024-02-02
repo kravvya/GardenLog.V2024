@@ -1,0 +1,47 @@
+name: Deploy GardenLogWeb
+run-name: ${{ github.actor }} is deploying to GitHub pages using GitHub Actions 🚀
+on:
+  push:
+    branches: 
+      - main
+    paths:
+      - "src/GardenLogWeb/**"
+  pull_request:
+    branches: 
+       - main
+    paths:
+      - 'src/GardenLogWeb/**'
+  workflow_dispatch:
+jobs:
+  deploy-to-github-pages:
+    runs-on: ubuntu-latest
+
+    needs: setup
+    steps:
+    # checkout the repo
+    - name: Checkout to the branch
+      uses: actions/checkout@main
+
+    - name: Install .NET Core SDK
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: "8.0.x"
+    
+    - name: Publish .NET Core Project
+      run: dotnet publish GardenLogWeb/GardenLogWeb.csproj -c Release -o release
+     
+    - name: Add .nojekyll file
+      run: touch release/wwwroot/.nojekyll
+      
+    - name: Change base-tag in index.html from / to GardenLog.V2023
+      run: sed -i 's/<base href="\/" \/>/<base href="\/GardenLog.V2023\/" \/>/g' release/wwwroot/index.html
+   
+    - name: Copy index.html to 404.html
+      run: cp release/wwwroot/index.html release/wwwroot/404.html
+
+    - name: Commit wwwroot to GitHub pages
+      uses: actions/deploy-pages@v4 
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: gh-pages
+        FOLDER: release/wwwroot

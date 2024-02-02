@@ -37,7 +37,7 @@ public partial class PlantHarvestTests // : IClassFixture<PlantHarvestServiceFix
 
         Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
         Assert.NotEmpty(returnString);
-        Assert.True(Guid.TryParse(returnString, out var harvestCycleId));
+        Assert.True(Guid.TryParse(returnString, out _));
 
     }
 
@@ -67,7 +67,7 @@ public partial class PlantHarvestTests // : IClassFixture<PlantHarvestServiceFix
         {
             var work = workLogs.First();
 
-            work.Log = $"{work.Log} last pdated: {DateTime.Now.ToString()}";
+            work.Log = $"{work.Log} last pdated: {DateTime.Now}";
 
             var response = await _workLogClient.UpdateWorkLog(work);
 

@@ -1,0 +1,23 @@
+﻿<input type="color" class="form-control form-control-color" value="@Color" @onchange="OnColorChanged" id="@Id" title="@Title">
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Color { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ColorChanged { get; set; }
+
+    private Task OnColorChanged(ChangeEventArgs e)
+    {
+        var color = e.Value != null ? e.Value.ToString() : null;
+
+        Color = color == null ? "White" : color;
+
+        return ColorChanged.InvokeAsync(Color);
+    }
+}

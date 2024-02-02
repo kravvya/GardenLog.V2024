@@ -1,0 +1,66 @@
+﻿.plant-list li {
+    color: #666;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.plant-list ul {
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    color: #333;
+}
+
+.search-result {
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.plant-search-filter {
+    background: #f7f7f7;
+    padding: 20px;
+}
+
+.widget {
+    background: #fff;
+    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1);
+    padding: 25px 10px 10px;
+    margin-bottom: 10px;
+    border-radius: 2px;
+}
+
+.widget-header {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #dedede;
+}
+
+.widget.plant-list ul li:not(:last-child) {
+    border-bottom: 1px solid #F4F7F9;
+}
+
+.widget.plant-list ul li a {
+    padding: 8px 0;
+    display: block;
+    transition: all linear 0.3s;
+}
+
+    .widget.plant-list ul li a span {
+        float: right;
+        font-size: 10px;
+        background: #F4F7F9;
+        border-radius: 10px;
+        padding: 3px 8px;
+        color: #84919B;
+    }
+
+.widget.product-shorting .form-check {
+    margin-bottom: 4px;
+}

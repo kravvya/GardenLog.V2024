@@ -1,0 +1,67 @@
+﻿@inject ILogger<PlantGrowInstructionList> _logger;
+@inject IVerifyService _verifyService;
+@inject IPlantService _plantService;
+@inject NavigationManager _navigationManager;
+
+<article id="plantGrowInstructionList">
+    <div class="container">
+        <div class="row">
+            @if (Plant != null)
+            {
+                @if (_growInstructions == null && string.IsNullOrEmpty(Plant.GardenTip))
+                {
+                    <p><em>Empty</em></p>
+                }
+                else
+                {
+                    <div class="accordion" id="growInstructions">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="GardenTipheader">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#gardenTip" aria-expanded="true" aria-controls="gardenTip">
+                                    <span class="lead fw-bold">Garden Tip</span>
+                                </button>
+                            </h2>
+                            <div id="gardenTip" class="accordion-collapse collapse" aria-labelledby="gardenTip" data-bs-parent="#growInstructions">
+                                <div class="accordion-body">
+                                    <p>
+                                        @Plant.GardenTip
+                                    </p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        @if (_growInstructions != null)
+                        {
+                            @foreach (var grow in _growInstructions.OrderBy(c => c.Name).Select((value, index) => new { value, index }))
+                            {
+                                <PlantGrowInstructionAccordianItemView GrowInstruction=@grow.value IsOpen=false />
+                            }
+                        }
+                    </div>
+                }
+            }
+        </div>
+
+    </div>
+</article>
+@code {
+
+    [Parameter] public PlantModel? Plant { get; set; }
+
+    private IList<PlantGrowInstructionViewModel>? _growInstructions { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Plant != null)
+        {
+            _growInstructions = await _plantService.GetPlantGrowInstructions(Plant.PlantId, true);
+            StateHasChanged();
+        }
+    }
+
+    private bool IsOpen(int index)
+    {
+        return index == 0;
+    }
+}

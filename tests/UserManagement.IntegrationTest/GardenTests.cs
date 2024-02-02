@@ -47,7 +47,7 @@ public partial class GardenTests : IClassFixture<UserManagementServiceFixture>
         }
         else
         {
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.BadRequest);
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
             Assert.NotEmpty(returnString);
             Assert.Contains("Garden with this name already exists", returnString);
         }
@@ -62,7 +62,7 @@ public partial class GardenTests : IClassFixture<UserManagementServiceFixture>
 
         _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.BadRequest);
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         Assert.NotEmpty(returnString);
         Assert.Contains("'Name' must not be empty.", returnString);
     }
@@ -80,7 +80,7 @@ public partial class GardenTests : IClassFixture<UserManagementServiceFixture>
 
         _output.WriteLine($"Service to update garden responded with {response.StatusCode} code and {returnString} message");
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.NotEmpty(returnString);
     }
 
@@ -97,7 +97,7 @@ public partial class GardenTests : IClassFixture<UserManagementServiceFixture>
 
         _output.WriteLine($"Service to delete garden responded with {response.StatusCode} code and {returnString} message");
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.NotEmpty(returnString);
     }
 
@@ -213,7 +213,7 @@ public partial class GardenTests : IClassFixture<UserManagementServiceFixture>
 
         _output.WriteLine($"Service to update Garden Bed responded with {response.StatusCode} code and {returnString} message");
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.NotEmpty(returnString);
     }
 
@@ -231,7 +231,7 @@ public partial class GardenTests : IClassFixture<UserManagementServiceFixture>
 
         _output.WriteLine($"Service to delete garden bed responded with {response.StatusCode} code and {returnString} message");
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.NotEmpty(returnString);
     }
     #endregion
@@ -344,7 +344,7 @@ public partial class GardenTests : IClassFixture<UserManagementServiceFixture>
 
 
         Assert.NotEmpty(returnString);
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.True(Guid.TryParse(returnString, out _));
 
         return returnString;

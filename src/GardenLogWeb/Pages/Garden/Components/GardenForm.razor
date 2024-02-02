@@ -1,0 +1,159 @@
+﻿@inject IGardenLogToastService _toastService;
+@inject ILogger<GardenForm> _logger;
+@inject IGardenService _gardenService;
+
+<article id="gardenForm">
+    <div class="container">
+        @if (_isInitialized && _garden != null)
+        {
+            <EditForm EditContext="@_editContext" OnValidSubmit="@HandleValidSubmitAsync" OnInvalidSubmit="@HandleInValidSubmit">
+
+                <FluentValidationValidator />
+                <CustomValidation @ref="customValidation" />
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <label for="name">Name</label>
+                        <InputText class="form-control" id="name" @bind-Value="@_garden.Name" />
+                        <ValidationMessage For="@(() => _garden.Name)" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-5">
+                        <label for="City">City</label>
+                        <InputText class="form-control" id="City" @bind-Value="@_garden.City" />
+                        <ValidationMessage For="@(() => _garden.City)" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="long">State</label>
+                        <InputText class="form-control" @bind-Value="@_garden.StateCode" />
+                        <ValidationMessage For="@(() => _garden.StateCode)" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="LastFrostDate">Last Spring Frost Date</label>
+                        <InputDate T="DateOnly" format-value="MM-dd" class="form-control" id="LastFrostDate" @bind-Value="@_garden.LastFrostDate" />
+                        <ValidationMessage For="@(() => _garden.LastFrostDate)" />
+                    </div>
+                    <div class="col-md-4">
+                        <label for="WarmSoilDate">Warm Soil Date</label>
+                        <InputDate T="DateOnly" class="form-control" id="WarmSoilDate" @bind-Value="@_garden.WarmSoilDate" />
+                        <ValidationMessage For="@(() => _garden.WarmSoilDate)" />
+                    </div>
+                    <div class="col-md-4">
+                        <label for="FirstFrostDate">First Fall Frost Date</label>
+                        <InputDate T="DateOnly" class="form-control" id="FirstFrostDate" @bind-Value="@_garden.FirstFrostDate" />
+                        <ValidationMessage For="@(() => _garden.FirstFrostDate)" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-5">
+                        <label for="lat">Latitude</label>
+                        <InputNumber T="decimal" class="form-control" id="lat" @bind-Value="@_garden.Latitude" />
+                        <ValidationMessage For="@(() => _garden.Latitude)" />
+                    </div>
+                    <div class="col-md-5">
+                        <label for="long">Longitude</label>
+                        <InputNumber T="decimal" class="form-control" id="long" @bind-Value="@_garden.Longitude" />
+                        <ValidationMessage For="@(() => _garden.Longitude)" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-2">
+                        <label for="Length">Length (ft)</label>
+                        <InputNumber T="double" class="form-control" id="Length" @bind-Value="@_garden.Length" />
+                        <ValidationMessage For="@(() => _garden.Length)" />
+                    </div>
+                    <div class="col-md-2">
+                        <label for="Width">Width (ft)</label>
+                        <InputNumber T="double" class="form-control" id="Width" @bind-Value="@_garden.Width" />
+                        <ValidationMessage For="@(() => _garden.Width)" />
+                    </div>
+                </div>
+
+                <div class="col-md-10">
+                    <label for="description">Description</label>
+                    <InputTextArea Class="form-control" Id="description" @bind-Value="@_garden.Notes" rows="5" />
+                    <ValidationMessage For="@(() => _garden.Notes)" />
+                </div>
+
+                <div class="col-12">
+                    <div class="modal-footer">
+                        @if (_isEdit)
+                        {
+                            <button type="submit" class="btn btn-primary" title="Save Changes">
+                                <span class="bi bi-file-earmark-post">&nbsp;</span> Save
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="submit" class="btn btn-primary" title="Create Garden">
+                                <span class="bi bi-file-earmark-post">&nbsp;</span> Add
+                            </button>
+                        }
+                        <button type="button" class="btn btn-danger" @onclick="@(() => OnCancel())">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                    </div>
+                </div>
+            </EditForm>
+        }
+    </div>
+</article>
+
+@code {
+    [Parameter] public Func<GardenModel, Task>? OnClose { get; set; }
+
+    private bool _isInitialized = false;
+    private GardenModel? _garden = null;
+    private EditContext? _editContext;
+    private bool _isEdit = false;
+    private CustomValidation? customValidation;
+
+    public void Initialize(GardenModel? garden)
+    {
+        _garden = garden;
+
+        if (_garden == null)
+        {
+            _garden = new GardenModel();
+        }
+        _isEdit = !string.IsNullOrEmpty(_garden.GardenId);
+
+        _editContext = new(_garden);
+        _editContext.SetFieldCssClassProvider(new BootstrapValidationFieldClassProvider());
+        _isInitialized = true;
+        StateHasChanged();
+    }
+
+    protected async Task HandleValidSubmitAsync()
+    {
+        _logger.Log(LogLevel.Information, "Garden Form passed validations");
+        customValidation?.ClearErrors();
+
+        ApiResponse response = (_isEdit) ? await _gardenService.UpdateGarden(_garden!) : await _gardenService.CreateGarden(_garden!);
+
+        if (response.ValidationProblems != null)
+        {
+            customValidation?.DisplayErrors(response.ValidationProblems);
+        }
+
+        if (response.IsSuccess)
+        {
+            if (OnClose != null) await OnClose(_garden!);
+        }
+    }
+
+    protected void HandleInValidSubmit()
+    {
+        _toastService.ShowToast("Garden can not be save. Please correct validation errors.", GardenLogToastLevel.Error);
+    }
+
+    protected void OnCancel()
+    {
+        if (OnClose != null && _garden != null)
+            OnClose(_garden);
+    }
+}

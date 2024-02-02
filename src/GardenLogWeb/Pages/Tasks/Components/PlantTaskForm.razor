@@ -1,0 +1,189 @@
+﻿@inject ILogger<WorkLogForm> _logger;
+@inject IPlantTaskService _taskService;
+@inject IVerifyService _verifyService;
+@inject IHarvestCycleService _harvestService;
+
+<article id="taskForm">
+    <div class="container">
+        @if (IsInitialized && _task != null && _harvests != null && _plants != null)
+        {
+            <EditForm EditContext="@_editContext" OnValidSubmit="@HandleValidSubmit" class="row g-3">
+                <FluentValidationValidator />
+                <CustomValidation @ref="_customValidation" />
+                @*<ValidationSummary />*@
+
+                <div class="col-md-6">
+                    <label for="HarvestCycleId">Garden Plan</label>
+                    <InputSelect class="form-select" @bind-Value="_task.HarvestCycleId" id="HarvestCycleId" @oninput="@ReloadHarvestOptions">
+                        @foreach (var harvest in _harvests)
+                        {
+                            <option Value="@harvest.HarvestCycleId">@harvest.HarvestCycleName</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => _task.HarvestCycleId)" />
+                </div>
+
+                <div class="col-md-6">
+                    <label for="PlantHarvestCycleId">Plant</label>
+                    <InputSelect class="form-select" @bind-Value="_task.PlantHarvestCycleId" id="PlantHarvestCycleId" @oninput="@SetPlantName">
+                        @foreach (var plant in _plants)
+                        {
+                            <option Value="@plant.PlantHarvestCycleId">@plant.GetPlantName()</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => _task.PlantHarvestCycleId)" />
+                </div>
+
+                <div class="col-md-6">
+                    <label for="reason">Reason</label>
+                    <InputSelect class="form-select" @bind-Value="_task.Type" id="reason">
+                        @foreach (var item in Enum.GetValues<WorkLogReasonEnum>().Where(p => p != WorkLogReasonEnum.Unspecified))
+                        {
+                            <option Value="@item">@(_verifyService.GetDescription(item))</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => _task.Type)" />
+                </div>
+
+                <div class="col-11">
+                    <div class="row flex-nowrap">
+                        <div class="col-md-4">
+                            <label for="TargetDateStart">Start Date</label>
+                            <InputDate class="form-control" id="TargetDateStart" @bind-Value="@_task.TargetDateStart" @oninput="@AdjustEndDate" />
+                            <ValidationMessage For="@(() => _task.TargetDateStart)" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="TargetDateEnd">End Date</label>
+                            <InputDate class="form-control" id="TargetDateEnd" @bind-Value="@_task.TargetDateEnd" />
+                            <ValidationMessage For="@(() => _task.TargetDateEnd)" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-10">
+                    <label for="Title">Title</label>
+                    <InputText Class="form-control" Id="log" @bind-Value="@_task.Title" />
+                    <ValidationMessage For="@(() => _task.Title)" />
+                </div>
+
+                <div class="col-md-10">
+                    <label for="Notes">Note</label>
+                    <InputTextArea Class="form-control" Id="log" @bind-Value="@_task.Notes" />
+                    <ValidationMessage For="@(() => _task.Notes)" />
+                </div>
+
+                <div class="col-12">
+                    <div class="modal-footer">
+                        <span>
+                            <button type="submit" class="btn btn-primary" title="Save Changes">Save <span class="bi bi-file-earmark-post">&nbsp;</span></button>
+                            <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() =>OnCancel())">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                        </span>
+                    </div>
+                </div>
+            </EditForm>
+        }
+    </div>
+</article>
+@code {
+    [Parameter] public Func<PlantTaskModel?, Task>? OnClose { get; set; }
+
+    private PlantTaskModel? _task;
+    private CustomValidation? _customValidation;
+    private EditContext? _editContext;
+
+    private bool IsInitialized = false;
+    IList<HarvestCycleModel>? _harvests;
+    IList<PlantHarvestCycleModel>? _plants = new List<PlantHarvestCycleModel>();
+
+    public async void Initialize()
+    {
+        _harvests = await _harvestService.GetHarvestList(false);
+
+
+        _task = new PlantTaskModel();
+        if (_harvests != null && _harvests.Count == 1)
+        {
+            _task.HarvestCycleId = _harvests.First().HarvestCycleId;
+            _plants = await _harvestService.GetPlantHarvests(_task.HarvestCycleId, false);
+        }
+        _task.CreatedDateTime = DateTime.Now;
+        _task.TargetDateStart = DateTime.Now.AddDays(1);
+        _task.TargetDateEnd = DateTime.Now.AddDays(7);
+
+        _task.IsSystemGenerated = false;
+
+        _editContext = new(_task);
+        _editContext.SetFieldCssClassProvider(new BootstrapValidationFieldClassProvider());
+        IsInitialized = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        _logger.Log(LogLevel.Information, "Image Form passed valdiate");
+
+        _customValidation?.ClearErrors();
+
+        ApiResponse response = await _taskService.CreatePlantTask(_task!);
+
+        if (response.ValidationProblems != null)
+        {
+            _customValidation?.DisplayErrors(response.ValidationProblems);
+        }
+
+        if (response.IsSuccess)
+        {
+            if (OnClose != null) await OnClose(_task!);
+        }
+    }
+
+    protected async Task ReloadHarvestOptions(ChangeEventArgs e)
+    {
+        if (e == null || e.Value == null) return;
+
+        _plants = null;
+
+        string? harvestId = (e != null ? (string)e.Value : _task?.HarvestCycleId);
+
+        if (!string.IsNullOrWhiteSpace(harvestId))
+        {
+            _plants = await _harvestService.GetPlantHarvests(harvestId, false);
+        }
+        else
+        {
+            _plants = new List<PlantHarvestCycleModel>();
+        }
+        StateHasChanged();
+    }
+
+    private void SetPlantName(ChangeEventArgs e)
+    {
+        if (e == null || e.Value == null || _task == null || _plants == null) return;
+
+        string plantHarvestId = (e != null ? (string)e.Value : _task.PlantHarvestCycleId);
+        if (!string.IsNullOrWhiteSpace(plantHarvestId))
+        {
+            _task.PlantName = _plants.First(p => p.PlantHarvestCycleId == plantHarvestId).GetPlantName();
+        }
+
+    }
+
+    private void AdjustEndDate(ChangeEventArgs e)
+    {
+        if (e == null || e.Value == null || _task == null) return;
+
+        if (DateTime.TryParse(e.Value.ToString(), out var startDate))
+        {
+            if (_task.TargetDateEnd < startDate)
+                _task.TargetDateEnd = startDate.AddDays(6);
+
+        }
+    }
+
+    private void OnCancel()
+    {
+        if (OnClose != null)
+            OnClose(null);
+    }
+}

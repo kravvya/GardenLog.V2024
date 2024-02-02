@@ -1,0 +1,327 @@
+﻿@inject IMouseService _mouseService;
+@inject IKeyService _keyService;
+@inject ILogger<DraggablePlantSelector> _logger;
+@implements IDisposable;
+
+@if (_plant != null && _sides != null)
+{
+    <g class="selector-box" transform="translate(@GardenBed?.X, @GardenBed?.Y) rotate(@(GardenBed?.Rotate),@(GardenBed?.GetWidthInPixels()/2),@(GardenBed?.GetHeightInPixels()/2))">
+
+        <rect x="@_plant.X" y="@_plant.Y" width="@_plant?.GetWidthInPixels()" height="@_plant?.GetHeightInPixels()" class="selector"></rect>
+
+        @if (_plant != null && GardenBed != null)
+        {
+            <ellipse cx="@_plant.X" cy="@(_plant.Y + _plant?.GetHeightInPixels()/2)" rx="5" ry="5" class="selector @_sides.GetCssClass(ComponentChanges.Left)" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.Left))></ellipse>
+
+            <ellipse cx="@(_plant?.X + _plant?.GetWidthInPixels()/2)" cy="@(_plant?.Y +_plant?.GetHeightInPixels())" rx="5" ry="5" class="selector @_sides.GetCssClass(ComponentChanges.Bottom)" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.Bottom))></ellipse>
+
+            <ellipse cx="@(_plant?.X + _plant?.GetWidthInPixels())" cy="@(_plant?.Y +_plant?.GetHeightInPixels()/2)" rx="5" ry="5" class="selector @_sides.GetCssClass(ComponentChanges.Right)" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.Right))></ellipse>
+
+            <ellipse cx="@(_plant?.X + _plant?.GetWidthInPixels()/2)" cy="@_plant?.Y" rx="5" ry="5" class="selector @_sides.GetCssClass(ComponentChanges.Upper)" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.Upper))></ellipse>
+        }
+    </g>
+}
+
+@code {
+    [System.Diagnostics.CodeAnalysis.AllowNull]
+    [Parameter] public GardenBedModel? GardenBed { get; set; }
+
+    [System.Diagnostics.CodeAnalysis.AllowNull]
+    [Parameter] public Action<GardenBedPlantHarvestCycleModel> GardenBedPlantChanged { get; set; } = null!;
+
+    private GardenPlanSettings? _settings;
+    private GardenBedPlantHarvestCycleModel? _plant;
+
+    private double _cursorX;
+    private double _cursorY;
+    ComponentChanges _changes = ComponentChanges.Unspecified;
+    private SelectorSides? _sides;
+
+    protected override void OnParametersSet()
+    {
+        if (_sides == null && GardenBed != null)
+        {
+            _sides = new SelectorSides(GardenBed.Rotate);
+        }
+    }
+
+    public void Intitialize(GardenBedPlantHarvestCycleModel? plant, GardenPlanSettings settings, MouseEventArgs? e)
+    {
+        _settings = settings;
+        if (plant != null && e == null && plant.GardenBedPlantHarvestCycleId == _plant?.GardenBedPlantHarvestCycleId) return;
+
+        if (plant != null && e != null && GardenBed != null)
+        {
+            _plant = plant;
+            _mouseService.OnMove += OnMove;
+            _mouseService.OnUp += OnUp;
+            _keyService.OnKeyDown += OnKeyDown;
+
+            _changes = ComponentChanges.Move;
+            _cursorX = e.ClientX;
+            _cursorY = e.ClientY;
+        }
+        else if (plant != null) //Plant is selected from the grid (not from mouse click)
+        {
+            _plant = plant;
+        }
+        else
+        {
+            _plant = null;
+            _mouseService.OnMove -= OnMove;
+            _mouseService.OnUp -= OnUp;
+            _keyService.OnKeyDown -= OnKeyDown;
+            _changes = ComponentChanges.Unspecified;
+        }
+
+        StateHasChanged();
+    }
+
+    void OnResizerDown(MouseEventArgs e, ComponentChanges changes)
+    {
+        _logger.LogDebug($"DraggablePlantSelector - OnResizerDown - {changes}");
+        _changes = changes;
+
+        _cursorX = e.ClientX;
+        _cursorY = e.ClientY;
+    }
+
+    void OnUp(object? _, MouseEventArgs e)
+    {
+        _changes = ComponentChanges.Unspecified;
+        _logger.LogDebug("DraggablePlantSelector - OnUp");
+    }
+
+    void OnMove(object? _, MouseEventArgs e)
+    {
+
+        if (_changes == ComponentChanges.Unspecified || _sides == null)
+            return;
+
+        if (GardenBed == null || _plant == null) return;
+
+        /*
+        Units of Measure:
+        moveBy is measured in the pattern units. This is done to support only expading products based on the pattern size.
+            (if pattern is 2 then moveBy 1 means - we are expending product by 2 ft (1 unit * 2 pattern))
+        _plant.Y - pixels from the top of  the garden bed to the top of the plant
+        _plant.X - pixels from the left side of the garden bed to the left side of the plant
+        _plant.PatternHeight - ft - required height for plant(s). Can only increment(expend) height by this number of ft.
+        _plant.PatternWidth - ft - required width for plant(s). Can only increment(expend) width by this number of ft.
+        GardenPlanSettings.TickFootWidth - number of pixles per foot. This scale is for the garden plan chart
+        */
+        if (_changes == ComponentChanges.Move)
+        {
+            /*
+            Top is based on the Y of the top side of the garden bed
+            Bottom is upper left corner of the garded bed + length of the garden bed - length of the plant itself
+                (since we will be comparing to the top of the plant, we need to subtract the length of the plat so it does not "pop" out from the garden bed)
+            Left is based on the X of the left side of the garden bed
+            Right is based on the X of the left side of the garden bed + the width of the bed - width of the plant itself
+                (since we will eb comapring to the left side of the plant, we need to subtract the length of the plant so it does not "pop" from the garden bed)
+            */
+            var top = GardenBed.Y;
+            var bottom = GardenBed.Y + GardenBed.Length / 12 * GardenPlanSettings.TickFootHeight - _plant.Length * GardenPlanSettings.TickFootHeight;
+            var left = GardenBed.X;
+            var right = GardenBed.X + GardenBed.Width / 12 * GardenPlanSettings.TickFootWidth - _plant.Width * GardenPlanSettings.TickFootWidth;
+
+            var deltaX = _cursorX - e.ClientX;
+            var deltaY = _cursorY - e.ClientY;
+
+            if (_sides!= null && _sides.FlipAxesForMove)
+            {
+                deltaY = _cursorX - e.ClientX;
+                deltaX = _cursorY - e.ClientY;
+            }
+
+            if (_sides!=null && _sides.LessIsMoreX)
+            {
+                deltaX = -1 * deltaX;                
+            }
+            if (_sides != null && _sides.LessIsMoreY)
+            {
+                deltaY = -1 * deltaY;
+            }
+            var newX = GardenBed.X + _plant?.X - deltaX;
+            var newY = GardenBed.Y + _plant?.Y - deltaY;
+
+            // _logger.LogInformation($"TryToMove: newX:{newX}  GardenBed.X:{GardenBed.X} _plant?.X:{_plant?.X} deltaX:{deltaX}  _cursorX:{_cursorX} e.ClientX: {e.ClientX}");
+
+
+            _logger.LogInformation($"TryToMove: newY: {newY} GardenBed.Y:{GardenBed.Y} _plant?.Y:{_plant?.Y}  deltaY:{deltaY} _cursorY:{_cursorY} e.ClientY: {e.ClientY} _sides.LessIsMoreY:{_sides!.LessIsMoreY}");
+
+
+            //  _logger.LogInformation($"Move: FlipAxesForMove: {_sides?.FlipAxesForMove} LessIsMore : {_sides?.LessIsMore}  top:{top} bottom: {bottom} left: {left} right:{right} oldX: {_plant?.X} oldY: {_plant?.Y} newX: {newX} newY: {newY}");
+
+            if (newX >= left && newX <= right && newY >= top && newY <= bottom)
+            {
+                _plant!.X -= deltaX;
+                _plant.Y -= deltaY;
+                GardenBedPlantChanged(_plant);
+            }
+        }
+        else
+        {
+            if (_sides == null) return;
+            var axis = _sides.GetAxis(_changes);
+            var lessIsMore = _sides.GetLessIsMore(_changes);
+            var delta = axis == "X" ? _cursorX - e.ClientX : _cursorY - e.ClientY;
+
+            var moveBy = Math.Floor(Math.Abs(delta) / _plant.GetPatternHeightInPixels());
+            if (moveBy == 0) return;
+            if ((delta) < 0) moveBy = moveBy * -1;
+           
+
+            switch (_changes)
+            {
+                case ComponentChanges.Left:
+                    /*make sure plants can not get outside of the garden bed
+                        We are expanding product to the left (reducing _plant.X). Right side remains as it was. To make sure product still fits within Garden Bed,
+                        check if reduced value of the _plant.X is still larger then 0 (plant X is measured from left side. less then ) is outside of GardenBed)
+                        to calcualte new left side fo the Plant, subtract moveBy(multiplied by patter and converted to pixels ) from _plant.X
+                    */
+                    lessIsMore = lessIsMore || _sides.LessIsMoreX;
+                    if (lessIsMore) moveBy = moveBy * -1;
+                    _logger.LogInformation($"Left: _plant.X:{_plant.X} Azis: {axis} LessIsMore: {lessIsMore} moveBy:{moveBy} new left side: {_plant.X - moveBy * _plant.PatternWidth * GardenPlanSettings.TickFootWidth} Allow: {_plant.X - moveBy * _plant.PatternWidth * GardenPlanSettings.TickFootWidth >= 0}");
+                    if (_plant.X - moveBy * _plant.PatternWidth * GardenPlanSettings.TickFootWidth >= 0)
+                    {
+                        _plant.X -= moveBy * _plant.GetPatternWidthInPixels();
+                        _plant.IncreaseWidthByPatternUnits(moveBy);
+                        GardenBedPlantChanged(_plant);
+                    }
+                    break;
+                case ComponentChanges.Bottom:                  
+
+                    //moveBy = Math.Floor(Math.Abs(_cursorY - e.ClientY) / _plant.GetPatternHeightInPixels());
+                    //if (moveBy == 0) return;
+                    //if ((_cursorY - e.ClientY) < 0) moveBy = moveBy * -1;
+                    /*make sure plants can not get outside of the garden bed
+                      We are expanding product to the bottom (increasing _plant.Y). Top side remains as it was. To make sure product still fits within Garden Bed,
+                      check if increased value of the (_plant.Y + _plant Height in pixels) is still smaller then GardenBed's length in pixels
+                      (note we are checking both plant length and where plant starts against the length of the garden bed)
+                      to calcualte where new bottom of the Plant will be, add moveBy(multiplied by pattern and converted to pixels ) and current plant length to _plant.Y
+                    */
+                    lessIsMore = lessIsMore || _sides.LessIsMoreY;
+                    if (lessIsMore) moveBy = moveBy * -1;
+                    _logger.LogInformation($"Bottom: _plant.Y:{_plant.Y} _plant.Length:{_plant.Length} Azis: {axis} LessIsMore: {lessIsMore} moveBy:{moveBy} new bottom: {_plant.Y + (_plant.Length + (-1 * moveBy) * _plant.PatternLength) * GardenPlanSettings.TickFootHeight} GardenBed.HeightInPixels:{GardenBed.GetHeightInPixels()} Allow: {_plant.Y + (_plant.Length + (-1 * moveBy) * _plant.PatternLength) * GardenPlanSettings.TickFootHeight <= GardenBed.GetHeightInPixels()}");
+                    if (_plant.Y + (_plant.Length + (-1 * moveBy) * _plant.PatternLength) * GardenPlanSettings.TickFootHeight <= GardenBed.GetHeightInPixels())
+                    {
+                        _plant.IncreaseLengthByPatternUnits(-1 * moveBy);
+                        GardenBedPlantChanged(_plant);
+                    }
+                    break;
+                case ComponentChanges.Right:
+
+                    /*make sure plants can not get outside of the garden bed
+                       We are changing right side of the product (changing _plant.Width). Left side remains as it was (_plant.X does not change). To make sure product still fits within Garden Bed,
+                       check if incrased value of the (_plant.X + _plant width in pixels) is still smaller then GardenBed's width in pixels
+                       (note we are checking both plant width and where plant starts against the width of the garden bed)
+                       to calcualte new location of the right side of the Plant, add moveBy(multiplied by pattern and converted to pixels ) and current plant width to the _plant.X
+                    */
+                    lessIsMore = lessIsMore || _sides.LessIsMoreX;
+                    if (lessIsMore) moveBy = moveBy * -1;
+                    _logger.LogInformation($"Right: _plant.X:{_plant.X} _plant.Width:{_plant.Width} Azis: {axis} LessIsMore: {lessIsMore} moveBy:{moveBy} new right:{_plant.X + (_plant.Width + (-1 * moveBy) * _plant.PatternWidth) * GardenPlanSettings.TickFootWidth} GardenBed.GetWidthInPixels: {GardenBed.GetWidthInPixels()} Allow: {_plant.X + (_plant.Width + (-1 * moveBy) * _plant.PatternWidth) * GardenPlanSettings.TickFootWidth <= GardenBed.GetWidthInPixels()}");
+                    if (_plant.X + (_plant.Width + (-1 * moveBy) * _plant.PatternWidth) * GardenPlanSettings.TickFootWidth <= GardenBed.GetWidthInPixels())
+                    {
+                        _plant.IncreaseWidthByPatternUnits(-1 * moveBy);
+                        GardenBedPlantChanged(_plant);
+                    }
+                    break;
+                case ComponentChanges.Upper:
+
+                    lessIsMore = lessIsMore || _sides.LessIsMoreY;
+                    if (lessIsMore) moveBy = moveBy * -1;
+                    if (_plant.Y - moveBy * _plant.PatternLength * GardenPlanSettings.TickFootHeight >= 0)
+                    {
+                        _plant.Y -= moveBy * _plant.GetPatternWidthInPixels();
+                        _plant.IncreaseLengthByPatternUnits(moveBy);
+                        GardenBedPlantChanged(_plant);
+                    }
+                    break;
+            }
+        }
+        _cursorX = e.ClientX;
+        _cursorY = e.ClientY;
+
+        StateHasChanged();
+    }
+
+    void OnKeyDown(object? _, KeyboardEventArgs e)
+    {
+        if (GardenBed == null || _plant == null) return;
+
+        var direction = e.Key;
+        if(_sides!=null && _sides.FlipAxesForMove)
+        {
+            switch (direction)
+            {
+                case "ArrowDown":
+                    direction = _sides.LessIsMoreY ? "ArrowRight" : "ArrowLeft";
+                    break;
+                case "ArrowUp":
+                    direction = _sides.LessIsMoreY ? "ArrowLeft" : "ArrowRight";
+                    break;
+                case "ArrowRight":
+                    direction = _sides.LessIsMoreX ? "ArrowUp" : "ArrowDown";
+                    break;
+                case "ArrowLeft":
+                    direction = _sides.LessIsMoreX ? "ArrowDown" : "ArrowUp";
+                    break;
+            }
+        }
+
+        switch (direction)
+        {
+            case "ArrowDown":
+                var bottom = GardenBed.Y + GardenBed.Length / 12 * GardenPlanSettings.TickFootHeight - _plant.Length * GardenPlanSettings.TickFootHeight;
+                var newY = GardenBed.Y + _plant.Y - 1;
+
+                if (newY <= bottom)
+                {
+                    _plant.MoveDown(1);
+                    GardenBedPlantChanged(_plant);
+                }
+                break;
+            case "ArrowUp":
+                var top = GardenBed.Y;
+                newY = GardenBed.Y + _plant.Y + 1;
+
+                if (newY >= top)
+                {
+                    _plant.MoveUp(1);
+                    GardenBedPlantChanged(_plant);
+                }
+                break;
+            case "ArrowRight":
+                var right = GardenBed.X + GardenBed.Width / 12 * GardenPlanSettings.TickFootWidth - _plant.Width * GardenPlanSettings.TickFootWidth;
+                var newX = GardenBed.X + _plant.X + 1;
+
+                if (newX <= right)
+                {
+                    _plant.MoveRight(1);
+                    GardenBedPlantChanged(_plant);
+                }
+                break;
+            case "ArrowLeft":
+                var left = GardenBed.X;
+                newX = GardenBed.X + _plant.X - 1;
+
+                if (newX >= left)
+                {
+                    _plant.MoveLeft(1);
+                    GardenBedPlantChanged(_plant);
+                }
+                break;
+            case "Delete":
+                _logger.LogInformation("Remove plant from garden bed");
+                break;
+        }
+    }
+
+    public void Dispose()
+    {
+        _mouseService.OnMove -= OnMove;
+        _mouseService.OnUp -= OnUp;
+        _keyService.OnKeyDown -= OnKeyDown;
+    }
+}

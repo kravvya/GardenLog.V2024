@@ -1,0 +1,12 @@
+﻿.plant-image {
+    max-width: 400px;
+}
+
+    .plant-image img {
+        width: 250px;
+    }
+
+.plant-image-thumbnail img {
+    width: 60px;
+    margin: 5px;
+}

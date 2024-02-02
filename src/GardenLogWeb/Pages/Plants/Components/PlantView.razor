@@ -1,0 +1,200 @@
+﻿@inject IImageService _imageService;
+@inject IVerifyService _verifyService;
+
+<article id="plantView">
+    @if (Plant != null && !string.IsNullOrWhiteSpace(Plant.PlantId) && !IsInsideModal)
+    {
+        <div class="row">
+
+            <div class="col-12 col-lg-4 mb-lg-5">
+                <div id="image-container">
+                    <div class="plant-image">
+                        <img class="d-block img-fluid" src="@_imageService.GetRawImageUrl(Plant.ImageFileName)" alt="@Plant.ImageLabel" />
+                    </div>
+                    <div class="plant-image-thumbnail">
+                        @if (Plant.Images != null)
+                        {
+                            @foreach (var image in Plant.Images)
+                            {
+                                <img class="img-fluid img-thumbnail" @key="image.ImageId" src="@_imageService.GetThumbnailImageUrl(image.FileName)" alt="@image.Label" @onclick="@(() => ReplaceImage(image))" />
+                            }
+                        }
+                    </div>
+                </div>
+
+                <div id="quick-facts">
+                    <div class="plant-facts">
+                        <h3 class="plant-facts_heading">Quick Facts</h3>
+                        <dl class="plant-facts_list row mt-2 mt-lg-0">
+                            <div class="plant-facts-item mt-1">
+                                <dt class="plant-facts_term">Features</dt>
+                                <dd class="plant-facts_definition col">
+                                    <img src="./images/@(Plant.LightRequirement).png" alt="@(_verifyService.GetDescription(Plant.LightRequirement))" title="@(_verifyService.GetDescription(Plant.LightRequirement))" class="img-fluid" />
+                                    <img src="./images/@(Plant.Type).png" alt="@Plant.Type" title="@Plant.Type" class="img-fluid" />
+                                    <img src="./images/@(Plant.Lifecycle).png" alt="@Plant.Lifecycle" title="@Plant.Lifecycle" class="img-fluid">
+                                </dd>
+                            </div>
+                            @if (Plant.HarvestSeason != HarvestSeasonEnum.Unspecified)
+                            {
+                                <div class="plant-facts-item mt-1">
+                                    <dt class="plant-facts_term">Harvest</dt>
+                                    <dd class="plant-facts_definition col">@GetHarvestSeasons()</dd>
+                                </div>
+                            }
+                            <div class="plant-facts-item mt-1">
+                                <dt class="plant-facts_term">Seed Viability (yrs)</dt>
+                                <dd class="plant-facts_definition col">@Plant.SeedViableForYears</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+
+
+            </div>
+
+            <div class="col-12 col-lg-8">
+
+                <div id="description">
+                    <p>
+                        @Plant.Description
+                    </p>
+                </div>
+
+                <div id="varieties-container">
+                    <p>
+                        <PlantVarietyList Plant=@Plant />
+                    </p>
+                </div>
+
+                <div id="grow-instructions-container">
+                    <div class="plant-grow">
+                        <h3 class="plant-facts_heading">Growing Instructions</h3>
+                        <p>
+                            <PlantGrowInstructionList Plant=@Plant />
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Plant != null && !string.IsNullOrEmpty(Plant.PlantId) && IsInsideModal)
+    {
+        <div class="row">
+
+            <div class="col-12">
+                <div id="image-container">
+                    <div class="plant-image">
+                        <img class="d-block img-fluid" src="@_imageService.GetRawImageUrl(Plant.ImageFileName)" alt="@Plant.ImageLabel" />
+                    </div>
+                    <div class="plant-image-thumbnail">
+                        @if (Plant.Images != null)
+                        {
+                            @foreach (var image in Plant.Images)
+                            {
+                                <img class="img-fluid img-thumbnail" @key="image.ImageId" src="@_imageService.GetThumbnailImageUrl(image.FileName)" alt="@image.Label" @onclick="@(() => ReplaceImage(image))" />
+                            }
+                        }
+                    </div>
+                </div>
+
+                <div id="quick-facts">
+                    <div class="plant-facts">
+                        <h3 class="plant-facts_heading">Quick Facts</h3>
+                        <dl class="plant-facts_list row mt-2 mt-lg-0">
+                            <div class="plant-facts-item mt-1">
+                                <dt class="plant-facts_term">Features</dt>
+                                <dd class="plant-facts_definition col">
+                                    <img src="./images/@(Plant.LightRequirement).png" alt="@(_verifyService.GetDescription(Plant.LightRequirement))" title="@(_verifyService.GetDescription(Plant.LightRequirement))" class="img-fluid" />
+                                    <img src="./images/@(Plant.Type).png" alt="@Plant.Type" title="@Plant.Type" class="img-fluid" />
+                                    <img src="./images/@(Plant.Lifecycle).png" alt="@Plant.Lifecycle" title="@Plant.Lifecycle" class="img-fluid">
+                                </dd>
+                            </div>
+                            @if (Plant.HarvestSeason != HarvestSeasonEnum.Unspecified)
+                            {
+                                <div class="plant-facts-item mt-1">
+                                    <dt class="plant-facts_term">Harvest</dt>
+                                    <dd class="plant-facts_definition col">@GetHarvestSeasons()</dd>
+                                </div>
+                            }
+                            <div class="plant-facts-item mt-1">
+                                <dt class="plant-facts_term">Seed Viability (yrs)</dt>
+                                <dd class="plant-facts_definition col">@Plant.SeedViableForYears</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+
+                <div id="description">
+                    <p>
+                        @Plant.Description
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div id="varieties-container">
+                    <p>
+                        <PlantVarietyList Plant=@Plant />
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div id="grow-instructions-container">
+                    <div class="plant-grow">
+                        <h3 class="plant-facts_heading">Growing Instructions</h3>
+                        <p>
+                            <PlantGrowInstructionList Plant=@Plant />
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</article>
+
+@code {
+    [Parameter]
+    public PlantModel? Plant { get; set; }
+
+    [Parameter]
+    public bool IsInsideModal { get; set; } = false;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        StateHasChanged();
+    }
+
+    private void ReplaceImage(ImageViewModel newImage)
+    {
+        if (Plant != null)
+        {
+            Plant.ImageFileName = newImage.FileName;
+            Plant.ImageLabel = newImage.Label;
+            StateHasChanged();
+        }
+    }
+
+    private string GetHarvestSeasons()
+    {
+        System.Text.StringBuilder sb = new();
+
+        if (Plant != null)
+        {
+            foreach (HarvestSeasonEnum harvest in Enum.GetValues(typeof(HarvestSeasonEnum)))
+            {
+                if (Plant.HarvestSeason.HasFlag(harvest) && harvest != HarvestSeasonEnum.Unspecified)
+                {
+                    if (sb.Length > 0) { sb.Append(", "); }
+                    sb.Append(_verifyService.GetDescription<HarvestSeasonEnum>(harvest.ToString()));
+                }
+            }
+        }
+        return sb.ToString();
+    }
+}

@@ -1,0 +1,28 @@
+﻿<Breadcrumb Links="@BreadcrumbLinks" />
+
+<!-- The <section> element can be used to enclose content that comes under a related heading.
+          NOTE: The <section> element can contain <article> elements and vice versa, if you think the content warrants it. -->
+<section>
+
+    <!-- This is the section's header. It contains the heading and navigation links for within the section -->
+    <PageHeaderAndTitle Title="@Title" Description="@Description" />
+
+    @PageContent
+
+</section>
+
+
+@code {
+    [Parameter]
+    public RenderFragment? PageContent { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Description { get; set; } = string.Empty;
+
+    [Parameter]
+    public List<BreadcrumbLink>? BreadcrumbLinks { get; set; }
+
+}

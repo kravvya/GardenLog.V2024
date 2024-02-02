@@ -1,0 +1,18 @@
+﻿@page "/"
+@page "/home"
+@using GardenLogWeb.Pages.Dashboard.Components
+
+<AuthorizeView>
+    <Authorized>
+        <Dashboard />
+    </Authorized>
+    <NotAuthorized>
+        Please login or request to create new account.
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+
+}
+
+

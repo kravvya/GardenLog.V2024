@@ -1,0 +1,11 @@
+﻿@page "/garden_plan"
+
+<Page Title="Garden Plan" Description="Review, Edit and Create Garden Plan" BreadcrumbLinks="@breacrubLinks">
+    <PageContent>
+        <HarvestList />
+    </PageContent>
+</Page>
+
+@code {
+    private List<BreadcrumbLink> breacrubLinks = new() { new BreadcrumbLink("Garden Plans", "garden_plan", true) };
+}

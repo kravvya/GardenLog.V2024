@@ -1,0 +1,127 @@
+﻿@inject IMouseService _mouseService;
+@inject IKeyService _keyService;
+@inject IGardenService _gardenService;
+@inject ILogger<HarvestGardenLayout> _logger;
+@inject IImageService _imageService;
+@implements IDisposable;
+
+@if (GardenBeds != null)
+{
+    <svg width="@Settings.SvgWidth" height="@Settings.SvgHeight" viewBox="@Settings.StartX @Settings.StartY @Settings.ViewBoxX @Settings.ViewBoxY"
+     @onkeydown=@(e => _keyService.KeyDown(this, e))
+     @onmousemove=@(e => _mouseService.MouseMove(this, e))
+     @onmouseup=@(e => _mouseService.MouseUp(this, e))
+     @onmouseout=@(e => _mouseService.MouseLeave(this, e))
+     tabindex="0">
+        <defs>
+            @*small background box*@
+            <pattern id="smallrect" x="0" y="0" width="48" height="48" viewBox="0 0 48 48" patternUnits="userSpaceOnUse">
+                <rect x="0" y="0" width="48" height="48" stroke-width="0.4"></rect>
+            </pattern>
+            @*group of small background boxes*@
+            <pattern id="bigrect" x="0" y="0" width="240" height="240" viewBox="0 0 240 240" patternUnits="userSpaceOnUse">
+                <rect x="0" y="0" width="240" height="240" fill="url(#smallrect)" stroke-width="1"></rect>
+            </pattern>
+            @*garden bed background box*@
+            <pattern id="bed-pat" x="0" y="0" width="48" height="48" viewBox="0 0 48 48" patternUnits="userSpaceOnUse">
+                <image x="0" y="0" width="48" height="48" href=" images/garden-bed-background.png"></image>
+            </pattern>
+
+            @if (GardenBedHarvestPlants != null)
+            {
+                @foreach (var plant in GardenBedHarvestPlants)
+                {
+                    <pattern id="@plant.GardenBedPlantHarvestCycleId" x="0" y="0" width="@plant.GetPatternWidthInPixels()" height="@plant.GetPatternHeightInPixels()" viewBox="0 0 @plant.GetPatternHeightInPixels() @plant.GetPatternWidthInPixels()" patternUnits="userSpaceOnUse">
+                        <image x="0" y="0" width="@plant.GetPatternWidthInPixels()" height="@plant.GetPatternHeightInPixels()" href="@_imageService.GetThumbnailImageUrl(plant.ImageFileName)"></image>
+                    </pattern>
+                }
+            }
+
+        </defs>
+        <rect x="0" y="0" width="@(Settings.GardenLayoutWidth)" height="@(Settings.GardenLayoutHeight)" fill="url(#bigrect)" id="bg" @onmousedown=@(e => PlantSelectedByMouseClick(null))></rect>
+
+        <g>
+            @foreach (var bed in GardenBeds)
+            {
+                <RectGardenBedWithPlants GardenBed=@bed SelectedPlant="@_selectedPlant" PlantSelectedByMouseClick=@PlantSelectedByMouseClick Settings=@Settings GardenBedHarvestPlants=@GetPlannedPlants(bed) GardenBedPlantChanged=@GardenBedPlantChanged fill="url(#bed-pat)"></RectGardenBedWithPlants>
+            }
+        </g>
+
+    </svg>
+}
+
+@code {
+    [Parameter] public GardenModel? Garden { get; set; }
+
+    [Parameter] public List<GardenBedModel>? GardenBeds { get; set; }
+
+    [Parameter] public List<GardenBedPlantHarvestCycleModel>? GardenBedHarvestPlants { get; set; }
+
+    [Parameter] public GardenPlanSettings Settings { get; set; } = null!;
+
+    [Parameter] public Func<GardenBedPlantHarvestCycleModel?, Task> NotifyViewOfSelectedGardenBedPlant { get; set; } = null!;
+
+    [Parameter] public Func<GardenBedPlantHarvestCycleModel, Task> PlantDeleted { get; set; } = null!;
+
+    [Parameter] public Action<GardenBedPlantHarvestCycleModel> GardenBedPlantChanged { get; set; } = null!;
+
+    private GardenBedPlantHarvestCycleModel? _selectedPlant;
+
+    protected override void OnInitialized()
+    {
+        _keyService.OnKeyDown += OnKeyDown;
+    }
+
+    public void ForceStateHasChanged(List<GardenBedModel>? gardenBeds, List<GardenBedPlantHarvestCycleModel>? gardenBedPlants)
+    {
+        GardenBeds = gardenBeds;
+        GardenBedHarvestPlants?.Clear();
+        GardenBedHarvestPlants = gardenBedPlants;
+        StateHasChanged();
+    }
+
+    protected List<GardenBedPlantHarvestCycleModel> GetPlannedPlants(GardenBedModel gardenBed)
+    {
+        if (GardenBedHarvestPlants == null) return new();
+        return GardenBedHarvestPlants.Where(p => p.GardenBedId == gardenBed.GardenBedId).ToList();
+    }
+
+    public async Task PlantSelectedFromTheGridOfOtherPlants(GardenBedPlantHarvestCycleModel selectedPlant)
+    {
+        _logger.LogDebug($"PlantSelectedFromTheGridOfOtherPlants {selectedPlant.PlantName}");
+        _selectedPlant = selectedPlant;
+        await NotifyViewOfSelectedGardenBedPlant(selectedPlant);
+    }
+
+    protected async Task PlantSelectedByMouseClick(GardenBedPlantHarvestCycleModel? selectedPlant)
+    {
+        if(selectedPlant!=null) _logger.LogDebug($"PlantSelectedByMouseClick {selectedPlant.PlantName}");
+        _selectedPlant = selectedPlant;
+        await NotifyViewOfSelectedGardenBedPlant(selectedPlant);
+    }
+
+    void OnKeyDown(object? _, KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Delete":
+                if (_selectedPlant != null)
+                {
+                    _logger.LogInformation($"Delete Plant - HarvestGardenLayout");
+                    GardenBedPlantHarvestCycleModel gardenBedPLantToBeDeleted = _selectedPlant;
+                    _selectedPlant = null;
+                    PlantDeleted(gardenBedPLantToBeDeleted).GetAwaiter();
+                    StateHasChanged();
+                }
+                break;
+        }
+    }
+
+
+    public void Dispose()
+    {
+        _keyService.OnKeyDown -= OnKeyDown;
+    }
+}
+
+

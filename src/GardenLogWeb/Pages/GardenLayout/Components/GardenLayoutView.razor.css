@@ -1,0 +1,24 @@
+﻿
+#collapse1 {
+    overflow-y: scroll;
+    height: 247px;
+}
+
+.btn{
+    max-height: 40px;
+
+}
+
+.vertical-ruler-div {
+    margin-right: -18px;
+    margin-top: 24px;
+}
+
+.garden-facts_list .garden-facts_term {
+    color: #709a41;
+    text-transform: uppercase;
+}
+
+.garden-facts_list .garden-facts-item {
+    border-bottom: 2px solid #c5c5c5;
+}

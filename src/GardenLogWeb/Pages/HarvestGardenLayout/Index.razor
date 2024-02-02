@@ -1,0 +1,35 @@
+﻿@page "/garden_plan/{HarvestCycleId}/layout"
+
+
+@inject IHarvestCycleService _harvestCycleService;
+@inject NavigationManager _navigationManager;
+
+<Page Title="@_title" Description="Review, Edit and Create Garden Layout" BreadcrumbLinks="@_breadcrumbLinks">
+    <PageContent>
+        <HarvestGardenLayoutView HarvestCycle=@_harvestCycle />
+    </PageContent>
+</Page>
+
+@code {
+    [Parameter]
+    public string? HarvestCycleId { get; set; }
+
+    private List<BreadcrumbLink> _breadcrumbLinks = new();
+
+    private HarvestCycleModel? _harvestCycle;
+
+    private string _title=string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HarvestCycleId != null)
+        {
+            _harvestCycle = await _harvestCycleService.GetHarvest(HarvestCycleId, true);
+
+            _title = $"{_harvestCycle.HarvestCycleName} Garden Layout";
+            _breadcrumbLinks.Add(new BreadcrumbLink("Garden Plans", _navigationManager.GetGardenPlansUrl(), false));
+            _breadcrumbLinks.Add(new BreadcrumbLink(_title, _navigationManager.GetGardenPlanLayoutUrl(HarvestCycleId), true)); ;
+        }
+    }
+}
+

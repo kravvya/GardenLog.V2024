@@ -1,0 +1,33 @@
+﻿<div class="form-group">
+    @if (AvailableValues != null)
+    {
+        @foreach (var item in AvailableValues)
+        {
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" id="@item.Key" name="@Name" value="@item.Key" checked="@(item.Key == Value)" @onchange="@(e => OnValueChanged(e, item.Key))" />
+                <label class="form-check-label" for="@item.Key">@item.Value</label>
+            </div>
+        }
+
+    }
+</div>
+@code {
+    [Parameter]
+    public string Name { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+
+    [Parameter]
+    public IReadOnlyCollection<KeyValuePair<string, string>>? AvailableValues { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    private void OnValueChanged(ChangeEventArgs e, string key)
+    {
+        Value = key;
+        ValueChanged.InvokeAsync(Value);
+    }
+}

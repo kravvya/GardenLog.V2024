@@ -1,0 +1,50 @@
+﻿@page "/viewplant/{PlantId}"
+
+@inject IPlantService _plantService;
+@inject NavigationManager _navigationManager;
+
+@if (_plant != null)
+{
+    <Page Title="@_title" Description="@_description" BreadcrumbLinks="@breadcrubLinks">
+        <PageContent>
+            <PlantView Plant=@_plant />
+            <PlantViewFooter Plant=@_plant Close=@ClosePage />
+        </PageContent>
+    </Page>
+}
+
+@code {
+    [Parameter]
+    public string PlantId { get; set; } = string.Empty;
+
+    private PlantModel? _plant;
+    private string _title=string.Empty;
+    private string _description = string.Empty;
+    private List<BreadcrumbLink> breadcrubLinks = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        breadcrubLinks.Add(new BreadcrumbLink("Plants", _navigationManager.GetPlantsUrl(), false));
+
+        _plant = await _plantService.GetPlant(PlantId, true);
+
+        if (_plant == null)
+        {
+            ClosePage();
+            return;
+        }
+
+        breadcrubLinks.Add(new BreadcrumbLink(_plant.Name, _navigationManager.GetViewPlantUrl(_plant.PlantId), true));
+
+        _title = $"{_plant.Name}";
+        _description = $"{_plant.Name} Details";
+    }
+     
+
+    protected void ClosePage()
+    {
+        _navigationManager.NavigateToPlants();
+
+    }
+
+}

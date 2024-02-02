@@ -1,0 +1,128 @@
+﻿@inject IGardenLogToastService _toastService;
+@inject IUserProfileService _userService;
+@inject ILogger<UserProfileForm> _logger;
+@inject NavigationManager _navigationManager;
+
+<article id="userProfileForm">
+    <div class="container">
+        @if (IsInitialized && _userProfile != null)
+        {
+            <div style="max-width:700px">
+                <EditForm EditContext="@_editContext" OnValidSubmit="@HandleValidSubmitAsync" OnInvalidSubmit="@HandleInValidSubmit">
+
+                    <FluentValidationValidator />
+                    <CustomValidation @ref="customValidation" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="userName">User Name</label>
+                            <InputText class="form-control" id="userName" @bind-Value="@_userProfile.UserName" disabled="@(!_isNewRegistration)" />
+                            <ValidationMessage For="@(() => _userProfile.UserName)" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name">Email (Will be valdiated) </label>
+                            <InputText class="form-control" id="email" @bind-Value="@_userProfile.EmailAddress"  disabled="@(!_isNewRegistration)" />
+                            <ValidationMessage For="@(() => _userProfile.EmailAddress)" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="firstName">First Name</label>
+                            <InputText class="form-control" id="firstName" @bind-Value="@_userProfile.FirstName" />
+                            <ValidationMessage For="@(() => _userProfile.FirstName)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="lastName">Last Name</label>
+                            <InputText class="form-control" id="lastName" @bind-Value="@_userProfile.LastName" />
+                            <ValidationMessage For="@(() => _userProfile.LastName)" />
+                        </div>
+                    </div>
+
+                    @if (_isNewRegistration)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="password">Password </label>
+                                <InputText type="password" class="form-control" id="password" @bind-Value="@_userProfile.Password" />
+                                <ValidationMessage For="@(() => _userProfile.Password)" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="confirm">Confirm Password </label>
+                                <InputText type="password" class="form-control" id="confirm" @bind-Value="@_userProfile.PasswordConfirmation" />
+                                <ValidationMessage For="@(() => _userProfile.PasswordConfirmation)" />
+                            </div>
+                        </div>
+                    }
+                    <div class="col-12 py-2">
+                        <div class="modal-footer">
+                            @if (!_isNewRegistration)
+                            {
+                                <button type="submit" class="btn btn-primary" title="Save Changes">
+                                    <span class="bi bi-file-earmark-post">&nbsp;</span> Save
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="submit" class="btn btn-primary" title="Register">
+                                    <span class="bi bi-file-earmark-post">&nbsp;</span> Add
+                                </button>
+                            }
+                             <span>&nbsp;</span>
+                            <button type="button" class="btn btn-danger" @onclick="@(() => _navigationManager.NavigateTo("/home"))">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        }
+    </div>
+</article>
+
+@code {
+    public bool IsInitialized = false;
+    private bool _isNewRegistration = false;
+    private UserProfileModel? _userProfile;
+    private CustomValidation? customValidation;
+    private EditContext? _editContext;
+
+    public void Initialize(UserProfileModel? userProfile)
+    {
+        _isNewRegistration = userProfile == null || string.IsNullOrWhiteSpace(userProfile.UserProfileId);
+        _userProfile = userProfile == null ? new UserProfileModel() : userProfile;
+
+        _editContext = new(_userProfile);
+        _editContext.SetFieldCssClassProvider(new BootstrapValidationFieldClassProvider());
+        IsInitialized = true;
+        StateHasChanged();
+    }
+
+    protected async Task HandleValidSubmitAsync()
+    {
+        _logger.Log(LogLevel.Information, "User Registration passed validations");
+        customValidation?.ClearErrors();
+
+        ApiResponse response = (_isNewRegistration) ? await _userService.CreateUserProfile(_userProfile!) : await _userService.UpdateUserProfile(_userProfile!);
+
+        if (response.ValidationProblems != null)
+        {
+            customValidation?.DisplayErrors(response.ValidationProblems);
+        }
+
+        if (response.IsSuccess)
+        {
+            if (_isNewRegistration)
+                _navigationManager.NavigateToLogin("authentication/login");
+            else
+            {
+                _navigationManager.NavigateTo("/");
+            }
+        }
+    }
+
+    protected void HandleInValidSubmit()
+    {
+        _toastService.ShowToast("Registration failed. Please correct validation errors.", GardenLogToastLevel.Error);
+    }
+}

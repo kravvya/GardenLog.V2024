@@ -1,0 +1,277 @@
+﻿@inject ILogger<PlantList> _logger;
+@inject IVerifyService _verifyService;
+@inject IPlantService _plantService;
+@inject IGardenLogToastService _toastService;
+@inject NavigationManager _navigationManager;
+
+<div class="row">
+    <div id="plant-filter" class="col-md-2 d-md-block collapse">
+        <h3 class="text-uppercase text-primary d-none d-md-block">Filters</h3>
+        @if (_filter != null)
+        {
+            <EditForm Model=@_filter>
+                <div class="d-flex flex-wrap">
+                    <div id="lifecycle-filter" class="my-3 mx-1">
+                        <h5 class="text-uppercase text-primary">Lifecylce</h5>
+
+                        @foreach (var life in _filter.PlantLifecycleEnums)
+                        {
+                            <div class="form-check">
+                                <InputCheckbox class="form-check-input" type="checkbox" @bind-Value="life.IsSelected" id="@life.EnumItem.Key" />
+                                <label class="form-check-label" for="@life.EnumItem.Key">
+                                    @life.EnumItem.Value
+                                </label>
+                            </div>
+                        }
+
+                        <a id="clear-lifecycle" role='button' onclick=@(() => Clear(_filter.PlantLifecycleEnums))>Clear</a>
+
+                    </div>
+                    <div id="type-filter" class="my-3 mx-1">
+                        <h5 class="text-uppercase text-primary">Type</h5>
+                        @foreach (var type in _filter.PlantTypeEnums)
+                        {
+                            <div class="form-check">
+                                <InputCheckbox class="form-check-input" type="checkbox" @bind-Value="type.IsSelected" id="@type.EnumItem.Key" />
+                                <label class="form-check-label" for="@type.EnumItem.Key">
+                                    @type.EnumItem.Value
+                                </label>
+                            </div>
+                        }
+                        <a id="clear-type" role='button' onclick=@(() => Clear(_filter.PlantTypeEnums))>Clear</a>
+                    </div>
+                    <div id="light-filter" class="my-3 mx-1">
+                        <h5 class="text-uppercase text-primary">Conditions</h5>
+                        @foreach (var grow in _filter.LightRequirementEnums)
+                        {
+                            <div class="form-check">
+                                <InputCheckbox class="form-check-input" type="checkbox" @bind-Value="grow.IsSelected" id="@grow.EnumItem.Key" />
+                                <label class="form-check-label" for="@grow.EnumItem.Key">
+                                    @grow.EnumItem.Value
+                                </label>
+                            </div>
+                        }
+                        <a id="clear-light" role='button' onclick=@(() => Clear(_filter.LightRequirementEnums))>Clear</a>
+                    </div>
+                    <div id="light-filter" class="my-3 mx-1">
+                        <h5 class="text-uppercase text-primary">Watering</h5>
+                        @foreach (var water in _filter.MoistureRequirementEnums)
+                        {
+                            <div class="form-check">
+                                <InputCheckbox class="form-check-input" type="checkbox" @bind-Value="water.IsSelected" id="@water.EnumItem.Key" />
+                                <label class="form-check-label" for="@water.EnumItem.Key">
+                                    @water.EnumItem.Value
+                                </label>
+                            </div>
+                        }
+                        <a id="clear-moisture" role='button' onclick=@(() => Clear(_filter.MoistureRequirementEnums))>Clear</a>
+                    </div>
+                </div>
+            </EditForm>
+        }
+    </div>
+
+    <div id="plants" class="col-md-9">
+        <section>
+            <article id="plantList">
+
+                <div id="icon-legend" class="d-none d-lg-block">
+                    <div class="d-flex flex-row text-center">
+                        <div class="p-2"><img src="./images/FullSun.png" alt="Full Sun" title="Full Sun" class="img-fluid" /><br />Full Sun</div>
+                        <div class="p-2"><img src="./images/PartShade.png" alt="Part Shade" title="Part Shade" class="img-fluid" /><br />Part Shade</div>
+                        <div class="p-2"><img src="./images/FullShade.png" alt="Full Shade" title="Full Shade" class="img-fluid" /><br />Full Shade</div>
+                        <div class="p-2"><img src="./images/Vegetable.png" alt="Vegetable" title="Vegetable" class="img-fluid" /><br />Vegetable</div>
+                        <div class="p-2"><img src="./images/Flower.png" alt="Flower" title="Flower" class="img-fluid" /><br />Flower</div>
+                        <div class="p-2"><img src="./images/Herb.png" alt="Herb" title="Herb" class="img-fluid" /><br />Herb</div>
+                        <div class="p-2"><img src="./images/Berry.png" alt="Berry" title="Berry" class="img-fluid" /><br />Berry</div>
+                        <div class="pt-3 ps-2"><img src="./images/Perennial.png" alt="Perennial" title="Perennial" class="img-fluid"><br />Perennial</div>
+                        <div class="pt-3 ps-2"><img src="./images/Biennial.png" alt="Biennial" title="Biennial" class="img-fluid"><br />Biennial</div>
+                        <div class="pt-3 ps-2"><img src="./images/Cool.png" alt="Cool Annual" title="Cool Annual" class="img-fluid"><br />Cool Annual</div>
+                        <div class="pt-3 ps-2"><img src="./images/Warm.png" alt="Warm Annaual" title="Warm Annual" class="img-fluid"><br />Warm Annual</div>
+                    </div>
+                </div>
+
+                <div id="toggle-filter" class="d-md-none py-2">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#plant-filter" aria-expanded="false" aria-controls="plant-filter">Filters</button>
+                </div>
+
+                @if (_plants == null)
+                {
+                    <p><em>Empty</em></p>
+                }
+                else
+                {
+                    <div class="table-responsive d-none d-sm-block">
+                        <table class="table table-borderless align-middle text-center ">
+                            <thead class="table-primary" style="border-width: 2px;">
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Grow Conditions</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Notes</th>
+                                    <th>
+                                        <AuthorizeView Roles="@(GlobalConstants.ROLE_MASTER_GARDENER + ", " + GlobalConstants.ROLE_WRITE_PLANTS)">
+                                            <div @onclick=@CreatePlant class="btn d-inline-block  btn-secondary"><span class="bi bi-plus-lg">Add</span></div>
+                                        </AuthorizeView>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var plant in _plants.OrderBy(p => p.Name))
+                                {
+                                    if (IsVisible(plant) && _filter!= null)
+                                    {
+                                        <tr style="border-width: 2px; border-color: @(plant.Color);" @key="plant.PlantId">
+                                            <td class="col-2 text-start "><a @onclick=@(() => ViewPlant(plant)) class="text-dark" role="button"><span class="lead fw-bold">@plant.Name</span></a></td>
+                                            <td class="col-1"><img src="./images/@(plant.LightRequirement).png" alt="@plant.LightRequirement" title="@plant.LightRequirement" class="img-fluid" /></td>
+                                            <td class="col-1"><img src="./images/@(plant.Type).png" alt="@plant.Type" title="@plant.Type" class="img-fluid" /><img src="./images/@(plant.Lifecycle).png" alt="@plant.Lifecycle" title="@plant.Lifecycle" class="img-fluid"></td>
+                                            <td class="col-2 text-start">
+                                                <span class="fw-bold">Moisture:</span> <br /> @GetDescription(_filter.MoistureRequirementEnums, plant.MoistureRequirement.ToString()) <br />                                             
+                                            </td>
+                                            <td class="col-3">
+                                                <button type="button" class="btn btn-info" title="View Plant" @onclick="@(() => ViewPlant(plant))"><span class="bi bi-info-lg">&nbsp;</span></button>
+                                                <AuthorizeView Roles="@(GlobalConstants.ROLE_MASTER_GARDENER + ", " + GlobalConstants.ROLE_WRITE_PLANTS)">
+                                                    <button type="button" class="btn btn-secondary" title="Edit Plant" onclick="@(() => EditPlant(plant))"><span class="bi bi-pencil">&nbsp;</span></button>
+                                                </AuthorizeView>
+                                                <AuthorizeView Roles="@(GlobalConstants.ROLE_MASTER_GARDENER + ", " + GlobalConstants.ROLE_WRITE_PLANT_VARIETIES)">
+                                                    <button type="button" class="btn btn-secondary" title="Add Variety" onclick="@(() => CreatePlantVariety(plant))"><span class="bi bi-flower1">&nbsp;</span></button>
+                                                </AuthorizeView>
+                                                <AuthorizeView Roles="@(GlobalConstants.ROLE_MASTER_GARDENER + ", " + GlobalConstants.ROLE_WRITE_GROW_INSTRUCTIONS)">
+                                                    <button type="button" class="btn btn-secondary" title="Add Growing Instruction" onclick="@(() => CreatePlantGrowInstructions(plant))"><span class="bi bi-card-checklist">&nbsp;</span></button>
+                                                </AuthorizeView>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                            <tfoot class="table-primary" style="border-width: 2px;">
+                                <tr>
+                                    <td />
+                                    <td />
+                                    <td />
+                                    <td />
+                                    <td>
+                                        <AuthorizeView Roles="@(GlobalConstants.ROLE_MASTER_GARDENER + ", " + GlobalConstants.ROLE_WRITE_PLANTS)">
+                                            <div @onclick=@CreatePlant class="btn d-inline-block  btn-secondary"><span class="bi bi-plus-lg">Add</span></div>
+                                        </AuthorizeView>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="row d-block d-sm-none">
+                        @foreach (var plant in _plants.OrderBy(p => p.Name))
+                        {
+                            if (IsVisible(plant) && _filter != null)
+                            {
+                                <div class="col-sm-6">
+                                    <div class="card bg-light mb-2" style="border-color:  @(plant.Color);">
+                                        <div class="card-header" style="background-color:  @(plant.Color);">
+                                            <a @onclick=@(() => ViewPlant(plant)) class="text-dark" role='button'><span class="lead fw-bold">@plant.Name</span></a>
+                                        </div>
+                                        <div class="card-body row">
+                                            <div class="col">
+                                                <span class="fw-bold">Moisture:</span> <br /> @GetDescription(_filter.MoistureRequirementEnums, plant.MoistureRequirement.ToString()) <br />
+                                                @* <span class="fw-bold">Varieties:&nbsp;</span>@DoNotDisplayZero(plant.VarietyCount)<br />
+                                    <span class="fw-bold">Instructions:&nbsp;</span>@DoNotDisplayZero(plant.GrowInstructionsCount)*@
+                                            </div>
+
+                                            <div class="col">
+                                                <img src="./images/@(plant.LightRequirement).png" alt="@plant.LightRequirement" title="@plant.LightRequirement" class="img-fluid" />
+                                                <img src="./images/@(plant.Type).png" alt="@plant.Type" title="@plant.Type" class="img-fluid" />
+                                                <img src="./images/@(plant.Lifecycle).png" alt="@plant.Lifecycle" title="@plant.Lifecycle" class="img-fluid">
+                                            </div>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button type="button" class="btn btn-info" title="View Plant" @onclick="@(() => ViewPlant(plant))"><span class="bi bi-info-lg">&nbsp;</span></button>
+                                            <button type="button" class="btn btn-secondary" title="Edit Plant" onclick="@(() => EditPlant(plant))"><span class="bi bi-pencil">&nbsp;</span></button>
+                                            <button type="button" class="btn btn-secondary" title="Add Variety" onclick="@(() => CreatePlantVariety(plant))"><span class="bi bi-journal-richtext">&nbsp;</span></button>
+                                            <button type="button" class="btn btn-secondary" title="Add Growing Instruction" onclick="@(() => CreatePlantGrowInstructions(plant))"><span class="bi bi-journals">&nbsp;</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+
+            </article>
+        </section>
+    </div>
+</div>
+@code {
+    public IList<PlantModel>? _plants;
+    public PlantFilter? _filter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _filter = new PlantFilter(_verifyService);
+
+        _plants = await _plantService.GetPlants(false);
+
+        StateHasChanged();
+    }
+
+    public bool IsVisible(PlantModel plant)
+    {
+        if (_filter == null) return true;
+
+        if (_filter.LightRequirementEnums.Exists(cb => cb.IsSelected) && !_filter.LightRequirementEnums.Exists(cb => cb.IsSelected && cb.EnumItem.Key.Equals(plant.LightRequirement.ToString())))
+            return false;
+
+        if (_filter.PlantTypeEnums.Exists(cb => cb.IsSelected) && !_filter.PlantTypeEnums.Exists(cb => cb.IsSelected && cb.EnumItem.Key.Equals(plant.Type.ToString())))
+            return false;
+
+        if (_filter.PlantLifecycleEnums.Exists(cb => cb.IsSelected) && !_filter.PlantLifecycleEnums.Exists(cb => cb.IsSelected && cb.EnumItem.Key.Equals(plant.Lifecycle.ToString())))
+            return false;
+
+        if (_filter.MoistureRequirementEnums.Exists(cb => cb.IsSelected) && !_filter.MoistureRequirementEnums.Exists(cb => cb.IsSelected && cb.EnumItem.Key.Equals(plant.MoistureRequirement.ToString())))
+            return false;
+
+        return true;
+    }
+
+    public string GetDescription(List<CheckableEnum> list, string code)
+    {
+        if (list == null) return string.Empty;
+        var en = list.FirstOrDefault(c => c.EnumItem.Key.Equals(code));
+        return en == null ? string.Empty : en.EnumItem.Value;
+    }
+
+    public string DoNotDisplayZero(int count)
+    {
+        var response = count > 0 ? count.ToString() : string.Empty;
+        return response;
+    }
+
+    public void Clear(List<CheckableEnum> options)
+    {
+        options.ForEach(o => o.IsSelected = false);
+    }
+
+    protected void CreatePlant()
+    {
+        _navigationManager.NavigateToCreatePlant();
+    }
+
+    public void EditPlant(PlantModel plant)
+    {
+        _navigationManager.NavigateToEditPlant(plant.PlantId);
+    }
+
+    public void CreatePlantVariety(PlantModel plant)
+    {
+        _navigationManager.NavigateToCreatePlantVariety(plant.PlantId);
+    }
+
+    public void CreatePlantGrowInstructions(PlantModel plant)
+    {
+        _navigationManager.NavigateToCreatePlantGrowInstruction(plant.PlantId);
+    }
+
+    protected void ViewPlant(PlantModel plant)
+    {
+        _navigationManager.NavigateToViewPlant(plant.PlantId);
+    }
+
+}

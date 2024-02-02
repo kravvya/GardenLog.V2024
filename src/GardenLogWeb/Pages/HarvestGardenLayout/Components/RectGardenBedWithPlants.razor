@@ -1,0 +1,75 @@
+﻿@inject ILogger<RectGardenBedWithPlants> _logger;
+
+@if (GardenBed != null)
+{
+    <g transform="translate(@GardenBed?.X, @GardenBed?.Y) rotate(@(GardenBed?.Rotate),@(GardenBed?.GetWidthInPixels()/2),@(GardenBed?.GetHeightInPixels()/2))">
+
+        <rect x=0 y=0
+          height="@(GardenBed?.GetHeightInPixels())" width="@(GardenBed?.GetWidthInPixels())"
+          @attributes="AdditionalAttributes" class="@GardenBed?.CssClass"></rect>
+
+        <text x="0" y="-20" text-anchor="start" alignment-baseline="hanging" style="fill:#fff;fill-opacity: .95;">@GardenBed?.Name</text>
+
+        @if (GardenBedHarvestPlants != null)
+        {
+            @foreach (var plant in GardenBedHarvestPlants)
+            {
+                <rect x=@plant?.X y=@plant?.Y height="@(plant?.GetHeightInPixels())" width="@(plant?.GetWidthInPixels())"
+          @attributes="AdditionalAttributes" cursor="grab" @onmousedown=@(e => OnDown(e, plant)) fill="url(#@plant?.GardenBedPlantHarvestCycleId)"></rect>
+            }
+        }
+    </g>
+
+    @if (GardenBedPlantChanged != null && GardenBed != null)
+    {
+        <DraggablePlantSelector @ref=_draggableComponent GardenBedPlantChanged="@GardenBedPlantChanged" GardenBed="@GardenBed" />
+    }
+}
+
+@code {
+
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    [Parameter] public GardenBedModel? GardenBed { get; set; }
+
+    [Parameter] public GardenBedPlantHarvestCycleModel? SelectedPlant { get; set; }
+
+    [Parameter] public List<GardenBedPlantHarvestCycleModel>? GardenBedHarvestPlants { get; set; }
+
+    [Parameter] public GardenPlanSettings Settings { get; set; } = null!;
+
+    [Parameter] public Func<GardenBedPlantHarvestCycleModel, Task> PlantSelectedByMouseClick { get; set; } = null!;
+
+    [Parameter] public Func<string, Task> PlantDeleted { get; set; } = null!;
+
+    [Parameter] public Action<GardenBedPlantHarvestCycleModel> GardenBedPlantChanged { get; set; } = null!;
+
+    private DraggablePlantSelector _draggableComponent = null!;
+
+    private GardenBedPlantHarvestCycleModel? _selectedPlant;
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (SelectedPlant == null)
+        {
+            if (_draggableComponent != null && _selectedPlant != null) _draggableComponent.Intitialize(null, Settings, null);
+        }
+        else
+        {
+            var plant = GardenBedHarvestPlants?.FirstOrDefault(p => p.GardenBedPlantHarvestCycleId == SelectedPlant.GardenBedPlantHarvestCycleId);
+            _draggableComponent.Intitialize(plant, Settings, null);
+        }
+        _selectedPlant = SelectedPlant;
+    }
+
+    void OnDown(MouseEventArgs e, GardenBedPlantHarvestCycleModel? plant)
+    {
+        if (plant == null) return;
+
+        _logger.LogDebug($"OnDown for {plant.PlantName}");
+        _draggableComponent.Intitialize(plant, Settings, e);
+        PlantSelectedByMouseClick(plant);
+    }
+}
+

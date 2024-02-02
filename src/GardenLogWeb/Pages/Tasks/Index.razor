@@ -1,0 +1,37 @@
+﻿@page "/tasks"
+@using GardenLogWeb.Pages.Tasks.Components;
+
+@inject NavigationManager _navigationManager;
+
+
+<Page Title="Tasks" Description="Review, Edit and Create Tasks" BreadcrumbLinks="@_breadcrumbLinks">
+    <PageContent>
+        <PlantTaskList @ref=_taskList />
+    </PageContent>
+</Page>
+
+@code {
+
+    private List<BreadcrumbLink> _breadcrumbLinks = new();
+    private PlantTaskList? _taskList;
+
+    protected override void OnInitialized()
+    {
+         SetupPage();
+    }
+
+  
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _taskList!.Initialize();            
+        }
+    }
+
+    private void SetupPage()
+    {
+        _breadcrumbLinks.Add(new BreadcrumbLink("Tasks", _navigationManager.GetPlantTasksUrl(), true));
+    }
+}
+

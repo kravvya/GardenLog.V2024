@@ -1,0 +1,221 @@
+﻿@inject ILogger<PlantVarietyForm> _logger;
+@inject IVerifyService _verifyService;
+@inject IPlantService _plantService;
+@inject NavigationManager _navigationManager;
+@inject IImageService _imageService;
+
+<article id="plantVarietyForm">
+    <div class="container">
+        @if (_isInitialized && _plantVariety != null && _plant!= null)
+        {
+            <div class="row">
+                <h4 class="lead">@_plantVariety.Title</h4>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div>
+                        <div class="plant-image">
+                            <img class="d-block img-fluid " style="width: 400px !important;" src="@_imageService.GetRawImageUrl(_plantVariety.ImageFileName)" alt="@_plantVariety.ImageLabel" title="@_plantVariety.ImageLabel" />
+                        </div>
+                        <div class="plant-image-thumbnail">
+                            @if (_plantVariety.Images != null)
+                            {
+                                @foreach (var image in _plantVariety.Images)
+                                {
+                                    <img class="img-fluid img-thumbnail" @key="image.ImageId" src="@_imageService.GetThumbnailImageUrl(image.FileName)" alt="@image.Label" @onclick="@(() => ReplaceImage(image))" />
+                                }
+                            }
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h3 class="text-uppercase">Description</h3>
+                            <p>
+                                @_plantVariety.Description
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="variety-facts-list">
+                        <h3 class="text-uppercase">Quick Facts</h3>
+                        <dl class="">
+                            <div class="variety-facts-item row">
+                                <dt class="variety-facts-term">Moisture Requirements</dt>
+                                <dd class="variety-facts-definition">@(_verifyService.GetDescription(_plantVariety.MoistureRequirement))</dd>
+                            </div>
+                            @if (_plantVariety.DaysToMaturityMin.HasValue)
+                            {
+                                <div class="variety-facts-item row">
+                                    <dt class="variety-facts-term">Days To Maturity</dt>
+                                    <dd class="variety-facts-definition">@_plantVariety.DaysToMaturityMin to @_plantVariety.DaysToMaturityMax</dd>
+                                </div>
+                            }
+                            @if (_plantVariety.HeightInInches.HasValue)
+                            {
+                                <div class="variety-facts-item row">
+                                    <dt class="variety-facts-term">Height</dt>
+                                    <dd class="variety-facts-definition">@_plantVariety.HeightInInches in</dd>
+                                </div>
+                            }
+                            <div class="variety-facts-item row">
+                                <dt class="variety-facts-term">Seeds Viable </dt>
+                                <dd class="variety-facts-definition">@_plant.SeedViableForYears Years</dd>
+                            </div>
+                            <div class="variety-facts-item">
+                                <dt class="variety-facts-term">Features</dt>
+                                <dd class="variety-facts-definition">
+                                    <img src="./images/@(_plantVariety.LightRequirement).png" alt="@(_verifyService.GetDescription(_plantVariety.LightRequirement))" title="@(_verifyService.GetDescription(_plantVariety.LightRequirement))" class="img-fluid" />
+                                    @if (_plantVariety.IsHeirloom)
+                                    {
+                                        <img src="/images/Heirloom.png" alt="Heirloom" title="Heirloom" class="img-fluid">
+                                    }
+                                    @if (_plant.HarvestSeason.HasFlag(HarvestSeasonEnum.Fall) || _plant.HarvestSeason.HasFlag(HarvestSeasonEnum.LateFall))
+                                    {
+                                        <img src="/images/F.png" class="tooltip-img-alt plant-facts_icon" alt="Fall Crop">
+                                    }
+                                    <img src="./images/@(_plant.Type).png" alt="@_plant.Type" title="@_plant.Type" class="img-fluid" />
+                                    <img src="./images/@(_plant.Lifecycle).png" alt="@_plant.Lifecycle" title="@_plant.Lifecycle" class="img-fluid">
+                                </dd>
+                            </div>
+                            @if (!string.IsNullOrEmpty(_tolerances))
+                            {
+                                <div class="variety-facts-item">
+                                    <dt class="variety-facts-term">Tolerances</dt>
+                                    <dd class="variety-facts-definition">
+                                        @_tolerances
+                                    </dd>
+                                </div>
+                            }
+                            <div class="variety-facts-item">
+                                <dt class="variety-facts-term">Characteristics</dt>
+                                <dd>
+                                    <div class="tags" role="group" aria-label="Plant Variety Characteristics">
+                                        <ul Id="plant-characteristics-tags">
+                                            @foreach (var tag in _plantVariety.Tags)
+                                            {
+                                                <li style="background-color:@_plant.Color">@tag</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </dd>
+                            </div>
+                            <div class="variety-facts-item">
+                                <dt class="variety-facts-term">Colors</dt>
+                                <dd>
+                                    <div class="colors" role="group" aria-label="Plant Variety Colors">
+                                        <ul Id="plant-characteristics-tags">
+                                            @foreach (var color in _plantVariety.Colors)
+                                            {
+                                                <li class="color">
+                                                    <label class="btn btn-outline-dark" for="@color" style="@GetStyleBasedOnColor(color)">@color</label>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </dd>
+                            </div>
+                            @if (_plantVariety.Sources != null && _plantVariety.Sources.Count > 0)
+                            {
+                                <div class="variety-facts-item">
+                                    <dt class="variety-facts-term">Source(s)</dt>
+                                    <dd class="col-md-8 sources">
+                                        <ul Id="sources">
+                                            @foreach (var source in _plantVariety.Sources)
+                                            {
+                                                <li>@RenderSource(source)<a href="@source" target="_blank" hidden="@RenderSourceAsHyperlink(source)">@source</a></li>
+                                            }
+                                        </ul>
+                                    </dd>
+                                </div>
+                            }
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        }
+    </div>
+</article>
+
+@code {
+    [Parameter] public Func<Task>? OnClose { get; set; }
+
+    private PlantModel? _plant { get; set; }
+    private PlantVarietyModel? _plantVariety { get; set; }
+    protected IReadOnlyCollection<Color>? _varietyColors { get; set; }
+
+    private bool _isInitialized = false;
+    private string _tolerances = string.Empty;
+
+    public void Initialize(PlantVarietyModel plantVariety, PlantModel plant)
+    {
+        this._plant = plant;
+        this._plantVariety = plantVariety;
+
+        _varietyColors = _verifyService.GetPlantVarietyColors();
+        _tolerances = GetTolerances();
+        _isInitialized = true;
+        StateHasChanged();
+    }
+
+    private void ReplaceImage(ImageViewModel newImage)
+    {
+        if (_plantVariety != null)
+        {
+            _plantVariety.ImageFileName = newImage.FileName;
+            _plantVariety.ImageLabel = newImage.Label;
+            StateHasChanged();
+        }
+    }
+
+    private string GetTolerances()
+    {
+        System.Text.StringBuilder sb = new();
+
+        if (_plantVariety != null)
+        {
+            foreach (GrowToleranceEnum tolerance in Enum.GetValues(typeof(GrowToleranceEnum)))
+            {
+                if (_plantVariety.GrowTolerance.HasFlag(tolerance) && tolerance != GrowToleranceEnum.Unspecified)
+                {
+                    if (sb.Length > 0) { sb.Append(", "); }
+                    sb.Append(_verifyService.GetDescription<GrowToleranceEnum>(tolerance.ToString()));
+                }
+            }
+        }
+        return sb.ToString();
+    }
+
+    private string GetStyleBasedOnColor(string selectedColor)
+    {
+        if (_varietyColors != null && _plant != null)
+        {
+            Color color = _varietyColors.First(c => c.Name == selectedColor);
+
+            if (_plant.VarietyColors.Contains(color.Name))
+            {
+                return $"color:{color.FontColor}; background-color:{color.BackgroundColor}";
+            }
+        }
+        return string.Empty;
+    }
+
+    private string RenderSource(string source)
+    {
+        if (string.IsNullOrEmpty(source) || !source.StartsWith("http"))
+        {
+            return source;
+        }
+        else
+        {
+            return string.Empty;
+        }
+    }
+
+    private bool RenderSourceAsHyperlink(string source)
+    {
+        return !(!string.IsNullOrEmpty(source) && source.StartsWith("http"));
+    }
+}

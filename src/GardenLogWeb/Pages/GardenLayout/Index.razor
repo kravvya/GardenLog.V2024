@@ -1,0 +1,40 @@
+﻿@page "/gardens/{GardenId}/layout";
+
+@inject IGardenService _gardenService;
+@inject NavigationManager _navigationManager;
+@inject ILogger<Index> _logger;
+
+<Page Title="@_title" Description="Review, Edit and Create Garden Layout" BreadcrumbLinks="@_breadcrumbLinks">
+    <PageContent>
+        <GardenLayoutView Garden=@_garden />
+    </PageContent>
+</Page>
+
+@code {
+    [Parameter]
+    public string GardenId { get; set; } = string.Empty;
+
+    private List<BreadcrumbLink> _breadcrumbLinks = new();
+
+    private GardenModel? _garden;
+
+    private string _title = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _garden = await _gardenService.GetGarden(GardenId, true);
+
+        if (_garden != null)
+        {
+            _title = $"{_garden.Name} Layout";
+            _breadcrumbLinks.Add(new BreadcrumbLink("Gardens", _navigationManager.GetGardensUrl(), false));
+            _breadcrumbLinks.Add(new BreadcrumbLink(_title, _navigationManager.GetGardenLayoutUrl(GardenId), true)); ;
+        }
+        else
+        {
+            _logger.LogError("Garden {0} was not found. Redirect to home.", GardenId);
+            _navigationManager.NavigateToHome();
+        }
+    }
+}
+

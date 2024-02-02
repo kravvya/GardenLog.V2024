@@ -1,0 +1,137 @@
+﻿@inject IGardenLogToastService _toastService;
+@inject ILogger<HarvestForm> _logger;
+@inject IHarvestCycleService _harvestService;
+@inject IGardenService _gardenService;
+
+<article id="harvestCycleForm">
+    <div class="container">
+        @if (_isInitialized && _harvest != null)
+        {
+            <EditForm EditContext="@_editContext" OnValidSubmit="@HandleValidSubmitAsync" OnInvalidSubmit="@HandleInValidSubmit">
+
+                <FluentValidationValidator />
+                <CustomValidation @ref="customValidation" />
+
+                <div class="col-md-10">
+                    <label for="name">Name</label>
+                    <InputText class="form-control" id="name" @bind-Value="@_harvest.HarvestCycleName" />
+                    <ValidationMessage For="@(() => _harvest.HarvestCycleName)" />
+                </div>
+
+                <div class="col-md-10">
+                    <label for="name">Garden</label>
+                    <InputSelect class="form-select" @bind-Value="@_harvest.GardenId" Name="Garden">
+                        @if (_gardens != null)
+                        {
+                            @foreach (var item in _gardens)
+                            {
+                                <option Value="@item.GardenId">@item.Name</option>
+                            }
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => _harvest.GardenId)" />
+                </div>
+
+                <div class="col-md-4">
+                    <label for="startDate">Start Date</label>
+                    <InputDate class="form-control" id="startDate" @bind-Value="@_harvest.StartDate" T="DateTime" />
+                    <ValidationMessage For="@(() => _harvest.StartDate)" />
+                </div>
+
+                <div class="col-md-4">
+                    <label for="endDate">End Date</label>
+                    <InputDate class="form-control" id="endDate" @bind-Value="@_harvest.EndDate" T="DateTime?" />
+                    <ValidationMessage For="@(() => _harvest.EndDate)" />
+                </div>
+
+                <div class="col-md-10">
+                    <label for="notes">Notes</label>
+                    <InputTextArea Class="form-control" Id="notes" @bind-Value="@_harvest.Notes" rows="5" />
+                    <ValidationMessage For="@(() => _harvest.Notes)" />
+                </div>
+
+                <div class="col-12">
+                    <div class="modal-footer">
+                        @if (_isEdit)
+                        {
+                            <button type="submit" class="btn btn-primary" title="Save Changes">
+                                <span class="bi bi-file-earmark-post">&nbsp;</span> Save
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="submit" class="btn btn-primary" title="Create Garden Plan">
+                                <span class="bi bi-file-earmark-post">&nbsp;</span> Add
+                            </button>
+                        }
+                        <button type="button" class="btn btn-danger" @onclick="@(() => OnCancel())">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                    </div>
+                </div>
+
+            </EditForm>
+        }
+    </div>
+</article>
+
+@code {
+
+    [Parameter] public Func<HarvestCycleModel, Task>? OnClose { get; set; }
+
+    private bool _isInitialized = false;
+    private HarvestCycleModel? _harvest;
+    private EditContext? _editContext;
+    private bool _isEdit = false;
+    private CustomValidation? customValidation;
+    private List<GardenModel>? _gardens;
+
+
+    public async void Initialize(HarvestCycleModel? harvest)
+    {
+        _gardens = await _gardenService.GetGardens(false);
+
+        if (harvest == null)
+        {
+            harvest = new HarvestCycleModel();
+            harvest.StartDate = DateTime.Now.Date;
+            if (_gardens.Count == 1) harvest.GardenId = _gardens.First().GardenId;
+        }
+
+        _harvest = harvest;
+
+        _isEdit = !string.IsNullOrEmpty(_harvest.HarvestCycleId);
+
+        _editContext = new(_harvest);
+        _editContext.SetFieldCssClassProvider(new BootstrapValidationFieldClassProvider());
+        _isInitialized = true;
+        StateHasChanged();
+    }
+
+    protected async Task HandleValidSubmitAsync()
+    {
+        _logger.LogDebug("Harvest Form passed validations");
+        customValidation?.ClearErrors();
+
+        ApiResponse response = (_isEdit) ? await _harvestService.UpdateHarvest(_harvest!) : await _harvestService.CreateHarvest(_harvest!);
+
+        if (response.ValidationProblems != null)
+        {
+            customValidation?.DisplayErrors(response.ValidationProblems);
+        }
+
+        if (response.IsSuccess)
+        {
+            if(OnClose!= null) await OnClose(_harvest!);
+        }
+    }
+
+    protected void HandleInValidSubmit()
+    {
+        _toastService.ShowToast("Garden Plan can not be save. Please correct validation errors.", GardenLogToastLevel.Error);
+    }
+
+    private void OnCancel()
+    {
+        if (OnClose != null && _harvest!= null)
+            OnClose(_harvest);
+    }
+}

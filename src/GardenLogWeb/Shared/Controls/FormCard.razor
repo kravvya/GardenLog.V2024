@@ -1,0 +1,28 @@
+﻿<div class="card @Class">
+    <div class="card-header @HeaderClass" hidden="@HideHeader">
+        @Header
+    </div>
+    <div class="card-body">
+        <div class="form-group">
+            @Body
+        </div>
+    </div>
+</div>
+<br />
+
+@code {
+    [Parameter] 
+    public RenderFragment? Header { get; set; }
+
+    [Parameter]
+    public RenderFragment? Body { get; set; }
+
+    [Parameter]
+    public string Class { get; set; } = string.Empty;
+
+    [Parameter]
+    public string HeaderClass { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool HideHeader { get; set; } = false;
+}

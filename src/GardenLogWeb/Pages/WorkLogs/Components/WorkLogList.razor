@@ -1,0 +1,111 @@
+﻿@inject IWorkLogService _workLogService;
+@inject IVerifyService _verifyService;
+@inject IHarvestCycleService _harvestService;
+
+
+<ModalView OnCloseModal="CloseWorkLogFormModal" @ref="_workLogFormModal">
+    <Body>
+        <WorkLogForm OnClose=@CloseWorkLogForm @ref=_workLogForm />
+    </Body>
+</ModalView>
+
+<div class="row">
+
+    @if (_workLogs == null || _workLogs.Count == 0)
+    {
+        <p><em>Empty</em></p>
+    }
+    else
+    {
+        <div class="table-responsive-md">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col"></th>
+                        <th scope="col">Reason</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Log</th>
+                        <th><div @onclick="(() => AddWorkLog())" class="btn d-inline-block  btn-secondary"><span class="bi bi-plus-lg">Add</span></div></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in _workLogs.OrderByDescending(c => c.EventDateTime))
+                    {
+                        <tr>
+                            <td class="@GetClass(log.Reason)">&nbsp;&nbsp;</td>
+                            <td>@(_verifyService.GetDescription<WorkLogReasonEnum>(log.Reason))</td>
+                            <td>@log.EventDateTime.ToShortDateString()</td>
+                            <td colspan="2">@log.Log</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4"></td>
+                        <td><div @onclick="(() => AddWorkLog())" class="btn d-inline-block  btn-secondary"><span class="bi bi-plus-lg">Add</span></div></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+</div>
+
+
+@code {
+    private ModalView? _workLogFormModal;
+    private WorkLogForm? _workLogForm;
+
+    private RelatedEntityTypEnum _relatedEntityType;
+    private string _relatedEntitytId = string.Empty;
+    private string _harvestCycleId=string.Empty;
+
+    private List<WorkLogModel> _workLogs { get; set; } = new();
+
+    public async void Initialize(RelatedEntityTypEnum relatedEntityType, string relatedEntitytId, string harvestCycleId)
+    {
+        _workLogs = await _workLogService.GetWorkLogs(relatedEntityType, relatedEntitytId, true);
+        _relatedEntitytId = relatedEntitytId;
+        _relatedEntityType = relatedEntityType;
+        _harvestCycleId = harvestCycleId;
+        StateHasChanged();
+    }
+
+    private async Task AddWorkLog()
+    {
+        if (_workLogForm != null && _workLogFormModal != null)
+        {
+            _workLogForm.Initialize(await _harvestService.BuildRelatedEntities(_relatedEntityType, _relatedEntitytId, _harvestCycleId));
+            await _workLogFormModal.OpenModal("Add new note", GlobalConstants.MODAL_FORM_COLOR);
+            StateHasChanged();
+        }
+    }
+
+    private async Task CloseWorkLogFormModal()
+    {
+        await _workLogFormModal!.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task CloseWorkLogForm(WorkLogModel workLog)
+    {
+        await _workLogFormModal!.CloseModal();
+
+        StateHasChanged();
+    }
+
+    private string GetClass(WorkLogReasonEnum reason)
+    {
+
+        switch (reason)
+        {
+            case WorkLogReasonEnum.Harvest:
+                return "table-success";
+            case WorkLogReasonEnum.Issue:
+                return "table-danger";
+            case WorkLogReasonEnum.IssueResolution:
+                return "table-warning";
+            default:
+                return "";
+        }
+    }
+}

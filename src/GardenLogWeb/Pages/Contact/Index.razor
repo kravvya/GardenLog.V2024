@@ -1,0 +1,14 @@
+﻿@page "/contact"
+
+@inject IPlantService _plantService;
+@inject NavigationManager _navigationManager;
+
+<Page Title="Contact Us" Description="" BreadcrumbLinks="@breacrubLinks">
+    <PageContent>
+        <ContactForm />
+    </PageContent>
+</Page>
+
+@code {
+    private List<BreadcrumbLink> breacrubLinks = new() { new BreadcrumbLink("Contact Us", "contact", true) };
+}

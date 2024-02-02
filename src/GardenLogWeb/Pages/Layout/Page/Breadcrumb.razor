@@ -1,0 +1,26 @@
+﻿<div id="breadcrumb" class="my-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            @if (Links != null)
+            {
+                @foreach (var link in Links)
+                {
+                    if (link.IsActive)
+                    {
+                        <li class="breadcrumb-item active" aria-current="page">@link.Title</li>
+                    }
+                    else
+                    {
+                        <li class="breadcrumb-item"><a href="@link.Address">@link.Title</a></li>
+                    }
+                }
+            }
+        </ol>
+    </nav>
+</div>
+
+@code {
+    [Parameter]
+    public List<BreadcrumbLink>? Links { get; set; }
+}

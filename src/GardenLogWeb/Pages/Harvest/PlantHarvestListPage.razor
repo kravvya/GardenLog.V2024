@@ -1,0 +1,49 @@
+﻿@page "/garden_plan/{HarvestCycleId}"
+@inject NavigationManager _navigationManager;
+@inject IHarvestCycleService _harvestService;
+
+<Page Title="@_title" Description="@_description" BreadcrumbLinks="@breadcrumbLinks">
+    <PageContent>
+        <PlantHarvestList @ref=_plantHarvestList />
+    </PageContent>
+</Page>
+
+@code {
+    [Parameter]
+    public string HarvestCycleId { get; set; } = string.Empty;
+
+    private PlantHarvestList? _plantHarvestList;
+
+    private List<BreadcrumbLink> breadcrumbLinks = new();
+    private HarvestCycleModel? _harvest = null;
+    private string _title = string.Empty;
+    private string _description  = string.Empty;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        breadcrumbLinks.Add(new BreadcrumbLink("Garden Plans", _navigationManager.GetGardenPlansUrl(), false));
+
+        _harvest = await _harvestService.GetHarvest(HarvestCycleId, true);
+
+        if (_harvest == null)
+        {
+            _navigationManager.NavigateToGardenPlans();
+        }
+        else
+        {
+            breadcrumbLinks.Add(new BreadcrumbLink(_harvest.HarvestCycleName, _navigationManager.GetGardenPlanUrl(HarvestCycleId), true));
+            _title = $"{_harvest.HarvestCycleName} at {_harvest.GardenName}";
+            _description = $"{_harvest.Notes}";
+           
+        }
+
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && _plantHarvestList!= null && _harvest!=null) 
+            _plantHarvestList.Initialize(_harvest);
+    }
+
+}

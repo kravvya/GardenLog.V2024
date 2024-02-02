@@ -1,0 +1,192 @@
+﻿@inject IMouseService _mouseService;
+@inject IKeyService _keyService;
+@implements IDisposable;
+
+@if (Component != null)
+{
+    <g class="selector-box" transform="translate(@Component.X, @Component.Y) rotate(@(Component?.Rotate),@(Component?.GetWidthInPixels()/2),@(Component?.GetHeightInPixels()/2))">
+
+        <rect x="0" y="0" width="@Component?.GetWidthInPixels()" height="@Component?.GetHeightInPixels()" class="selector"></rect>
+
+        <line x1="@(Component?.GetWidthInPixels()/2)" y1="0" x2="@(Component?.GetWidthInPixels()/2)" y2="-14" class="selector"></line>
+
+        <ellipse cx="@(Component?.GetWidthInPixels()/2)" cy="-14" rx="5" ry="5" class="selector rotator" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.Rotate))></ellipse>
+
+        <ellipse cx="0" cy="0" rx="5" ry="5" class="selector top-left-resizer" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.UpperLeft))></ellipse>
+        <ellipse cx="0" cy="@(Component?.GetHeightInPixels()/2)" rx="5" ry="5" class="selector null-left-resizer" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.Left))></ellipse>
+        <ellipse cx="0" cy="@Component?.GetHeightInPixels()" rx="5" ry="5" class="selector bottom-left-resizer" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.BottomLeft))></ellipse>
+
+        <ellipse cx="@(Component?.GetWidthInPixels()/2)" cy="@Component?.GetHeightInPixels()" rx="5" ry="5" class="selector bottom-null-resizer" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.Bottom))></ellipse>
+
+        <ellipse cx="@Component?.GetWidthInPixels()" cy="@Component?.GetHeightInPixels()" rx="5" ry="5" class="selector bottom-right-resizer" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.BottomRight))></ellipse>
+        <ellipse cx="@Component?.GetWidthInPixels()" cy="@(Component?.GetHeightInPixels()/2)" rx="5" ry="5" class="selector null-right-resizer" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.Right))></ellipse>
+        <ellipse cx="@Component?.GetWidthInPixels()" cy="0" rx="5" ry="5" class="selector top-right-resizer" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.UpperRight))></ellipse>
+
+        <ellipse cx="@(Component?.GetWidthInPixels()/2)" cy="0" rx="5" ry="5" class="selector top-null-resizer" @onmousedown=@(e => OnResizerDown(e, ComponentChanges.Upper))></ellipse>
+    </g>
+}
+@code {
+    [Parameter]
+    public IVisualComponent? Component { get; set; }
+
+    public GardenPlanSettings? _settings;
+    double _cursorX;
+    double _cursorY;
+    ComponentChanges _changes = ComponentChanges.Unspecified;
+
+
+    public void Intitialize(IVisualComponent? component, GardenPlanSettings settings, MouseEventArgs? e)
+    {
+
+        _settings = settings;
+
+
+        if (component != null)
+        {
+            _mouseService.OnMove += OnMove;
+            _mouseService.OnUp += OnUp;
+            _keyService.OnKeyDown += OnKeyDown;
+
+            if (e != null)
+            {
+                Console.WriteLine("DraggableSelector - Initialize - with Move");
+                _changes = ComponentChanges.Move;
+                _cursorX = e.ClientX;
+                _cursorY = e.ClientY;
+            }
+            else
+            {
+                Console.WriteLine("DraggableSelector - Initialize - NO Move");
+            }
+        }
+        else
+        {
+            Console.WriteLine("DraggableSelector - Initialize - NO Component");
+            _mouseService.OnMove -= OnMove;
+            _mouseService.OnUp -= OnUp;
+            _keyService.OnKeyDown -= OnKeyDown;
+            _changes = ComponentChanges.Unspecified;
+        }
+
+        StateHasChanged();
+    }
+
+    void OnResizerDown(MouseEventArgs e, ComponentChanges changes)
+    {
+        Console.WriteLine($"DraggableSelector - OnResizerDown - {changes}");
+        _changes = changes;
+
+        _cursorX = e.ClientX;
+        _cursorY = e.ClientY;
+    }
+
+    void OnUp(object? _, MouseEventArgs e)
+    {
+        _changes = ComponentChanges.Unspecified;
+    }
+
+    void OnMove(object? _, MouseEventArgs e)
+    {
+        Console.WriteLine($"DraggableSelector - OnMove - {_changes}");
+
+        if (_changes == ComponentChanges.Unspecified || Component == null)
+            return;
+
+
+        switch (_changes)
+        {
+            case ComponentChanges.Move:
+                Component.X -= (_cursorX - e.ClientX);
+                Component.Y -= (_cursorY - e.ClientY);
+                break;
+            case ComponentChanges.UpperLeft:
+                Component.X -= (_cursorX - e.ClientX);
+                Component.Y -= (_cursorY - e.ClientY);
+
+                Component.IncreaseLengthByPixels(_cursorY - e.ClientY);
+                Component.IncreaseWidthByPixels(_cursorX - e.ClientX);
+                break;
+            case ComponentChanges.Left:
+
+                Component.X -= (_cursorX - e.ClientX);
+
+                Component.IncreaseWidthByPixels(_cursorX - e.ClientX);
+                break;
+            case ComponentChanges.BottomLeft:
+                Component.IncreaseLengthByPixels(-1 * (_cursorY - e.ClientY));
+                Component.IncreaseWidthByPixels(-1 * (_cursorX - e.ClientX));
+                break;
+            case ComponentChanges.Bottom:
+                Component.IncreaseLengthByPixels(-1 * (_cursorY - e.ClientY));
+                break;
+            case ComponentChanges.BottomRight:
+                Component.IncreaseLengthByPixels(-1 * (_cursorY - e.ClientY));
+                Component.IncreaseWidthByPixels(-1 * (_cursorX - e.ClientX));
+                break;
+            case ComponentChanges.Right:
+                Component.IncreaseWidthByPixels(-1 * (_cursorX - e.ClientX));
+                break;
+            case ComponentChanges.UpperRight:
+
+                Component.Y -= (_cursorY - e.ClientY);
+
+                Component.IncreaseLengthByPixels((_cursorY - e.ClientY));
+                Component.IncreaseWidthByPixels(-1 * (_cursorX - e.ClientX));
+                break;
+            case ComponentChanges.Upper:
+
+                Component.Y -= (_cursorY - e.ClientY);
+
+                Component.IncreaseLengthByPixels((_cursorY - e.ClientY));
+                break;
+            case ComponentChanges.Rotate:
+
+                double centerX = Component.X + Component.GetWidthInPixels() / 2;
+                double centerY = Component.Y + Component.GetHeightInPixels() / 2;
+                Console.WriteLine($"{e.ClientY} - {centerY} - {e.ClientX} - {centerX}");
+                Component.Rotate = Math.Atan2(e.ClientY - centerY, e.ClientX - centerX) * 100;
+                Console.WriteLine(Component.Rotate);
+                break;
+        }
+
+
+        _cursorX = e.ClientX;
+        _cursorY = e.ClientY;
+
+        StateHasChanged();
+    }
+
+    void OnKeyDown(object? _, KeyboardEventArgs e)
+    {
+         if (Component == null)
+            return;
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                Component.MoveDown(1);
+                break;
+            case "ArrowUp":
+                Component.MoveUp(1);
+                break;
+            case "ArrowRight":
+                Component.MoveRight(1);
+                break;
+            case "ArrowLeft":
+                Component.MoveLeft(1);
+                break;
+            case "Delete":
+                Console.WriteLine("Delete bed - DraggableSelector");
+
+                break;
+        }
+    }
+
+    public void Dispose()
+    {
+        _mouseService.OnMove -= OnMove;
+        _mouseService.OnUp -= OnUp;
+        _keyService.OnKeyDown -= OnKeyDown;
+    }
+}
+

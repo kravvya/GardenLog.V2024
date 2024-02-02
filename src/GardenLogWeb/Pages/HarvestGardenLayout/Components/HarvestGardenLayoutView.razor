@@ -1,0 +1,369 @@
+﻿@inject IGardenService _gardenService;
+@inject IHarvestCycleService _harvestCycleService;
+@inject NavigationManager _navigationManager;
+@inject IVerifyService _verifyService;
+@inject ILogger<HarvestGardenLayoutView> _logger;
+@inject IImageService _imageService;
+
+<ModalView OnCloseModal="CloseGardenBedPlantFormModal" @ref="_gardenBedFormModal" ModalSize="modal-lg">
+    <Body>
+        <GardenBedPlantHarvestCycleForm OnClose=@CloseGardenBedPlantForm @ref=_gardenBedPlantForm />
+    </Body>
+</ModalView>
+
+
+@if (_garden != null)
+{
+    <div class="row ">
+        <div class="col-md-2">
+            <div class="card border-secondary">
+                <div class="card-header text-bg-secondary">
+                    <h5>
+                        Selected Product
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (_selectedGardenBedPlant != null)
+                    {
+                        <dl class="garden-facts_list row mt-2 mt-lg-0">
+                            <div class="garden-facts-item mt-1">
+                                <dt class="garden-facts_term">Plant</dt>
+                                <dd class="garden-facts_definition col">@_selectedGardenBedPlant.PlantName</dd>
+                            </div>
+                            <div class="garden-facts-item mt-1">
+                                <dt class="garden-facts_term">Variety</dt>
+                                <dd class="garden-facts_definition col">@_selectedGardenBedPlant.PlantVarietyName</dd>
+                            </div>
+                            <div class="garden-facts-item mt-1">
+                                <dt class="garden-facts_term">Plants Per Foot</dt>
+                                <dd class="garden-facts_definition col">@_selectedGardenBedPlant.PlantsPerFoot</dd>
+                            </div>
+                            <div class="garden-facts-item mt-1">
+                                <dt class="garden-facts_term">Number of Plants</dt>
+                                <dd class="garden-facts_definition col">@_selectedGardenBedPlant.NumberOfPlants</dd>
+                            </div>
+                        </dl>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-header text-bg-info">
+                    <h5>
+                        @_garden.Name
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="garden-facts-item mt-1">
+                        <dl class="garden-facts_list row mt-2 mt-lg-0">
+                            <dt class="garden-facts_term">Total Grow Area</dt>
+                            <dd class="garden-facts_definition ms-auto">@(GetTotalGrowArea()) sq. ft</dd>
+
+                            <dt class="garden-facts_term">Free Grow Area</dt>
+                            <dd class="garden-facts_definition  ms-auto">@(GetFreeGrowArea()) sq.ft</dd>
+
+                            <dt class="garden-facts_term">Number of Beds </dt>
+                            <dd class="garden-facts_definition  ms-auto">@_gardenBeds?.Count()</dd>
+
+                            <dt class="garden-facts_term">Number of Free Beds</dt>
+                            <dd class="garden-facts_definition  ms-auto">@GetNumberOfFreeBeds()</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card border-info">
+                <div class="card-header text-bg-info">
+                    <div class="d-flex justify-content-between">
+                        <h5>
+                            Plants
+                        </h5>
+                        <InputSelect class="form-select" @bind-Value="_harvestPlantFilter" style="max-width:250px">
+                            <option Value="available">Available Plants</option>
+                            <option Value="all">All Plants</option>
+                        </InputSelect>
+                    </div>
+
+                </div>
+                <div class="card-body">
+
+                    <div id="collapse1" class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col"></th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Variety</th>
+                                    <th scope="col"># Left</th>
+                                    <th scope="col"># Planned</th>
+                                    <th scope="col">Plant Date</th>
+                                    <th scope="col">Plants per sq. ft.</th>
+                                    <th scope="col">Space required</th>
+
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_harvestPlants != null)
+                                {
+                                    @foreach (var plant in _harvestPlants)
+                                    {
+                                        @if (IsVisible(plant))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <img src="@_imageService.GetThumbnailImageUrl(plant.ImageFileName)" title="@plant.ImageLabel" class="plant-image" role="button" @onclick="@(() => SelectPlantInGardenBed(plant))" />
+                                                </td>
+                                                <td>@plant.PlantName</td>
+                                                <td>@plant.PlantVarietyName</td>
+                                                <td>@plant.NumberOfPlantsLeftToAddToGardenBedLayout</td>
+                                                <td>@plant.NumberOfPlantsInGardenBedLayout</td>
+                                                <td>@plant.GetPlantingDate()</td>
+                                                <td>@plant.GetPlantsPerFoot()</td>
+                                                <td>
+                                                    @((int?)(plant.NumberOfPlantsLeftToAddToGardenBedLayout / plant.GetPlantsPerFoot())) sq. ft.
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex gap-2 flex-nowrap">
+                                                        @if (plant.NumberOfPlantsLeftToAddToGardenBedLayout > 0)
+                                                        {
+                                                            <button type="button" class="btn btn-secondary" title="Add to Garden Bed" @onclick="@(() => CreateGardenBedHarvestPlant(plant))">
+                                                                <span class="bi bi-plus">&nbsp;</span>
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@if (_settings != null)
+{
+    <div class="harvest-garden-layout-container">
+        <div class="harvest-garden-plan mt-3">
+
+            <div>
+                <div class="garden_layout">
+                    <HarvestGardenLayout Garden="@_garden" GardenBeds=@_gardenBeds GardenBedHarvestPlants="@(_harvestPlants?.SelectMany(g => g.GardenBedLayout).ToList())" Settings="@_settings" NotifyViewOfSelectedGardenBedPlant="@NotifyViewOfSelectedGardenBedPlant" PlantDeleted="@GardenBedHarvestPlantDeleted" GardenBedPlantChanged="@GardenBedPlantChanged" @ref=_harvestGardenLayout />
+                </div>
+            </div>
+
+
+            <div class="d-flex  justify-content-between flex-nowrap " style="width: @(_settings.SvgWidth)px">
+                <div class="p-2">
+                    <div class="btn-group" role="group" aria-label="Navigation Buttons">
+                        <div class="px-1"><button type="button" class="btn btn-info" @onclick="@(() => _settings.MoveUp())"><span class="bi bi-arrow-up">&nbsp;</span></button></div>
+                        <div class="px-1"><button type="button" class="btn btn-info" @onclick="@(() => _settings.MoveDown())"><span class="bi bi-arrow-down">&nbsp;</span></button></div>
+                    </div>
+                </div>
+                <div class="p-2  ">
+                    <label for="zoom" class="form-label">Zoom</label>
+                    <input type="range" class="form-range" min="0" max="5000" step="100" id="zoom" @bind=_settings.Zoom>
+                </div>
+                <div class="p-2">
+                    <div class="btn-group" role="group" aria-label="Navigation Buttons">
+                        <div class="px-1"><button type="button" class="btn btn-info" @onclick="@(() => _settings.MoveLeft())"><span class="bi bi-arrow-left">&nbsp;</span></button></div>
+                        <div class="px-1"><button type="button" class="btn btn-info" @onclick="@(() => _settings.MoveRight())"><span class="bi bi-arrow-right">&nbsp;</span></button></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+
+
+@code {
+    [Parameter]
+    public HarvestCycleModel? HarvestCycle { get; set; }
+
+    private GardenPlanSettings? _settings;
+    private GardenModel? _garden;
+    private List<GardenBedModel>? _gardenBeds;
+    private IList<PlantHarvestCycleModel>? _harvestPlants;
+
+    private GardenBedPlantHarvestCycleModel? _selectedGardenBedPlant;
+
+    //attrbibute to acccess layout compoenent
+    private HarvestGardenLayout? _harvestGardenLayout;
+
+    //2 atrbiutes for managing modal form to create/edit GardenBedPlant
+    private ModalView? _gardenBedFormModal;
+    private GardenBedPlantHarvestCycleForm? _gardenBedPlantForm;
+    private bool _skipSave = true;
+    private string _harvestPlantFilter = "available";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (HarvestCycle != null)
+        {
+            var gardenTask = _gardenService.GetGarden(HarvestCycle.GardenId, true);
+            var gardenBedsTask = _gardenService.GetGardenBeds(HarvestCycle.GardenId, true);
+            var plantsTask = _harvestCycleService.GetPlantHarvests(HarvestCycle.HarvestCycleId, false);
+
+            await Task.WhenAll(gardenTask, gardenBedsTask, plantsTask);
+
+            _garden = gardenTask.Result;
+            _gardenBeds = gardenBedsTask.Result;
+            _harvestPlants = plantsTask.Result;
+
+            if (_garden != null)
+            {
+                _settings = new GardenPlanSettings(_garden.Length, _garden.Width);
+            }
+            StateHasChanged();
+        }
+    }
+
+    private bool IsVisible(PlantHarvestCycleModel plant)
+    {
+        if (_harvestPlantFilter.Equals("all")) return true;
+
+        if (_harvestPlantFilter.Equals("available") && plant.NumberOfPlantsLeftToAddToGardenBedLayout > 0) return true;
+
+        return false;
+    }
+
+    private async Task NotifyViewOfSelectedGardenBedPlant(GardenBedPlantHarvestCycleModel selectedGardenBedPlant)
+    {
+
+        if (_selectedGardenBedPlant != null)
+        {
+            _logger.LogInformation($"GardenBedHarvestPlantSelected - saving {_selectedGardenBedPlant.PlantName}");
+            if (!_skipSave) await _harvestCycleService.UpdateGardenBedPlantHarvestCycle(_selectedGardenBedPlant);
+        }
+        _selectedGardenBedPlant = selectedGardenBedPlant;
+        _skipSave = true;
+        StateHasChanged();
+    }
+
+    //Called from the garden bed plant grid - when plant is selected
+    private async Task SelectPlantInGardenBed(PlantHarvestCycleModel plant)
+    {
+        var gardenLayoutPlant = plant.GardenBedLayout.FirstOrDefault();
+        if (gardenLayoutPlant != null && _harvestGardenLayout != null) await _harvestGardenLayout.PlantSelectedFromTheGridOfOtherPlants(gardenLayoutPlant);
+    }
+
+    //method invokde by Draggable plant selector to notify View that Garden Bed Plant has changed its dimensions
+    private void GardenBedPlantChanged(GardenBedPlantHarvestCycleModel selectedPlant)
+    {
+        _skipSave = false;
+        StateHasChanged();
+    }
+
+    private async Task GardenBedHarvestPlantDeleted(GardenBedPlantHarvestCycleModel deletedGardenBedPlant)
+    {
+        _selectedGardenBedPlant = null;
+        _skipSave = true;
+
+        if (_harvestPlants == null) return;
+
+        var harvestPlant = _harvestPlants.FirstOrDefault(p => p.PlantHarvestCycleId == deletedGardenBedPlant.PlantHarvestCycleId);
+
+        if (harvestPlant == null) return;
+
+        harvestPlant?.GardenBedLayout?.Remove(deletedGardenBedPlant);
+
+        await _harvestCycleService.DeleteGardenBedPlantHarvestCycle(deletedGardenBedPlant.HarvestCycleId, deletedGardenBedPlant.PlantHarvestCycleId, deletedGardenBedPlant.GardenBedPlantHarvestCycleId);
+
+        _harvestGardenLayout?.ForceStateHasChanged(_gardenBeds, _harvestPlants?.SelectMany(g => g.GardenBedLayout).ToList());
+
+        StateHasChanged();
+    }
+
+
+
+
+    private async Task CreateGardenBedHarvestPlant(PlantHarvestCycleModel plant)
+    {
+        if (_garden == null || _gardenBedPlantForm == null || _gardenBedFormModal == null) return;
+
+        GardenBedPlantHarvestCycleModel gardenPlant = new()
+            {
+                //PlantHarvestCycleId = plant.PlantHarvestCycleId,
+                GardenId = _garden.GardenId,
+                ImageFileName = plant.ImageFileName,
+                ImageLabel = plant.ImageLabel,
+                PlantId = plant.PlantId,
+                PlantName = plant.PlantName,
+                HarvestCycleId = plant.HarvestCycleId,
+                PlantHarvestCycleId = plant.PlantHarvestCycleId,
+                PlantVarietyId = plant.PlantVarietyId,
+                PlantVarietyName = plant.PlantVarietyName,
+                PlantsPerFoot = plant.GetPlantsPerFoot()
+            };
+        int? availablePlants = plant.DesiredNumberOfPlants - plant.GardenBedLayout.Sum(g => g.NumberOfPlants);
+
+        await _gardenBedPlantForm.InitialitzeAsync(gardenPlant, availablePlants);
+        await _gardenBedFormModal.OpenModal(plant.GetPlantName(), GlobalConstants.MODAL_FORM_COLOR);
+    }
+
+
+
+
+    private string GetTotalGrowArea()
+    {
+        if (_gardenBeds != null)
+        {
+            return (_gardenBeds.Sum(g => g.Length * g.Width) / 12).ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        return "0";
+    }
+
+    private string GetFreeGrowArea()
+    {
+        if (_gardenBeds != null && _harvestPlants != null)
+        {
+            var usedArea = _harvestPlants.SelectMany(h => h.GardenBedLayout).Sum(p => p.Length * 12 * p.Width * 12);
+            var totalArea = _gardenBeds.Sum(g => g.Length * g.Width);
+            return ((totalArea - usedArea) / 12).ToString("N0", System.Globalization.CultureInfo.InvariantCulture); ;
+        }
+        return "0";
+    }
+
+    private int GetNumberOfFreeBeds()
+    {
+        if (_harvestPlants == null || _gardenBeds == null) return 0;
+
+        var numberOfBedsInUse = _harvestPlants.SelectMany(h => h.GardenBedLayout)
+        .Select(p => p.GardenBedId)
+        .Distinct()
+        .Count();
+        return _gardenBeds.Count - numberOfBedsInUse;
+    }
+
+    private async Task CloseGardenBedPlantFormModal()
+    {
+        await _gardenBedFormModal!.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task CloseGardenBedPlantForm(GardenBedPlantHarvestCycleModel gardenBedPlant)
+    {
+        await _gardenBedFormModal!.CloseModal();
+
+        if (HarvestCycle != null) _harvestPlants = await _harvestCycleService.GetPlantHarvests(HarvestCycle.HarvestCycleId, false);
+        StateHasChanged();
+    }
+
+
+    private void ViewGardenImage()
+    {
+        if (_garden != null)
+            _navigationManager.NavigateToGardenImages(_garden.GardenId);
+    }
+}

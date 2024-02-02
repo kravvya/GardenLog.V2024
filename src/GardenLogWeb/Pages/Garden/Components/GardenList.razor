@@ -1,0 +1,175 @@
+﻿@inject IGardenService _gardenService;
+@inject IImageService _imageService;
+@inject NavigationManager _navigationManager;
+
+<ModalView OnCloseModal="CloseGardenFormModal" @ref="_gardenFormModal" ModalSize="modal-lg">
+    <Body>
+        <GardenForm OnClose=@CloseGardenForm @ref=_gardenForm />
+    </Body>
+</ModalView>
+
+<ModalView OnCloseModal="CloseImageFormModal" @ref="_imageFormModal">
+    <Body>
+        <ImageForm OnClose=@CloseImageFormModal @ref=_imageForm />
+    </Body>
+</ModalView>
+
+<div class="row justify-content-start">
+    @if (_gardens == null)
+    {
+        <p><em>Empty</em></p>
+    }
+    else
+    {
+        @foreach (var garden in _gardens)
+        {
+            <div class="col-auto mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>
+                            @garden.Name
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div><img class="img-fluid img-thumbnail" style="max-width:250px; max-height:250px;" src="@_imageService.GetThumbnailImageUrl(garden.ImageFileName)" alt="@garden.ImageLabel"></div>
+                        <div>
+                            @garden.Notes
+                        </div>
+
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex gap-2 gy-2 d-md-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary" title="Edit Garden Plan" @onclick="@(() => EditGarden(garden))">
+                                <span class="bi bi-pencil">&nbsp;</span>
+                            </button>
+                            @if (garden.Length > 0 && garden.Width > 0)
+                            {
+                                <button type="button" class="btn btn-warning" title="Garden Layout" @onclick="@(() => EditGardenLayout(garden))">
+                                    <span class="bi bi-grid-1x2-fill">&nbsp;</span>
+                                </button>
+                            }
+                            <button type="button" class="btn btn-warning" title="Add Image" @onclick="@(() => AddGardenImage(garden))">
+                                <span class="bi bi-card-image">&nbsp;</span>
+                            </button>
+                            <button type="button" class="btn btn-info" title="Gallery" @onclick="@(() => ViewGardenImage(garden))">
+                                <span class="bi bi-images" aria-hidden="true"></span>
+                            </button>
+                            @*<button type="button" class="btn btn-link p-0" title="delete location" @onclick="@(async () => await OnPlantLocationRemove(loc))">
+                    <span class="oi oi-trash" aria-hidden="true"></span> Remove
+                    </button>*@
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        <div class="d-grid gap-2 justify-content-md-start">
+            <button @onclick="(() => AddGarden())" type="button" class="btn btn-primary"><span class="bi bi-plus-lg">Add</span></button>
+        </div>
+    }
+</div>
+
+@code {
+    private ModalView? _imageFormModal { get; set; }
+    private ImageForm? _imageForm { get; set; }
+    private ModalView? _harvestFormModal { get; set; }
+    private HarvestForm? _harvestForm { get; set; }
+    private ModalView? _gardenFormModal;
+    private GardenForm? _gardenForm;
+
+    private List<GardenModel> _gardens { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _gardens = await _gardenService.GetGardens(false);
+        StateHasChanged();
+    }
+
+    private async Task AddGarden()
+    {
+        if (_gardenForm == null || _gardenFormModal == null) return;
+
+        _gardenForm.Initialize(null);
+        await _gardenFormModal.OpenModal("Add new garden", GlobalConstants.MODAL_FORM_COLOR);
+        StateHasChanged();
+    }
+
+    private async Task EditGarden(GardenModel garden)
+    {
+        if (_gardenForm == null || _gardenFormModal == null) return;
+
+        _gardenForm.Initialize(garden);
+        await _gardenFormModal.OpenModal(garden.Name, GlobalConstants.MODAL_FORM_COLOR);
+        StateHasChanged();
+    }
+
+    private async Task AddGardenImage(GardenModel garden)
+    {
+        if (_imageForm == null || _imageFormModal == null) return;
+
+        List<RelatedEntity> relatedEntities = new() { new RelatedEntity(RelatedEntityTypEnum.Garden, garden.GardenId, garden.Name) };
+        _imageForm.Initialize(RelatedEntityTypEnum.Garden, garden.GardenId, relatedEntities);
+        await _imageFormModal.OpenModal(garden.Name, GlobalConstants.MODAL_FORM_COLOR);
+        StateHasChanged();
+    }
+
+    private async Task CloseGardenFormModal()
+    {
+        if (_gardenFormModal!= null) 
+            await _gardenFormModal.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task CloseGardenForm(GardenModel workLog)
+    {
+        if (_gardenFormModal != null)
+        {
+            await _gardenFormModal.CloseModal();
+        }
+
+        _gardens = await _gardenService.GetGardens(false);
+
+        StateHasChanged();
+    }
+
+
+    private async Task CloseImageFormModal()
+    {
+        if (_imageFormModal != null)
+
+            await _imageFormModal.CloseModal();
+        StateHasChanged();
+    }
+
+    private async Task CloseImageFormModal(ImageViewModel image)
+    {
+        if (image != null)
+        {
+            var garden = _gardens.FirstOrDefault(g => g.GardenId == image.RelatedEntityId);
+            if (garden != null)
+            {
+                if (string.IsNullOrEmpty(garden.ImageFileName) || garden.ImageFileName == ImageService.NO_IMAGE)
+                {
+                    garden.ImageFileName = image.FileName;
+                    garden.ImageLabel = image.Label;
+                }
+                if (garden.Images == null) garden.Images = new();
+                garden.Images.Add(image);
+            }
+        }
+
+        if (_imageFormModal != null)
+
+        await _imageFormModal.CloseModal();
+        StateHasChanged();
+    }
+
+    private void ViewGardenImage(GardenModel garden)
+    {
+        _navigationManager.NavigateToGardenImages(garden.GardenId);
+    }
+
+    private void EditGardenLayout(GardenModel garden)
+    {
+        _navigationManager.NavigateToGardenLayout(garden.GardenId);
+    }
+}

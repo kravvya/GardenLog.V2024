@@ -1,0 +1,103 @@
+﻿@page "/addplantvariety/{PlantId}"
+@page "/editplantvariety/{PlantId}/variety/{PlantVarietyId}"
+
+@inject ILogger<PlantVarietyFormPage> _logger
+@inject IPlantService _plantService
+@inject NavigationManager _navigationManager
+
+<Page Title="@title" Description="@description" BreadcrumbLinks="@breacrumbLinks">
+    <PageContent>
+        <PlantVarietyForm OnClose=@ClosePage @ref="plantVarietyForm" />
+    </PageContent>
+</Page>
+
+@code {
+    [Parameter] public string PlantId { get; set; }=string.Empty;
+    [Parameter] public string PlantVarietyId { get; set; } = string.Empty;
+
+    private List<BreadcrumbLink> breacrumbLinks = new();
+
+    private PlantModel? plant { get; set; }
+    private PlantVarietyModel? plantVariety { get; set; }
+    private PlantVarietyForm? plantVarietyForm { get; set; }
+
+    private string title { get; set; } = string.Empty;
+    private string description { get; set; } = string.Empty;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        plant = await GetPlant(PlantId);
+
+        if (plant == null)
+        {
+            NavigateToPlants();
+            return;
+        }
+
+        breacrumbLinks.Add(new BreadcrumbLink("Plants", _navigationManager.GetPlantsUrl(), false));
+        breacrumbLinks.Add(new BreadcrumbLink(plant.Name, _navigationManager.GetViewPlantUrl(PlantId), false));
+
+        if (string.IsNullOrWhiteSpace(PlantVarietyId))
+        {
+            breacrumbLinks.Add(new BreadcrumbLink($"Add {plant.Name} Variety", _navigationManager.GetCreatePlantVarietyUrl(PlantId), true));
+            title = $"Add {plant.Name} Variety";
+            description = "";// $"Add {plant.Name} Variety";
+            if (plantVarietyForm!= null) plantVarietyForm.Initialize(null, plant);
+        }
+        else
+        {
+            plantVariety = await GetPlantVariety(PlantId, PlantVarietyId);
+            breacrumbLinks.Add(new BreadcrumbLink($"Edit {plantVariety.Name}", _navigationManager.GetEditPlantVarietyUrl(PlantId, PlantVarietyId), true));
+            title = $"Edit {plantVariety.Name}";
+            description = "";// $"Add {plant.Name} Variety";
+            if (plantVarietyForm != null) plantVarietyForm.Initialize(plantVariety, plant);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task<PlantModel> GetPlant(string plantId)
+    {
+        PlantModel? plant = null;
+
+        if (!string.IsNullOrWhiteSpace(plantId))
+        {
+            plant = await _plantService.GetPlant(plantId, false);
+        }
+
+        if (plant == null) _navigationManager.NavigateToPlants();
+
+        return plant?? new PlantModel();
+    }
+
+    private async Task<PlantVarietyModel> GetPlantVariety(string plantId, string plantVarietyId)
+    {
+        PlantVarietyModel? plantVariety = null;
+
+        plantVariety = await _plantService.GetPlantVariety(plantId, plantVarietyId);
+
+        if (plantVariety == null) _navigationManager.NavigateToPlants();
+
+        return plantVariety?? new PlantVarietyModel();
+    }
+
+    protected async Task ClosePage()
+    {
+        await Task.Delay(1);
+        if (!string.IsNullOrWhiteSpace(PlantVarietyId))
+        {
+            _navigationManager.NavigateToPlantVariety(PlantId, PlantVarietyId);
+        }
+        else
+        {
+            _navigationManager.NavigateToViewPlant(PlantId);
+        }
+    }
+
+    protected void NavigateToPlants()
+    {
+        _navigationManager.NavigateToPlants();
+
+    }
+    }

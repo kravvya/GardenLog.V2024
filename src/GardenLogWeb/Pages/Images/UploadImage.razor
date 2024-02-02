@@ -1,0 +1,34 @@
+﻿@page "/uploadImage"
+
+@inject HttpClient Http
+@inject ILogger<UploadImage> Logger
+@inject IImageService _imageService
+
+<h1>Upload Files</h1>
+
+<p>
+    <label>
+        Upload file:
+        <InputFile OnChange="@OnInputFileChange" accept="image/*" />
+    </label>
+    Uploaded: @_progress;
+</p>
+
+
+@code {
+    private long _progress;
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        var file = e.GetMultipleFiles().FirstOrDefault();
+        if (file != null)
+        {
+            await _imageService.UploadFile(file, Progress, e.File.Name);
+        }
+    }
+
+    protected void Progress(long progress)
+    {
+        _progress = progress;
+    }
+}

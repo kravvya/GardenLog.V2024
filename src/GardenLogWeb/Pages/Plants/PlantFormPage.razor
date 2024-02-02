@@ -1,0 +1,381 @@
+﻿@page "/addplant"
+@page "/editplant/{PlantId}"
+
+@inject ILogger<PlantFormPage> _logger;
+@inject IVerifyService _verifyService;
+@inject IPlantService _plantService;
+@inject NavigationManager _navigationManager;
+
+<Page Title="@_title" Description="@_description" BreadcrumbLinks="@breacrumbLinks">
+    <PageContent>
+        <article id="plantForm">
+            <div class="container">
+                @if (_isInitialized && _plant!= null)
+                {
+                    <EditForm EditContext="@editContext" OnValidSubmit="@HandleValidSubmit" class="row g-3">
+
+                        <FluentValidationValidator />
+                        <CustomValidation @ref="customValidation" />
+
+                        @*<ValidationSummary />*@
+                        <div class="col-md-1">
+                            <label for="color" class="form-label">Select color</label>
+                            <ColorSelector Id="color" @bind-Color="_plant.Color" Title="Select color" />
+                            <div class="invalid-feedback"><ValidationMessage For="@(() => _plant.Color)" /></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="plantname" class="form-label">Name</label>
+                            <InputText Class="form-control" @bind-Value="@_plant.Name" Id="plantname" />
+                            <div class="invalid-feedback"><ValidationMessage For="@(() => _plant.Name)" /></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="type">What type of Plant?</label>
+                            <div class="row">
+                                <div class="col-12">
+                                    <InputRadioGroup @bind-Value="@_plant.Type" Name="Type" id="type">
+                                        @foreach (var item in Enum.GetValues<PlantTypeEnum>().Where(p => p != PlantTypeEnum.Unspecified))
+                                        {
+                                            <InputRadio class="btn-check" type="radio" name="Type" id="@item" Value="@item" />
+                                            <label class="btn btn-outline-primary" for="@item">@(_verifyService.GetDescription(item))</label>
+                                        }
+                                        <div class="invalid-feedback"><ValidationMessage For="@(() => _plant.Type)" /></div>
+                                    </InputRadioGroup>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                <Header>
+                                    <label for="description">Description</label>
+                                </Header>
+                                <Body>
+                                    <InputTextArea Class="form-control" Id="description" @bind-Value="@_plant.Description" rows="3" />
+                                    <div class="invalid-feedback"><ValidationMessage For="@(() => _plant.Description)" /></div>
+                                </Body>
+                            </FormCard>
+                        </div>
+                        <div class="col-12">
+                            <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                <Header>
+                                    <label for="tip">Garden Tips</label>
+                                </Header>
+                                <Body>
+                                    <InputTextArea Class="form-control" Id="tip" @bind-Value="@_plant.GardenTip" rows="3" />
+                                    <div class="invalid-feedback"><ValidationMessage For="@(() => _plant.GardenTip)" /></div>
+                                </Body>
+                            </FormCard>
+                        </div>
+                        <div class="col-md-2">
+                            <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                <Header>
+                                    <label for="Lifecyle">Lifecycle</label>
+                                </Header>
+                                <Body>
+                                    <InputRadioGroup @bind-Value="@_plant.Lifecycle" Name="Lifecyle">
+                                        @foreach (var item in Enum.GetValues<PlantLifecycleEnum>().Where(p => p != PlantLifecycleEnum.Unspecified))
+                                        {
+                                            <div class="form-check form-check-inline">
+                                                <InputRadio class="form-check-input" type="radio" name="Lifecyle" id="@item" Value="@item" />
+                                                <label class="form-check-label" for="@item">@(_verifyService.GetDescription(item))</label>
+                                            </div>
+                                        }
+                                        <ValidationMessage For="@(() => _plant.Lifecycle)" />
+                                    </InputRadioGroup>
+                                </Body>
+                            </FormCard>
+                        </div>
+                        <div class="col-md-2">
+                            <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                <Header>
+                                    <label for="Tolerances">Tolerances</label>
+                                </Header>
+                                <Body>
+                                    @foreach (var tolerance in growToleranceEnums)
+                                    {
+                                        <div class="form-check">
+                                            <InputCheckbox class="form-check-input" type="checkbox" @bind-Value="tolerance.IsSelected" id="@tolerance.EnumItem.Key" />
+                                            <label class="form-check-label" for="@tolerance.EnumItem.Key">
+                                                @tolerance.EnumItem.Value
+                                            </label>
+                                        </div>
+                                    }
+                                </Body>
+                            </FormCard>
+                        </div>
+                        <div class="col-md-2">
+                            <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                <Header>
+                                    <label for="LightRequirement">Light Requirements</label>
+                                </Header>
+                                <Body>
+                                    <InputRadioGroup @bind-Value="@_plant.LightRequirement" Name="LightRequirement">
+                                        @foreach (var item in Enum.GetValues<LightRequirementEnum>().Where(p => p != LightRequirementEnum.Unspecified))
+                                        {
+                                            <div class="form-check form-check-inline">
+                                                <InputRadio class="form-check-input" type="radio" name="LightRequirement" id="@item" Value="@item" />
+                                                <label class="form-check-label" for="@item">@(_verifyService.GetDescription(item))</label>
+                                            </div>
+                                        }
+                                        <ValidationMessage For="@(() => _plant.LightRequirement)" />
+                                    </InputRadioGroup>
+                                </Body>
+                            </FormCard>
+                        </div>
+                        <div class="col-md-3">
+                            <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                <Header>
+                                    <label for="MoistureRequirement">Moisture Requirements</label>
+                                </Header>
+                                <Body>
+                                    <InputRadioGroup @bind-Value="@_plant.MoistureRequirement" Name="MoistureRequirement">
+                                        @foreach (var item in Enum.GetValues<MoistureRequirementEnum>().Where(p => p != MoistureRequirementEnum.Unspecified))
+                                        {
+                                            <div class="form-check form-check-inline">
+                                                <InputRadio class="form-check-input" type="radio" name="MoistureRequirement" id="@item" Value="@item" />
+                                                <label class="form-check-label" for="@item">@(_verifyService.GetDescription(item))</label>
+                                            </div>
+                                        }
+                                        <ValidationMessage For="@(() => _plant.MoistureRequirement)" />
+                                    </InputRadioGroup>
+                                </Body>
+                            </FormCard>
+                        </div>
+
+                        <div class="col-md-2">
+                            <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                <Header>
+                                    <label for="seed-viable-for-years">Seeds viable for (yrs)</label>
+                                </Header>
+                                <Body>
+                                    <InputNumber Class="form-control" @bind-Value="@_plant.SeedViableForYears" Id="seed-viable-for-years" />
+                                    <div class="invalid-feedback"><ValidationMessage For="@(() => _plant.Name)" /></div>
+                                </Body>
+                            </FormCard>
+                        </div>
+
+                        <div class="col-md-4">
+                            <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                <Header>
+                                    <label for="DaysToSproutMin" class="card-subtitle mb-2 text-light">Maturity after(days)</label>
+                                </Header>
+                                <Body>
+                                    <div class="d-flex justify-content-start flex-nowrap">
+                                        <div class="px-2"> <span>From</span> </div>
+                                        <div class="px-2">
+                                            <InputNumber Class="form-control" @bind-Value="@_plant.DaysToMaturityMin" id="DaysToSproutMin" />
+                                        </div>
+                                        <div class="px-2"> <span>to</span> </div>
+                                        <div class="px-2">
+                                            <InputNumber Class="form-control" @bind-Value="@_plant.DaysToMaturityMax" id="DaysToSproutMax" />
+                                        </div>
+                                    </div>
+                                </Body>
+                            </FormCard>
+                        </div>
+                        <div class="col-md-10">
+                            <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                <Header>
+                                    <label for="plant-characteristics-tags">Plant Characteristics</label>
+                                </Header>
+                                <Body>
+                                    <div class="tags" role="group" aria-label="Plant Characteristics">
+                                        <ul Id="plant-characteristics-tags">
+                                            @foreach (var tag in _plant.Tags)
+                                            {
+                                                <li style="background-color:@_plant.Color">@tag<a role='button' onclick=@(() => RemoveTag(tag))>×</a></li>
+                                            }
+                                        </ul>
+                                        @*<input @bind:get="newTag" @bind:event="OnTagInput" @ref="inputTag" />*@
+                                        <input type="text" @bind="NewTag" @ref="_inputTag" />
+                                    </div>
+                                </Body>
+                            </FormCard>
+                        </div>
+                        <div class="col-md-10">
+                            <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                <Header>
+                                    <label for="type">Variety Colors</label>
+                                </Header>
+                                <Body>
+                                    <div class="variety-colors" role="group" aria-label=">Variety Colors">
+                                        @if (_varietyColors != null)
+                                        {
+                                            @foreach (var color in _varietyColors)
+                                            {
+                                                <div class="form-check form-check-inline color">
+                                                    <input class="btn-check" type="checkbox" id="@color.Name" value="@color.Name" autocomplete="off" onclick=@(() => ToggleVarietyColor(color))>
+                                                    <label class="btn btn-outline-dark" for="@color.Name" style="@GetStyleBasedOnColor(color)">@color.Name</label>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                </Body>
+                            </FormCard>
+                        </div>
+                        <div class="col-12">
+                            <div class="modal-footer justify-content-between">
+                                <span>
+                                    <button type="submit" class="btn btn-primary" title="Save Changes">Save <span class="bi bi-file-earmark-post">&nbsp;</span></button>
+                                    <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() => ClosePage())">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                                </span>
+                            </div>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </article>
+    </PageContent>
+</Page>
+
+@code {
+    [Parameter]
+    public string PlantId { get; set; } = string.Empty;
+
+    private PlantModel? _plant { get; set; }
+    private string _title { get; set; } = string.Empty;
+    private string _description { get; set; } = string.Empty;
+
+    private ElementReference _inputTag;
+    private string _newTag = string.Empty;
+    private string NewTag
+    {
+        get => _newTag;
+        set
+        {
+            OnTagInput(value);
+        }
+    }
+    private bool _isInitialized = false;
+    private bool _isEdit = false;
+    private CustomValidation? customValidation;
+    private EditContext? editContext;
+
+    protected IReadOnlyCollection<Color>? _varietyColors { get; set; }
+
+    public List<CheckableEnum> growToleranceEnums { get; set; } = new();
+
+    private List<BreadcrumbLink> breacrumbLinks = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        breacrumbLinks.Add(new BreadcrumbLink("Plants", _navigationManager.GetPlantsUrl(), false));
+
+        _varietyColors = _verifyService.GetPlantVarietyColors();
+
+        foreach (var code in _verifyService.GetCodeList<GrowToleranceEnum>(true))
+        {
+            growToleranceEnums.Add(new CheckableEnum(code));
+        }
+
+        if (string.IsNullOrEmpty(PlantId))
+        {
+            breacrumbLinks.Add(new BreadcrumbLink("Add Plant", _navigationManager.GetCreatePlantUrl(), true));
+            _plant = new PlantModel();
+            _plant.Color = _plantService.GetRandomPlantColor();
+            _isEdit = false;
+            _title = $"Add Plant";
+            _description = $"";
+        }
+        else
+        {
+            _plant = await _plantService.GetPlant(PlantId, false);
+
+            if (_plant == null)
+            {
+                ClosePage();
+                return;
+            }
+            else
+            {
+                breacrumbLinks.Add(new BreadcrumbLink(_plant.Name, _navigationManager.GetEditPlantUrl(PlantId), true));
+
+                growToleranceEnums.ForEach(item => item.IsSelected = _plant.GrowTolerance.HasFlag(Enum.Parse<GrowToleranceEnum>(item.EnumItem.Key)));
+
+                _isEdit = true;
+                _title = $"Edit {_plant.Name}";
+                _description = $"";
+            }
+
+        }
+
+        editContext = new(_plant);
+        editContext.SetFieldCssClassProvider(new BootstrapValidationFieldClassProvider());
+        _isInitialized = true;
+        StateHasChanged();
+    }
+
+    private void OnTagInput(string value)
+    {
+        if (_plant == null) return;
+        _plant.Tags.Add(value.Trim());
+        _newTag = string.Empty;
+        _inputTag.FocusAsync();
+    }
+    private void RemoveTag(string tag)
+    {
+        if (_plant == null) return;
+        _plant.Tags.RemoveAll(t => t == tag);
+        StateHasChanged();
+    }
+
+    private string GetStyleBasedOnColor(Color color)
+    {
+        if (_plant != null && _plant.VarietyColors.Contains(color.Name))
+        {
+            return $"color:{color.FontColor}; background-color:{color.BackgroundColor}";
+        }
+        return string.Empty;
+    }
+
+    private void ToggleVarietyColor(Color color)
+    {
+        if (_plant == null) return;
+
+        if (_plant.VarietyColors.Contains(color.Name))
+        {
+            _plant.VarietyColors.Remove(color.Name);
+        }
+        else
+        {
+            _plant.VarietyColors.Add(color.Name);
+        }
+        StateHasChanged();
+    }
+    protected async Task HandleValidSubmit()
+    {
+        _logger.LogDebug("Plant Form passed validations");
+
+        customValidation?.ClearErrors();
+
+        foreach (var item in growToleranceEnums)
+        {
+            if (item.IsSelected)
+            {
+                _plant!.GrowTolerance |= Enum.Parse<GrowToleranceEnum>(item.EnumItem.Key);
+            }
+            else
+            {
+                _plant!.GrowTolerance &= ~Enum.Parse<GrowToleranceEnum>(item.EnumItem.Key);
+            }
+        }
+
+        ApiResponse response = (_isEdit) ? await _plantService.UpdatePlant(_plant!) : await _plantService.CreatePlant(_plant!);
+
+        if (response.ValidationProblems != null)
+        {
+            customValidation?.DisplayErrors(response.ValidationProblems);
+        }
+
+        if (response.IsSuccess)
+        {
+            ClosePage();
+        }
+    }
+
+    protected void ClosePage()
+    {
+        _navigationManager.NavigateToPlants();
+
+    }
+}
