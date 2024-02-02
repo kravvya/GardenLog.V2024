@@ -16,7 +16,6 @@ jobs:
   deploy-to-github-pages:
     runs-on: ubuntu-latest
 
-    needs: setup
     steps:
     # checkout the repo
     - name: Checkout to the branch
