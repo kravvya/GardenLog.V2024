@@ -27,13 +27,13 @@ jobs:
         dotnet-version: "8.0.x"
     
     - name: Publish .NET Core Project
-      run: dotnet publish GardenLogWeb/GardenLogWeb.csproj -c Release -o release
+      run: dotnet publish src/GardenLogWeb/GardenLogWeb.csproj -c Release -o release
      
     - name: Add .nojekyll file
       run: touch release/wwwroot/.nojekyll
       
     - name: Change base-tag in index.html from / to GardenLog.V2023
-      run: sed -i 's/<base href="\/" \/>/<base href="\/GardenLog.V2023\/" \/>/g' release/wwwroot/index.html
+      run: sed -i 's/<base href="\/" \/>/<base href="\/GardenLog.V2024\/" \/>/g' release/wwwroot/index.html
    
     - name: Copy index.html to 404.html
       run: cp release/wwwroot/index.html release/wwwroot/404.html
