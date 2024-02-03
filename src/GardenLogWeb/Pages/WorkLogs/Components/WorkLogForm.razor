@@ -29,13 +29,36 @@
                         <ValidationMessage For="@(() => _workLog.Reason)" />
                     </div>
                 </div>
-                <div class="row">
+                <div class="row mt-2">
                     <div class="col-md-10">
                         <label for="log">Note</label>
                         <InputTextArea Class="form-control" Id="log" @bind-Value="@_workLog.Log" />
                         <ValidationMessage For="@(() => _workLog.Log)" />
                     </div>
                 </div>
+                @if (_otherPlantsWithSameTask != null && _otherPlantsWithSameTask.Count > 0)
+                {
+                    <div class="row">
+                        <div class="col-md-10">
+                            <FormCard Class="border-info" HeaderClass="text-bg-info">
+                                <Header>
+                                    <label for="type" class="card-subtitle mb-2 text-light">Other Plants</label>
+                                </Header>
+                                <Body>
+                                    <div class="form-group" Id="other-plants">
+                                        @foreach (var entityPlant in _otherPlantsWithSameTask)
+                                        {
+                                            <div class="form-check">
+                                                <label class="px-1" for="@entityPlant.EntityId">@entityPlant.EntityName</label>
+                                                <input type="checkbox" class="form-check-input" checked="@_selectedPlants.Contains(entityPlant.EntityId)" onclick=@(() => ToggleSelectedPlants(entityPlant.EntityId)) id="@entityPlant.EntityId">
+                                            </div>
+                                        }
+                                    </div>
+                                </Body>
+                            </FormCard>
+                        </div>
+                    </div>
+                }
                 <div class="col-12">
                     <div class="modal-footer">
                         <span>
@@ -56,8 +79,10 @@
     private EditContext? _editContext;
 
     private bool _isInitialized = false;
+    private List<RelatedEntity>? _otherPlantsWithSameTask;
+    private List<string> _selectedPlants = new();
 
-    public void Initialize(List<RelatedEntity> relatedEntities, WorkLogReasonEnum? reason = null)
+    public void Initialize(List<RelatedEntity> relatedEntities, WorkLogReasonEnum? reason = null, List<RelatedEntity>? otherPlantsWithSameTask = null)
     {
         _workLog = new WorkLogModel();
         _workLog.RelatedEntities = relatedEntities;
@@ -68,6 +93,9 @@
 
         _editContext = new(_workLog);
         _editContext.SetFieldCssClassProvider(new BootstrapValidationFieldClassProvider());
+
+        _otherPlantsWithSameTask = otherPlantsWithSameTask;
+
         _isInitialized = true;
         StateHasChanged();
     }
@@ -79,6 +107,27 @@
         _customValidation?.ClearErrors();
 
         ApiResponse response = await _workLogService.CreateWorkLog(_workLog!);
+
+
+        foreach (var plant in _selectedPlants)
+        {
+            if (response.IsSuccess)
+            {
+                var relatedEntities = new List<RelatedEntity>();
+                relatedEntities.Add(_workLog!.RelatedEntities.First(p => p.EntityType == RelatedEntityTypEnum.HarvestCycle));
+                relatedEntities.Add(_otherPlantsWithSameTask.First(p => p.EntityId == plant));
+
+                var workLog = new WorkLogModel
+                    {
+                        EventDateTime = _workLog.EventDateTime,
+                        Reason = _workLog.Reason,
+                        Log = _workLog.Log,
+                        RelatedEntities = relatedEntities
+                    };
+
+                response = await _workLogService.CreateWorkLog(_workLog!);
+            }
+        }
 
         if (response.ValidationProblems != null)
         {
@@ -97,4 +146,16 @@
             OnClose(null);
     }
 
+    private void ToggleSelectedPlants(string plantName)
+    {
+        if (_selectedPlants.Contains(plantName))
+        {
+            _selectedPlants.Remove(plantName);
+        }
+        else
+        {
+            _selectedPlants.Add(plantName);
+        }
+        StateHasChanged();
+    }
 }

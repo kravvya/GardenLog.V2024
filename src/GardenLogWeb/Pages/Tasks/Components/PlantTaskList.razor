@@ -291,11 +291,11 @@
             case WorkLogReasonEnum.FertilizeOutside:
             case WorkLogReasonEnum.IssueResolution:
             case WorkLogReasonEnum.Maintenance:
-                _workLogForm.Initialize(await _harvestService.BuildRelatedEntities(RelatedEntityTypEnum.PlantHarvestCycle, task.PlantHarvestCycleId, task.HarvestCycleId), task.Type);
+                _workLogForm.Initialize(await _harvestService.BuildRelatedEntities(RelatedEntityTypEnum.PlantHarvestCycle, task.PlantHarvestCycleId, task.HarvestCycleId), task.Type, GetEntitiesForSimilarActiveTasks(task, 7));
                 await _workLogFormModal.OpenModal("Add new note", GlobalConstants.MODAL_FORM_COLOR);
                 break;
             case WorkLogReasonEnum.Harden:
-                _workLogForm.Initialize(await _harvestService.BuildRelatedEntities(RelatedEntityTypEnum.PlantHarvestCycle, task.PlantHarvestCycleId, task.HarvestCycleId), task.Type);
+                _workLogForm.Initialize(await _harvestService.BuildRelatedEntities(RelatedEntityTypEnum.PlantHarvestCycle, task.PlantHarvestCycleId, task.HarvestCycleId), task.Type, GetEntitiesForSimilarActiveTasks(task, 7));
                 await _workLogFormModal.OpenModal("Harden Off", GlobalConstants.MODAL_FORM_COLOR);
                 break;
             default:
@@ -305,6 +305,15 @@
         }
 
         StateHasChanged();
+    }
+
+    private List<RelatedEntity> GetEntitiesForSimilarActiveTasks(PlantTaskViewModel task, int DueWithinDays)
+    {
+        DateTime maxDueDate = task.TargetDateEnd.AddDays(DueWithinDays);
+
+        return _tasks.Where(t => t.Type == task.Type && t.TargetDateStart < maxDueDate && t.PlantHarvestCycleId!=task.PlantHarvestCycleId)
+                .Select(t => new RelatedEntity(RelatedEntityTypEnum.PlantHarvestCycle, t.PlantHarvestCycleId, t.PlantName))
+                .ToList();
     }
 
     private async Task ClosePlantTaskFormModal()
