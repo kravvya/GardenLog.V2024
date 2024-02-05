@@ -1,4 +1,6 @@
 ﻿@using System.ComponentModel;
+@inject IConfiguration _config;
+
 @model (IReadOnlyCollection<PlantTaskViewModel> data, bool isReadOnly)
 
 @{
@@ -86,5 +88,5 @@
         </table>
     </div>
 
-    <a href="https://kravvya.github.io/GardenLog.V2023/" >GardenLog Site</a>
+    <a href="@_config["Site-Url"]">GardenLog Site</a>
 }
