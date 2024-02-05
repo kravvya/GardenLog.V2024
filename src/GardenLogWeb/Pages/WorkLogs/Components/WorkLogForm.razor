@@ -115,7 +115,8 @@
             {
                 var relatedEntities = new List<RelatedEntity>();
                 relatedEntities.Add(_workLog!.RelatedEntities.First(p => p.EntityType == RelatedEntityTypEnum.HarvestCycle));
-                relatedEntities.Add(_otherPlantsWithSameTask.First(p => p.EntityId == plant));
+                //sencie we are iterating over the selected plants, we expect _otherPlantsWithSameTask to be not null
+                relatedEntities.Add(_otherPlantsWithSameTask!.First(p => p.EntityId == plant));
 
                 var workLog = new WorkLogModel
                     {

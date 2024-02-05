@@ -27,7 +27,7 @@ public class PlantHarvestApiClient : IPlantHarvestApiClient
             _logger.LogCritical("Unable to get PlantHarvest Api");
             throw new ArgumentNullException(nameof(confguration), "Unable to get PlantHarvest Api");
         }
-        _logger.LogInformation($"PlantHarvest URL @ {harvestUrl}");
+        _logger.LogInformation("PlantHarvest URL @ {harvestUrl}", harvestUrl);
 
         _httpClient.BaseAddress = new Uri(harvestUrl);
     }
@@ -50,7 +50,7 @@ public class PlantHarvestApiClient : IPlantHarvestApiClient
 
         if (!response.IsSuccess)
         {
-            _logger.LogError($"Unable to get Tasks for userProfileId: {userProfileId} ");
+            _logger.LogError("Unable to get Tasks for userProfileId: {userProfileId} ", userProfileId);
             return null;
         }
 

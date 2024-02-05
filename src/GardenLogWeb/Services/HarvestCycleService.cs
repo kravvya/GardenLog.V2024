@@ -94,7 +94,7 @@ public class HarvestCycleService : IHarvestCycleService
         }
         else
         {
-            _logger.LogInformation($"Harvests are in cache. Found {harvests!.Count}");
+            _logger.LogInformation("Harvests are in cache. Found {harvests.Count}",   harvests!.Count);
         }
 
         return harvests;
@@ -209,7 +209,7 @@ public class HarvestCycleService : IHarvestCycleService
 
     public async Task<List<RelatedEntity>> BuildRelatedEntities(RelatedEntityTypEnum entityType, string entityId, string harvestCycleId)
     {
-        List<RelatedEntity> relatedEntities = new();
+        List<RelatedEntity> relatedEntities = [];
 
         switch (entityType)
         {
@@ -237,7 +237,7 @@ public class HarvestCycleService : IHarvestCycleService
 
         if (forceRefresh || !_cacheService.TryGetValue<List<PlantHarvestCycleModel>>(key, out List<PlantHarvestCycleModel>? plants))
         {
-            _logger.LogDebug($"PlantHarvestCycles for {harvestCycleId} not in cache or forceRefresh");
+            _logger.LogDebug("PlantHarvestCycles for {harvestCycleId} not in cache or forceRefresh", harvestCycleId);
 
             var harvestPlantsTask = GetPlantHarvestCycles(harvestCycleId);
             var imagesTask = _imageService.GetImages(RelatedEntityTypEnum.Plant, false);
@@ -296,7 +296,7 @@ public class HarvestCycleService : IHarvestCycleService
         }
         else
         {
-            _logger.LogDebug($"PlantHarvestCycles for {harvestCycleId} are in cache. Found {plants!.Count}");
+            _logger.LogDebug("PlantHarvestCycles for {harvestCycleId} are in cache. Found {plants.Count}", harvestCycleId, plants!.Count);
         }
 
         return plants;
@@ -313,7 +313,7 @@ public class HarvestCycleService : IHarvestCycleService
         if (!response.IsSuccess)
         {
             _toastService.ShowToast("Unable to get Garden Plan examples for this plant ", GardenLogToastLevel.Error);
-            return new List<PlantHarvestCycleIdentityOnlyViewModel>();
+            return [];
         }
 
         plants = response.Response!;
@@ -350,7 +350,7 @@ public class HarvestCycleService : IHarvestCycleService
         }
         else
         {
-            _logger.LogDebug($"PlantHarvestCycles for {harvestCycleId} are in cache. Found {plantHarvests!.Count}");
+            _logger.LogDebug("PlantHarvestCycles for {harvestCycleId} are in cache. Found {plantHarvests.Count}", harvestCycleId, plantHarvests!.Count);
             plantHarvest = plantHarvests.First(p => p.PlantHarvestCycleId == plantHarvestCycleId);
         }
 
@@ -447,7 +447,7 @@ public class HarvestCycleService : IHarvestCycleService
         if (!response.IsSuccess)
         {
             _toastService.ShowToast("Unable to get Garden Plans", GardenLogToastLevel.Error);
-            return new List<HarvestCycleModel>();
+            return [];
         }
 
         return response.Response!;
@@ -467,7 +467,7 @@ public class HarvestCycleService : IHarvestCycleService
         }
         else
         {
-            harvests = new List<HarvestCycleModel>();
+            harvests = [];
             _cacheService.Set(HARVESTS_KEY, harvests, DateTime.Now.AddMinutes(_cacheDuration));
         }
         harvests.Add(harvest);
@@ -578,7 +578,7 @@ public class HarvestCycleService : IHarvestCycleService
         if (!response.IsSuccess)
         {
             _toastService.ShowToast("Unable to get Garden Plan deatils ", GardenLogToastLevel.Error);
-            return new List<PlantHarvestCycleModel>();
+            return [];
         }
 
         return response.Response!;

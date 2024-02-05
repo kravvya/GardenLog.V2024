@@ -2,7 +2,7 @@
 
 public record PlantHarvestCycleModel : PlantHarvestCycleViewModel
 {
-    public new List<GardenBedPlantHarvestCycleModel> GardenBedLayout { get; set; } = new();
+    public new List<GardenBedPlantHarvestCycleModel> GardenBedLayout { get; set; } = [];
 
     public string ImageFileName { get; set; } = string.Empty;
     public string ImageLabel { get; set; } = string.Empty;
@@ -48,42 +48,17 @@ public record PlantHarvestCycleModel : PlantHarvestCycleViewModel
         //default to 1in
         if (!SpacingInInches.HasValue) return 144;
 
-        switch (SpacingInInches)
+        return SpacingInInches switch
         {
-            case 1:
-                return 144;
-            case 2:
-                return 36;
-            case 3:
-                return 16;
-            case 4:
-                return 9;
-            case 5:
-            case 6:
-                return 4;
-            case 7:
-            case 8:
-            case 9:
-            case 10:
-            case 11:
-            case 12:
-            case 13:
-            case 14:
-                return 1;
-            case 15:
-            case 16:
-            case 17:
-            case 18:
-            case 19:
-            case 20:
-            case 21:
-            case 22:
-            case 23:
-            case 24:
-                return 0.5;
-            default:
-                return 0.25;
-        }
+            1 => 144,
+            2 => 36,
+            3 => 16,
+            4 => 9,
+            5 or 6 => 4,
+            7 or 8 or 9 or 10 or 11 or 12 or 13 or 14 => 1,
+            15 or 16 or 17 or 18 or 19 or 20 or 21 or 22 or 23 or 24 => 0.5,
+            _ => 0.25,
+        };
     }
 
 }

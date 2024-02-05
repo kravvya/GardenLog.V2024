@@ -20,6 +20,6 @@ public class PlantHarvestFilter
     }
     protected void OnModelChanged()
     {
-        if (ModelChanged != null) ModelChanged.Invoke(this, new EventArgs());
+        ModelChanged?.Invoke(this, new EventArgs());
     }
 }
