@@ -23,7 +23,7 @@ public class NationalWeatherServiceApiClient : INationalWeatherServiceApiClient
         _mapper = mapper;
         _configurationService = configurationService;
 
-        var nationalWeatherServiceUrl = confguration["NationalWeatherService.Api"];
+        var nationalWeatherServiceUrl = confguration["Services:NationalWeatherService.Api"];
 
         if (nationalWeatherServiceUrl == null)
         {
@@ -33,7 +33,7 @@ public class NationalWeatherServiceApiClient : INationalWeatherServiceApiClient
 
         _logger.LogInformation("National Weather Service URL @ {nationalWeatherServiceUrl}", nationalWeatherServiceUrl);
         _httpClient.BaseAddress = new Uri(nationalWeatherServiceUrl);
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "(under development website");
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "slavgl.com");
     }
 
     public async Task<WeatherForecastViewModel?> GetWeatherForecast(WeatherstationViewModel weatherStation)
@@ -84,7 +84,8 @@ public class NationalWeatherServiceApiClient : INationalWeatherServiceApiClient
 
     public async Task<WeatherstationViewModel?> GetWeatherStation(decimal latitude, decimal longitude)
     {
-        HttpResponseMessage response = await _httpClient.GetAsync($"/points?{latitude},{longitude}");
+        var url = $"/points/{latitude},{longitude}";
+        HttpResponseMessage response = await _httpClient.GetAsync(url);
         response.EnsureSuccessStatusCode();
 
         var jsonString = await response.Content.ReadAsStringAsync();
@@ -101,7 +102,7 @@ public class NationalWeatherServiceApiClient : INationalWeatherServiceApiClient
 
         WeatherstationViewModel weatherStation = new();
         weatherStation.WeatherstationId = pointData.Id;
-        weatherStation.ForecastOffice = pointData.Properties.ForecastOffice;
+        weatherStation.ForecastOffice = pointData.Properties.GridId;
         weatherStation.GridX = pointData.Properties.GridX;
         weatherStation.GridY = pointData.Properties.GridY;
         weatherStation.Timezone = pointData.Properties.TimeZone;

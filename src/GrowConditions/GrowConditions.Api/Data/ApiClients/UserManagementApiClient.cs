@@ -19,7 +19,7 @@ public class UserManagementApiClient : IUserManagementApiClient
     private readonly IMemoryCache _cache;
 
     private const string GARDEN_CACHE_KEY = "Gardens";
-    private const string WEATHERSTATION_CACHE_KEY = "WeatherStation-{gardenId}";
+    private const string WEATHERSTATION_CACHE_KEY = "WeatherStation-{0}";
     private const int CACHE_DURATION = 1440;
 
     public UserManagementApiClient(HttpClient httpClient, IConfiguration confguration, ILogger<UserManagementApiClient> logger, IMemoryCache cache)
@@ -87,7 +87,7 @@ public class UserManagementApiClient : IUserManagementApiClient
 
     public async Task<GardenViewModel?> GetGarden(string gardenId)
     {
-        var response = await _httpClient.ApiGetAsync<GardenViewModel>(string.Format(GardenRoutes.GetGarden, gardenId));
+        var response = await _httpClient.ApiGetAsync<GardenViewModel>(GardenRoutes.GetGarden.Replace("{gardenId}", gardenId));
 
         if (!response.IsSuccess)
         {
