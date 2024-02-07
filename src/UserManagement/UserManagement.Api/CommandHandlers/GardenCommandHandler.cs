@@ -99,6 +99,8 @@ public class GardenCommandHandler : IGardenCommandHandler
             , request.Notes, request.LastFrostDate, request.FirstFrostDate, request.WarmSoilDate
             , request.Length, request.Width);
 
+        var hasNoWeatherstation = garden.Weatherstation == null;
+
         garden.SetWeatherstation(weatherstation.ForecastOffice, weatherstation.GridX, weatherstation.GridY, weatherstation.Timezone);
 
         _gardenRepository.Update(garden);
@@ -107,7 +109,7 @@ public class GardenCommandHandler : IGardenCommandHandler
         {
             _weatherstationRepository.UpdateWeatherstation(garden);
         }
-        else
+        else if (hasNoWeatherstation)
         {
             _weatherstationRepository.AddWeatherstation(garden);
         }
