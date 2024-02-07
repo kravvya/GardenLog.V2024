@@ -65,9 +65,11 @@ try
 
     builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
     builder.Services.AddScoped<IGardenRepository, GardenRepository>();
+    builder.Services.AddScoped<IWeatherstationRepository, WeatherstationRepository>();
 
     builder.Services.AddHttpClient<IAuth0AuthenticationApiClient, Auth0AuthenticationApiClient>();
     builder.Services.AddHttpClient<IAuth0ManagementApiClient, Auth0ManagementApiClient>();
+    builder.Services.AddHttpClient<IGrowConditionsApiClient, GrowConditionsApiClient>();
 
     builder.Services.AddScoped<IEmailClient, EmailClient>();
     builder.Services.AddScoped<IContactCommandHandler, ContactCommandHandler>();

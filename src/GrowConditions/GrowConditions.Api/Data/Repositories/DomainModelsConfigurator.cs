@@ -3,11 +3,11 @@ using GrowConditions.Contract.Base;
 using GrowConditions.Contract.ViewModels;
 using MongoDB.Bson.Serialization;
 
-namespace GrowConditions.Api.Data;
+namespace GrowConditions.Api.Data.Repositories;
 
-public class DomainModelsConfigurator:IModelConfigurator
+public class DomainModelsConfigurator : IModelConfigurator
 {
-    public  void OnModelCreating()
+    public void OnModelCreating()
     {
         if (BsonClassMap.IsClassMapRegistered(typeof(WeatherUpdate)))
         {

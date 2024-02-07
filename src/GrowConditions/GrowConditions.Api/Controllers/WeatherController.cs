@@ -58,14 +58,44 @@ public class WeatherController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Received request to run weather cycle");
+            _logger.LogInformation("Received request to run weatherStation cycle");
              _weatherCommandHandler.GetWeatherUpdates().GetAwaiter().GetResult();
             return Accepted();
         }
         catch (Exception ex)
         {
-            _logger.LogError("Exception running weather cycle time: {ex}", ex);
+            _logger.LogError("Exception running weatherStation cycle time: {ex}", ex);
             return Problem(ex.Message);
         }
+    }
+
+    [Authorize]
+    [HttpGet(WeatherRoutes.GetWeatherStation)]
+    [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType(typeof(WeatherUpdateViewModel), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult> GetWeatherStation(decimal lat, decimal lon)
+    {
+        var weatherStation = await _weatherQueryHandler.GetWeatherStation(lat, lon);
+        if (weatherStation == null)
+        {
+            return NotFound();
+        }
+        return Ok(weatherStation);
+    }
+
+    [Authorize]
+    [HttpGet(WeatherRoutes.GetForecast)]
+    [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType(typeof(WeatherUpdateViewModel), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult> GetForecast(string gardenId)
+    {
+        var weatherStation = await _weatherQueryHandler.GetForecast(gardenId);
+        if (weatherStation == null)
+        {
+            return NotFound();
+        }
+        return Ok(weatherStation);
     }
 }

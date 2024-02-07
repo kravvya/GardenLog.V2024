@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 using GardenLog.SharedInfrastructure.MongoDB;
 using GardenLog.SharedKernel.Interfaces;
-using GrowConditions.Api.ApiClients;
-using GrowConditions.Api.Data;
+using GrowConditions.Api.Data.ApiClients;
+using GrowConditions.Api.Data.Repositories;
 
 Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
@@ -55,6 +55,7 @@ try
     builder.Services.AddScoped<IUnitOfWork, MongoDBUnitOfWork>();
 
     builder.Services.AddHttpClient<IOpenWeatherApiClient, OpenWeatherApiClient>();
+    builder.Services.AddHttpClient<INationalWeatherServiceApiClient, NationalWeatherServiceApiClient>();
     builder.RegisterHttpClient<IUserManagementApiClient, UserManagementApiClient>();
 
     builder.Services.AddScoped<IWeatherRepository, WeatherRepository>();

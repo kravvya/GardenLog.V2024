@@ -1,6 +1,4 @@
-﻿
-
-namespace GrowConditions.Api.ApiClients;
+﻿namespace GrowConditions.Api.Data.ApiClients;
 
 public interface IOpenWeatherApiClient
 {
@@ -13,7 +11,7 @@ public class OpenWeatherApiClient : IOpenWeatherApiClient
     private readonly ILogger<OpenWeatherApiClient> _logger;
     private readonly IMapper _mapper;
     private readonly IConfigurationService _configurationService;
-   
+
     public OpenWeatherApiClient(HttpClient httpClient, IConfiguration confguration, ILogger<OpenWeatherApiClient> logger, IMapper mapper, IConfigurationService configurationService)
     {
         _httpClient = httpClient;
@@ -44,7 +42,7 @@ public class OpenWeatherApiClient : IOpenWeatherApiClient
         //continue to use Newtonsoft for OpenWeather service. 
         var openWeather = Newtonsoft.Json.JsonConvert.DeserializeObject<OpenWeather>(jsonString);
 
-        if(openWeather == null || openWeather.Sys == null || openWeather.Main == null)
+        if (openWeather == null || openWeather.Sys == null || openWeather.Main == null)
         {
             _logger.LogCritical("Did not get Open Weather update message");
             return null;

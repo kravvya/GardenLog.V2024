@@ -30,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\GardenLog.SharedInfrastructure\GardenLog.SharedInfrastructure.csproj" />
     <ProjectReference Include="..\..\GardenLog.SharedKernel\GardenLog.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\GrowConditions\GrowConditions.Contract\GrowConditions.Contract.csproj" />
     <ProjectReference Include="..\..\PlantHarvest\PlantHarvest.Contract\PlantHarvest.Contract.csproj" />
     <ProjectReference Include="..\UserManagement.Contract\UserManagement.Contract.csproj" />
   </ItemGroup>

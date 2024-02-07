@@ -12,12 +12,35 @@ namespace PlantHarvest.Infrastructure.Data.Repositories;
 public class GardenRepository : BaseRepository<Garden>, IGardenRepository
 {
     private const string GARDEN_COLLECTION_NAME = "Garden-Collection";
+    private readonly IWeatherstationRepository _weatherstationRepository;
     private readonly ILogger<GardenRepository> _logger;
 
-    public GardenRepository(IUnitOfWork unitOfWork, ILogger<GardenRepository> logger)
+    public GardenRepository(IUnitOfWork unitOfWork, IWeatherstationRepository weatherstationRepository, ILogger<GardenRepository> logger)
         : base(unitOfWork, logger)
     {
+        _weatherstationRepository = weatherstationRepository;
         _logger = logger;
+    }
+
+    public async Task<Garden> ReadGarden(string gardenId, string userProfileId)
+    {
+        var filter = Builders<Garden>.Filter.And(
+                      Builders<Garden>.Filter.Eq("UserProfileId", userProfileId),
+                                 Builders<Garden>.Filter.Eq("_id", gardenId));
+
+        var gardenTask = Collection.Find(filter).SingleOrDefaultAsync();
+
+        var weatherstationTask = _weatherstationRepository.ReadWeatherstation(gardenId);
+
+
+        await Task.WhenAll(gardenTask, weatherstationTask);
+
+        var garden = gardenTask.Result;
+        var weatherstation = weatherstationTask.Result;
+
+        garden.RehidrateWeatherstation(weatherstation);
+
+        return garden;
     }
 
     public async Task<GardenViewModel> GetGarden(string gardenId)

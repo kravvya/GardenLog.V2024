@@ -4,6 +4,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using PlantHarvest.Infrastructure.Data.Repositories;
 using System.Reflection;
+using UserManagement.Contract.ViewModels;
 
 namespace UserManagement.Api.Data.Repositories;
 
@@ -23,6 +24,7 @@ public class DomainModelsConfigurator : IModelConfigurator
             //p.IdMemberMap.SetSerializer(new StringSerializer(BsonType.ObjectId));
             p.SetIgnoreExtraElements(true);
             p.UnmapMember(m => m.DomainEvents);
+            p.UnmapMember(m => m.IsModified);
         });
 
         BsonClassMap.RegisterClassMap<Garden>(p =>
@@ -40,6 +42,8 @@ public class DomainModelsConfigurator : IModelConfigurator
             p.MapProperty(m => m.WarmSoilDate).SetSerializer(dateSerializer).SetDefaultValue(DateTime.MinValue);
             p.MapProperty(m => m.Length).SetDefaultValue(0);
             p.MapProperty(m => m.Width).SetDefaultValue(0);
+            p.UnmapMember(m => m.Weatherstation);
+
             var nonPublicCtors = p.ClassType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance);
             var longestCtor = nonPublicCtors.OrderByDescending(ctor => ctor.GetParameters().Length).FirstOrDefault();
             p.MapConstructor(longestCtor, p.DeclaredMemberMaps.Where(c => c.ElementName != "Id").Select(c => c.ElementName).ToArray());
@@ -115,6 +119,28 @@ public class DomainModelsConfigurator : IModelConfigurator
             //ignore elements not in the document 
             p.SetIgnoreExtraElements(true);
             //p.MapMember(m => m.UserProfileId).SetElementName("_id");
+        });
+
+        BsonClassMap.RegisterClassMap<WeatherstationBase>(p =>
+        {
+            p.AutoMap();
+            //ignore elements not in the document 
+            p.SetIgnoreExtraElements(true);
+        });
+
+        BsonClassMap.RegisterClassMap<WeatherstationViewModel>(p =>
+        {
+            p.AutoMap();
+            //ignore elements not in the document 
+            p.SetIgnoreExtraElements(true);
+            p.MapIdMember(m => m.WeatherstationId);
+        });
+
+        BsonClassMap.RegisterClassMap<Weatherstation>(p =>
+        {
+            p.AutoMap();
+            //ignore elements not in the document 
+            p.SetIgnoreExtraElements(true);
         });
     }
 }

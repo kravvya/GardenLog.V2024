@@ -14,6 +14,7 @@ public class Garden : BaseEntity, IAggregateRoot
     public DateTime WarmSoilDate { get; private set; }
     public double Length { get; private set; }
     public double Width { get; private set; }
+    public Weatherstation? Weatherstation { get; private set; }
 
     private readonly List<GardenBed> _gardenBeds = [];
     public IReadOnlyCollection<GardenBed> GardenBeds => _gardenBeds.AsReadOnly();
@@ -102,6 +103,29 @@ public class Garden : BaseEntity, IAggregateRoot
         this.Set<double>(() => this.Length, length);
         this.Set<double>(() => this.Width, width);
     }
+
+    public void SetWeatherstation(string forecastOffice, double gridX, double gridY, string timezone)
+    {
+        if(this.Weatherstation != null)
+        {
+            this.Weatherstation.Update(forecastOffice, gridX, gridY, timezone, AddChildDomainEvent);
+        }
+        else
+        {
+            var weatherstation = Weatherstation.Create(forecastOffice, gridX, gridY, timezone);
+            this.Weatherstation = weatherstation;
+
+            this.DomainEvents.Add(
+                        new GardenEvent(this, UserProfileEventTriggerEnum.WeatherstationCreated, new TriggerEntity(EntityTypeEnum.WeatherStation, weatherstation.Id)));
+        }
+        
+    }
+
+    public void RehidrateWeatherstation(Weatherstation weatherstation)
+    {
+        this.Weatherstation = weatherstation;
+    }
+
     #region GardenBed
     public string AddGardenBed(CreateGardenBedCommand command)
     {

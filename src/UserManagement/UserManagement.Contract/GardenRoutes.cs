@@ -10,6 +10,8 @@ public class GardenRoutes
     public const string CreateGarden = GardenBase;
     public const string UpdateGarden = GardenBase + "/{gardenId}";
     public const string DeleteGarden = GardenBase + "/{gardenId}";
+    public const string SetWeatherstation = GardenBase + "/{gardenId}/Weatherstations";
+    public const string GetWeatherstation = GardenBase + "/{gardenId}/Weatherstations";
 
     public const string GetGardenBeds = GardenBase + "/{gardenId}/GardenBeds";
     public const string GetGardenBed = GardenBase + "/{gardenId}/GardenBeds/{id}";

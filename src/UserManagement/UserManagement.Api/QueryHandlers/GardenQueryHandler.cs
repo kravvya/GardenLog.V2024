@@ -10,16 +10,19 @@ public interface IGardenQueryHandler
     Task<GardenViewModel> GetGardenByName(string gardenName);
     Task<IReadOnlyCollection<GardenViewModel>> GetGardens();
     Task<IReadOnlyCollection<GardenViewModel>> GetAllGardens();
+    Task<WeatherstationViewModel> GetWeatherstation(string gardenId);
 }
 
 public class GardenQueryHandler : IGardenQueryHandler
 {
     private readonly IGardenRepository _gardenRepository;
+    private readonly IWeatherstationRepository _weatherstationRepository;
     private readonly IHttpContextAccessor _httpContextAccessor;
     
-    public GardenQueryHandler(IGardenRepository plantLocationRepository, IHttpContextAccessor httpContextAccessor)
+    public GardenQueryHandler(IGardenRepository plantLocationRepository, IWeatherstationRepository weatherstationRepository,  IHttpContextAccessor httpContextAccessor)
     {
         _gardenRepository = plantLocationRepository;
+        _weatherstationRepository = weatherstationRepository;
         _httpContextAccessor = httpContextAccessor;
 
     }
@@ -34,4 +37,6 @@ public class GardenQueryHandler : IGardenQueryHandler
     public Task<IReadOnlyCollection<GardenViewModel>> GetGardens() => _gardenRepository.GetGardens(_httpContextAccessor.HttpContext!.User.GetUserProfileId(_httpContextAccessor.HttpContext.Request.Headers));
 
     public Task<IReadOnlyCollection<GardenViewModel>> GetAllGardens() => _gardenRepository.GetAllGardens();
+
+    public Task<WeatherstationViewModel> GetWeatherstation(string gardenId) => _weatherstationRepository.GetWeatherstation(gardenId);
 }

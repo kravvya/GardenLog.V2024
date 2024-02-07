@@ -5,4 +5,5 @@ public enum EntityTypeEnum
     UserProfile = 1,
     Garden = 2,
     GardenBed = 3,
+    WeatherStation = 4,
 }

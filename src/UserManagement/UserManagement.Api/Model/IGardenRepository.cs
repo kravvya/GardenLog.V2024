@@ -14,4 +14,5 @@ public interface IGardenRepository :  IRepository<Garden>
     Task<GardenBedViewModel?> GetGardenBed(string gardenId, string id);
     Task<IReadOnlyCollection<GardenBedViewModel>> GetGardenBeds(string gardenId);
     Task<string> GetIdByNameAsync(string name, string userProfileId);
+    Task<Garden> ReadGarden(string gardenId, string userProfileId);
 }

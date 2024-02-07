@@ -12,5 +12,8 @@ public enum UserProfileEventTriggerEnum
 
     GardenBedCreated=7, 
     GardenBedUpdated=8,
-    GardenBedDeleted=9
+    GardenBedDeleted=9,
+
+    WeatherstationCreated=10,
+    WeatherstationUpdated=11,
 }

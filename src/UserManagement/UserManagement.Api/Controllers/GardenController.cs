@@ -168,6 +168,7 @@ public class GardenController(IGardenCommandHandler commadnHandler, IGardenQuery
             return Problem(ex.Message);
         }
     }
+
     #endregion
 
     #region Garden Bed
@@ -287,5 +288,56 @@ public class GardenController(IGardenCommandHandler commadnHandler, IGardenQuery
             return Problem(ex.Message);
         }
     }
+    #endregion
+
+    #region Weatherstation
+
+    [HttpPost()]
+    [ActionName("SetWeatherstation")]
+    [Route(GardenRoutes.SetWeatherstation)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(GardenViewModel), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult<GardenViewModel>> SetWeatherstation([FromBody] CreateWeatherstationCommand command)
+    {
+        try
+        {
+            var result = await _commadnHandler.CreateWeatherstation(command);
+
+            if (result == null) return NotFound();
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            ModelState.AddModelError(ex.ParamName!, ex.Message);
+            return BadRequest(ModelState);
+        }
+
+    }
+
+    [HttpGet()]
+    [ActionName("GetWeatherstation")]
+    [Route(GardenRoutes.GetWeatherstation)]
+    [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType(typeof(GardenViewModel), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult<GardenViewModel>> GetWeatherstation(string gardenId)
+    {
+        try
+        {
+            var results = await _queryHandler.GetWeatherstation(gardenId);
+
+            if (results == null) return NotFound();
+
+            return Ok(results);
+        }
+        catch (Exception ex)
+        {
+            return Problem(ex.Message);
+        }
+    }
+
+
     #endregion
 }

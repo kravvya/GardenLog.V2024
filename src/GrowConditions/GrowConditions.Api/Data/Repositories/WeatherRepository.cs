@@ -5,13 +5,13 @@ using GrowConditions.Contract.ViewModels;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 
-namespace GrowConditions.Api.Data
+namespace GrowConditions.Api.Data.Repositories
 {
-    public interface IWeatherRepository: IRepository<WeatherUpdate>
+    public interface IWeatherRepository : IRepository<WeatherUpdate>
     {
         Task<WeatherUpdateViewModel> GetLastWeatherUpdate(string gardenId);
         Task<IList<WeatherUpdateViewModel>> GetHistoryOfWeatherUpdates(string gardenId, int numberOfDays);
-        
+
     }
 
     public class WeatherRepository : BaseRepository<WeatherUpdate>, IWeatherRepository
@@ -19,12 +19,12 @@ namespace GrowConditions.Api.Data
         private const string WEATHER_COLLECTION_NAME = "Weather-Collection";
         private readonly ILogger<WeatherRepository> _logger;
 
-        public WeatherRepository(IUnitOfWork unitOfWork, ILogger<WeatherRepository> logger) 
+        public WeatherRepository(IUnitOfWork unitOfWork, ILogger<WeatherRepository> logger)
             : base(unitOfWork, logger)
         {
             _logger = logger;
         }
-               
+
 
         public async Task<IList<WeatherUpdateViewModel>> GetHistoryOfWeatherUpdates(string gardenId, int numberOfDays)
         {
@@ -35,7 +35,7 @@ namespace GrowConditions.Api.Data
             filters.Add(Builders<WeatherUpdate>.Filter.Eq("GardenId", gardenId));
 
             var data = await Collection
-                .Find<WeatherUpdate>(Builders<WeatherUpdate>.Filter.And(filters))
+                .Find(Builders<WeatherUpdate>.Filter.And(filters))
                 .As<WeatherUpdateViewModel>()
                 .ToListAsync();
 
@@ -46,7 +46,7 @@ namespace GrowConditions.Api.Data
         public async Task<WeatherUpdateViewModel> GetLastWeatherUpdate(string gardenId)
         {
             var data = await Collection
-                .Find<WeatherUpdate>(Builders<WeatherUpdate>.Filter.Eq("GardenId", gardenId))
+                .Find(Builders<WeatherUpdate>.Filter.Eq("GardenId", gardenId))
                 .SortByDescending(f => f.UpdatedDateUtc)
                 .Limit(1)
                 .As<WeatherUpdateViewModel>()

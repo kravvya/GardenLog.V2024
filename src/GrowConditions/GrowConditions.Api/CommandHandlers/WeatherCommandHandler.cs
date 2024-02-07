@@ -1,6 +1,6 @@
 ﻿using GardenLog.SharedKernel.Interfaces;
-using GrowConditions.Api.ApiClients;
-using GrowConditions.Api.Data;
+using GrowConditions.Api.Data.ApiClients;
+using GrowConditions.Api.Data.Repositories;
 
 namespace GrowConditions.Api.CommandHandlers
 {

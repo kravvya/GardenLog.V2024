@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using UserManagement.Contract.Base;
+using UserManagement.Contract.Command;
 using UserManagement.Contract.ViewModels;
 using UserManagement.IntegrationTest.Clients;
 using UserManagement.IntegrationTest.Fixture;
@@ -236,6 +237,25 @@ public partial class GardenTests : IClassFixture<UserManagementServiceFixture>
     }
     #endregion
 
+    #region Weatherstation
+    [Fact]
+    public async Task Post_Weatherstation_ShouldSetWeatherStation()
+    {
+        var gardenId = await GetGardenIdToWorkWith(TEST_GARDEN_NAME);
+              
+        var weatherstationId = await SetWeatherstation(gardenId);
+
+        Assert.NotEmpty(weatherstationId);
+
+        var weatherstation = await GetWeatherstation(gardenId);
+
+        Assert.NotNull(weatherstation);
+        Assert.Equal(weatherstationId, weatherstation.WeatherstationId);
+    }
+
+
+    #endregion
+
     #region Shared Private Functions
     public async Task<string> GetGardenIdToWorkWith(string gardenName)
     {
@@ -350,5 +370,45 @@ public partial class GardenTests : IClassFixture<UserManagementServiceFixture>
         return returnString;
     }
 
+    private async Task<string> SetWeatherstation(string gardenId)
+    {
+        CreateWeatherstationCommand command = new()
+        {
+            GardenId = gardenId,
+            ForecastOffice = "MPX",
+            GridX = 95,
+            GridY = 72,
+            Timezone = "America/Chicago"
+        };
+
+        var response = await _gardenClient.SetWeatherstation(command);
+
+        response.EnsureSuccessStatusCode();
+
+        var returnString = await response.Content.ReadAsStringAsync();
+
+        return returnString;
+    }
+
+    private async Task<WeatherstationViewModel> GetWeatherstation(string gardenId)
+    {
+        var response = await _gardenClient.GetWeatherstation(gardenId);
+
+        var returnString = await response.Content.ReadAsStringAsync();
+
+        _output.WriteLine($"Service to get weatherstation responded with {response.StatusCode} code and {returnString} message");
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters =
+            {
+                    new JsonStringEnumConverter(),
+                },
+        };
+        var weatherstation = await response.Content.ReadFromJsonAsync<WeatherstationViewModel>(options);
+
+        return weatherstation!;
+    }   
     #endregion
 }

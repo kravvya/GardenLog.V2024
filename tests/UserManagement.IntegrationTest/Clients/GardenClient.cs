@@ -139,4 +139,23 @@ public class GardenClient
         };
     }
     #endregion
+
+    #region Weatherstation
+
+    public async Task<HttpResponseMessage> SetWeatherstation(CreateWeatherstationCommand command)
+    {
+        var url = $"{this._baseUrl.OriginalString}{GardenRoutes.SetWeatherstation}";
+
+        using var requestContent = command.ToJsonStringContent();
+
+        return await this._httpClient.PostAsync(url.Replace("{gardenId}", command.GardenId), requestContent);
+    }
+
+    public async Task<HttpResponseMessage> GetWeatherstation(string gardenId)
+    {
+        var url = $"{this._baseUrl.OriginalString}{GardenRoutes.GetWeatherstation}";
+        return await this._httpClient.GetAsync(url.Replace("{gardenId}", gardenId));
+    }
+
+    #endregion
 }
