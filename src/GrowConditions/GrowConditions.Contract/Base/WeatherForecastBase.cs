@@ -25,7 +25,7 @@ public record WindForecast
 public record WeatherForecast
 {
     public decimal Temp { get; set; }
-    public decimal Humidity { get; set; }
-    public int ChanceOfPrecipitation { get; set; }
+    public decimal? Humidity { get; set; }
+    public int? ChanceOfPrecipitation { get; set; }
 }
 

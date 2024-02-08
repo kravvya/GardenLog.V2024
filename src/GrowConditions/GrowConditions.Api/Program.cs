@@ -105,3 +105,5 @@ finally
     Log.Information("Shut down complete for GrowConditions.Api");
     Log.CloseAndFlush();
 }
+
+public partial class Program { }

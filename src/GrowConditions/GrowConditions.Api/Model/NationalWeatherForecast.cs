@@ -43,13 +43,13 @@ public record Dewpoint
 public record ProbabilityOfPrecipitation
 {
     public required string UnitCode { get; set; }
-    public int Value { get; set; }
+    public int? Value { get; set; }
 }
 
 public record RelativeHumidity
 {
     public required string UnitCode { get; set; }
-    public int Value { get; set; }
+    public int? Value { get; set; }
 }
 
 

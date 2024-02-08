@@ -13,15 +13,11 @@ public class NationalWeatherServiceApiClient : INationalWeatherServiceApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<OpenWeatherApiClient> _logger;
-    private readonly IMapper _mapper;
-    private readonly IConfigurationService _configurationService;
 
-    public NationalWeatherServiceApiClient(HttpClient httpClient, IConfiguration confguration, ILogger<OpenWeatherApiClient> logger, IMapper mapper, IConfigurationService configurationService)
+    public NationalWeatherServiceApiClient(HttpClient httpClient, IConfiguration confguration, ILogger<OpenWeatherApiClient> logger)
     {
         _httpClient = httpClient;
         _logger = logger;
-        _mapper = mapper;
-        _configurationService = configurationService;
 
         var nationalWeatherServiceUrl = confguration["Services:NationalWeatherService.Api"];
 
@@ -38,8 +34,6 @@ public class NationalWeatherServiceApiClient : INationalWeatherServiceApiClient
 
     public async Task<WeatherForecastViewModel?> GetWeatherForecast(WeatherstationViewModel weatherStation)
     {
-        string appId = _configurationService.GetOpenWeartherApplicationId();
-
         HttpResponseMessage response = await _httpClient.GetAsync($"gridpoints/{weatherStation.ForecastOffice}/{weatherStation.GridX},{weatherStation.GridY}/forecast");
         response.EnsureSuccessStatusCode();
 
@@ -76,6 +70,11 @@ public class NationalWeatherServiceApiClient : INationalWeatherServiceApiClient
                     Humidity = period.RelativeHumidity.Value,
                     ChanceOfPrecipitation = period.ProbabilityOfPrecipitation.Value,
                 },
+                Wind = new WindForecast()
+                {
+                    Speed = period.WindSpeed,
+                    WindDirection = period.WindDirection
+                }
             });
         }
 
@@ -84,9 +83,16 @@ public class NationalWeatherServiceApiClient : INationalWeatherServiceApiClient
 
     public async Task<WeatherstationViewModel?> GetWeatherStation(decimal latitude, decimal longitude)
     {
+
+
         var url = $"/points/{latitude},{longitude}";
         HttpResponseMessage response = await _httpClient.GetAsync(url);
-        response.EnsureSuccessStatusCode();
+        
+        if (response.IsSuccessStatusCode == false)
+        {
+            _logger.LogCritical("Did not get National Weather Center point data message");
+            return null;
+        }
 
         var jsonString = await response.Content.ReadAsStringAsync();
         //continue to use Newtonsoft for OpenWeather service. 
@@ -108,6 +114,7 @@ public class NationalWeatherServiceApiClient : INationalWeatherServiceApiClient
         weatherStation.Timezone = pointData.Properties.TimeZone;
 
         return weatherStation;
+
     }
 }
 

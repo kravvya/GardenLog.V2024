@@ -50,10 +50,47 @@ jobs:
             echo openweather-appid=$(az keyvault secret show --name "openweather-appid" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo registry-server=$(az keyvault secret show --name "registry-server" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
 
+  build:
+    
+    env:
+      mongodb-server: ${{needs.setup.outputs.test-mongodb-server}}
+      mongodb-databasename: ${{needs.setup.outputs.test-mongodb-databasename}}
+      mongodb-username: ${{needs.setup.outputs.test-mongodb-username}}
+      mongodb-password: ${{needs.setup.outputs.test-mongodb-password}}
+      auth0-clientsecret: ${{needs.setup.outputs.auth0-clientsecret}}
+      auth0-apiclientsecret: ${{needs.setup.outputs.auth0-apiclientsecret}}
+      openweather-appid: ${{needs.setup.outputs.openweather-appid}}
+      ASPNETCORE_ENVIRONMENT: "Test"      
+           
+    needs: setup
+    
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+        
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore
+    
+    - name: List files in the repository
+      run: |
+          ls ${{ github.workspace }}
+
+    - name: Test
+      run: dotnet test ~/work/GardenLog.V2024/GardenLog.V2024/tests/GrowConditions.IntegrationTest/GrowConditions.IntegrationTest.csproj --logger "console;verbosity=normal" --no-build --verbosity normal
+ 
   register_image:    
   
     runs-on: ubuntu-latest
-    needs: [setup]    
+    needs: [setup, build]    
     steps:    
     - uses: Azure/login@v1
       with:

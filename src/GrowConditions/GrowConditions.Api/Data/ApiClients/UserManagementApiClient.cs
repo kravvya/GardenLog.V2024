@@ -67,7 +67,7 @@ public class UserManagementApiClient : IUserManagementApiClient
 
         if (!_cache.TryGetValue(cacheKey, out WeatherstationViewModel? weatherstation))
         {
-            var response = await _httpClient.ApiGetAsync<List<WeatherstationViewModel>>(GardenRoutes.GetWeatherstation.Replace("{gardenId}", gardenId));
+            var response = await _httpClient.ApiGetAsync<WeatherstationViewModel>(GardenRoutes.GetWeatherstation.Replace("{gardenId}", gardenId));
 
             if (!response.IsSuccess)
             {
@@ -75,7 +75,7 @@ public class UserManagementApiClient : IUserManagementApiClient
                 return null;
             }
 
-            weatherstation = response.Response!.FirstOrDefault();
+            weatherstation = response.Response!;
 
             _cache.Set(cacheKey, weatherstation, new MemoryCacheEntryOptions()
             {
@@ -111,11 +111,9 @@ public class UserManagementApiClient : IUserManagementApiClient
 
         };
 
-        using var requestContent = command.ToJsonStringContent();
-
         string url = GardenRoutes.SetWeatherstation.Replace("{gardenId}", gardenId);
 
-        var response = await _httpClient.ApiPostAsync(GardenRoutes.SetWeatherstation.Replace("{gardenId}", gardenId), requestContent);
+        var response = await _httpClient.ApiPostAsync(url, command);
 
         if (!response.IsSuccess)
         {
