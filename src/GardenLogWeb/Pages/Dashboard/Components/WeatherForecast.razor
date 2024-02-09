@@ -87,6 +87,12 @@
         //https://github.com/metno/weathericons/tree/main/weather
         var conditions = dailyForecast.Conditions!;
 
+        if (conditions.Main.Contains("Partly Sunny", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
+            return "partlycloudy_day.png";
+
+        if (conditions.Main.Contains("Partly Cloudy", StringComparison.OrdinalIgnoreCase) && !dailyForecast.IsDaytime)
+            return "partlycloudy_night.png";
+
         if ((conditions.Main.Contains("clear", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
             || (conditions.Main.Contains("Sunny", StringComparison.OrdinalIgnoreCase)))
             return "clearsky_day.png";
@@ -109,13 +115,7 @@
         if (conditions.Main.Contains("Mostly Cloudy", StringComparison.OrdinalIgnoreCase)
             || conditions.Main.Contains("Cloudy", StringComparison.OrdinalIgnoreCase))
             return "cloudy.png";
-
-        if (conditions.Main.Contains("Partly Sunny", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
-            return "partlycloudy_day.png";
-
-        if (conditions.Main.Contains("Partly Cloudy", StringComparison.OrdinalIgnoreCase) && !dailyForecast.IsDaytime)
-            return "partlycloudy_night.png";
-
+                   
         if (conditions.Main.Contains("Partly", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
             return "fair_day.png";
 
