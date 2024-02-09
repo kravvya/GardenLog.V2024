@@ -84,6 +84,7 @@
 
     private string GetIcon(DailyForecast dailyForecast)
     {
+        //https://github.com/metno/weathericons/tree/main/weather
         var conditions = dailyForecast.Conditions!;
 
         if ((conditions.Main.Contains("clear", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
@@ -92,19 +93,6 @@
 
         if (conditions.Main.Contains("clear", StringComparison.OrdinalIgnoreCase) && !dailyForecast.IsDaytime)
             return "clearsky_night.png";
-
-        if (conditions.Main.Contains("Mostly Cloudy", StringComparison.OrdinalIgnoreCase) 
-            || conditions.Main.Contains("Cloudy", StringComparison.OrdinalIgnoreCase))
-            return "cloudy.png";
-
-        if (conditions.Main.Contains("Partly", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
-            return "fair_day.png";
-
-        if (conditions.Main.Contains("Partly", StringComparison.OrdinalIgnoreCase) && !dailyForecast.IsDaytime)
-            return "fair_night.png";
-
-        if (conditions.Main.Contains("Fog", StringComparison.OrdinalIgnoreCase))
-            return "fog.png";
 
         if (conditions.Main.Contains("Rain", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
             return "rainshowers_day.png";
@@ -117,6 +105,27 @@
 
         if (conditions.Main.Contains("Snow", StringComparison.OrdinalIgnoreCase) && !dailyForecast.IsDaytime)
             return "snowshowers_night.png";
+
+        if (conditions.Main.Contains("Mostly Cloudy", StringComparison.OrdinalIgnoreCase)
+            || conditions.Main.Contains("Cloudy", StringComparison.OrdinalIgnoreCase))
+            return "cloudy.png";
+
+        if (conditions.Main.Contains("Partly Sunny", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
+            return "partlycloudy_day.png";
+
+        if (conditions.Main.Contains("Partly Cloudy", StringComparison.OrdinalIgnoreCase) && !dailyForecast.IsDaytime)
+            return "partlycloudy_night.png";
+
+        if (conditions.Main.Contains("Partly", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
+            return "fair_day.png";
+
+        if (conditions.Main.Contains("Partly", StringComparison.OrdinalIgnoreCase) && !dailyForecast.IsDaytime)
+            return "fair_night.png";
+
+        if (conditions.Main.Contains("Fog", StringComparison.OrdinalIgnoreCase))
+            return "fog.png";
+
+
 
         return "clearsky_polartwilight.png";
     }
