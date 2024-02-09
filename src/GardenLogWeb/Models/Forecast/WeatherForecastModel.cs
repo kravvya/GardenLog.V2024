@@ -12,6 +12,8 @@ public record WeatherForecastDayModel
     public string Name { get; set; } = string.Empty;
     public WeatherForecastSummaryModel? Day { get; set; }
     public WeatherForecastSummaryModel? Night { get; set; }
+    public required int Sequence { get; set; }
+    public required string Class { get; set; } = string.Empty;
 }
 
 public record WeatherForecastSummaryModel
@@ -24,4 +26,5 @@ public record WeatherForecastSummaryModel
     public int? ChanceOfRain { get; set; }
     public int? ChanceOfSnow { get; set; }
     public required string Icon { get; set; }
+
 }

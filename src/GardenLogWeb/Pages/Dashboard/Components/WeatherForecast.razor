@@ -8,7 +8,7 @@
         <div class="card-group">
             @foreach (var daily in _forecastDays)
             {
-                <div class="card">
+                <div class="card @daily.Class">
                     <div class="card-header text-center"><h5 class="card-title">@daily.Name</h5></div>
                     <div class="card-body">
                         @if (daily.Day != null)
@@ -36,6 +36,7 @@
 
         _forecastDays = new();
         WeatherForecastDayModel? daily = null;
+        int sequence = 1;
 
         foreach (var dailyForecast in Forecast.DailyForecasts)
         {
@@ -62,9 +63,11 @@
             }
 
             if (daily == null) daily = new WeatherForecastDayModel()
-                {
-                    Name = dailyForecast.Name
-                };
+            {
+                Name = dailyForecast.Name,
+                Sequence = sequence,
+                Class = GetClass(sequence)
+            };
 
             if (dailyForecast.IsDaytime)
             {
@@ -75,6 +78,7 @@
                 daily.Night = summary;
                 _forecastDays.Add(daily);
                 daily = null;
+                sequence++;
             };
 
         };
@@ -115,7 +119,7 @@
         if (conditions.Main.Contains("Mostly Cloudy", StringComparison.OrdinalIgnoreCase)
             || conditions.Main.Contains("Cloudy", StringComparison.OrdinalIgnoreCase))
             return "cloudy.png";
-                   
+
         if (conditions.Main.Contains("Partly", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
             return "fair_day.png";
 
@@ -128,5 +132,25 @@
 
 
         return "clearsky_polartwilight.png";
+    }
+
+    private string GetClass(int sequence)
+    {
+        switch (sequence)
+        {
+            case 2:
+                return "d-none d-sm-block";
+            case 3:
+                return "d-none d-md-block";
+            case 4:
+                return "d-none d-lg-block";
+            case 5:
+            case 6:
+                return "d-none d-xl-block";
+            case 7:
+                return "d-none d-xxl-block";
+        }
+
+        return "";
     }
 }

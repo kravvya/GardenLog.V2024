@@ -86,7 +86,7 @@
                 </div>
                 <div class="card-body d-flex justify-content-between">
                     <div class="variety-facts-list">
-                        <h4>Garden Plan Name</h4>
+                        <h5>@_harvest.HarvestCycleName</h5>
                         <dl>
                             <dt class="variety-facts-term">Selected Plants:</dt>
                             <dd class="variety-facts-item">@_numberOfPlants</dd>
@@ -107,9 +107,9 @@
                     <div>
                         <PieChartOfGrowMethods HarvestPlants="@_harvestPlants"></PieChartOfGrowMethods>
                     </div>
-                    <div class="vr"></div>
-                    <div class="variety-facts-list">
-                        <h4>Garden Name</h4>
+                    <div class="vr d-none d-md-block"></div>
+                    <div class="variety-facts-list d-none d-md-block">
+                        <h5>@_harvest.GardenName</h5>
                         <dl>
                             <dt class="variety-facts-term">Grow Area:</dt>
                             <dd class="variety-facts-item">@_totalGrowArea sq. ft.</dd>
