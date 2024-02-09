@@ -1,0 +1,41 @@
+﻿@if (Forecast != null)
+{
+    <div class="d-flex flex-column text-center mb-2">
+        <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+                <img src="./images/@Forecast.Icon" width="50" alt="@Forecast.Description">
+            </div>
+            <div class="flex-grow-1 ms-3">
+                <h2 class="card-title me-1">@Forecast.Temperature F</h2>
+            </div>
+        </div>
+        <span class="small">@Forecast.Main</span>
+    </div>
+    <div class="d-flex align-items-center">
+        <div class="flex-grow-1" style="font-size: 1rem;">
+            <div><i class="bi bi-wind me-1"></i> <span class="small">@Forecast.WindSpeed</span></div>
+            @if (Forecast.ChanceOfRain.HasValue)
+            {
+                <div>
+                    <i class="bi bi-cloud-drizzle"></i><span class="small">&nbsp; @Forecast.ChanceOfRain.Value % </span>
+                </div>
+            }
+            @if (Forecast.ChanceOfSnow.HasValue)
+            {
+                <div>
+                    <i class="bi bi-cloud-snow"></i><span class="small">&nbsp; @Forecast.ChanceOfSnow.Value % </span>
+                </div>
+            }
+            @if (!Forecast.ChanceOfRain.HasValue && !Forecast.ChanceOfSnow.HasValue)
+            {
+                <div>
+                    <i class="bi bi-cloud-drizzle"></i><span class="small"> Not expected </span>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public WeatherForecastSummaryModel? Forecast { get; set; }
+}

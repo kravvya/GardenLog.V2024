@@ -30,6 +30,7 @@ builder.Services.AddScoped<IWorkLogService, WorkLogService>();
 builder.Services.AddScoped<IPlantTaskService, PlantTaskService>();
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IGrowConditionsService, GrowConditionsService>();
 
 builder.Services.AddBlazoredToast();
 builder.Services.AddScoped<IGardenLogToastService, GardenLogToastService>();
@@ -38,6 +39,7 @@ string serviceUrl = "";
 string imageServiceUrl = "";
 string harvestServiceUrl = "";
 string userServiceUrl = "";
+string growConditionsUrl = "";
 
 if (builder.HostEnvironment.IsProduction())
 {
@@ -45,6 +47,7 @@ if (builder.HostEnvironment.IsProduction())
     imageServiceUrl = "https://imagecatalogapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
     harvestServiceUrl = "https://plantharvestapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
     userServiceUrl = "https://usermanagementapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
+    growConditionsUrl = "https://growconditionsapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
 
     builder.Services.AddOidcAuthentication(options =>
     {
@@ -65,6 +68,7 @@ else
     imageServiceUrl = "https://imagecatalogapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
     harvestServiceUrl = "https://plantharvestapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io/";
     userServiceUrl = "https://usermanagementapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
+    growConditionsUrl = "https://growconditionsapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
 
     //builder.Services.AddAuthorizationCore();
     //builder.Services.AddScoped<AuthenticationStateProvider, TestAuthStateProvider>();
@@ -109,6 +113,10 @@ builder.Services.AddHttpClient(GlobalConstants.USERMANAGEMENT_API, client => cli
                                 .ConfigureHandler(authorizedUrls: new[] { userServiceUrl }))
                                 .AddPolicyHandler(retryPolicy);
 builder.Services.AddHttpClient(GlobalConstants.USERMANAGEMENT_NO_AUTH, client => client.BaseAddress = new Uri(userServiceUrl))
+                                .AddPolicyHandler(retryPolicy);
+builder.Services.AddHttpClient(GlobalConstants.GROWCONDITIONS_API, client => client.BaseAddress = new Uri(growConditionsUrl))
+                                .AddHttpMessageHandler(sp => sp.GetRequiredService<AuthorizationMessageHandler>()
+                                .ConfigureHandler(authorizedUrls: new[] { growConditionsUrl }))
                                 .AddPolicyHandler(retryPolicy);
 
 builder.Services.AddValidatorsFromAssemblyContaining<PlantViewModelValidator>();

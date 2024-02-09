@@ -27,6 +27,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\GardenLog.SharedKernel\GardenLog.SharedKernel.csproj" />
+		<ProjectReference Include="..\GrowConditions\GrowConditions.Contract\GrowConditions.Contract.csproj" />
 		<ProjectReference Include="..\ImageCatalog\ImageCatalog.Contract\ImageCatalog.Contract.csproj" />
 		<ProjectReference Include="..\PlantCatalog\PlantCatalog.Contract\PlantCatalog.Contract.csproj" />
 		<ProjectReference Include="..\PlantHarvest\PlantHarvest.Contract\PlantHarvest.Contract.csproj" />

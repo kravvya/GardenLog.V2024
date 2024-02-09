@@ -1,7 +1,7 @@
 ﻿@inject IHarvestCycleService _harvestService;
 @inject IPlantTaskService _taskService;
 @inject IGardenService _gardenService;
-@inject IImageService _imageService;
+@inject IGrowConditionsService _growConditionsService;
 @inject NavigationManager _navigationManager;
 
 <div class="container-fluid px-4">
@@ -149,54 +149,15 @@
     </div>
     <div class="row">
         <div class="col-xl-12 " data-bs-theme="dark">
-
             <div class="card mb-4 border border-1" style="border-color: #A0C136 !important;">
                 <div class="card-header d-flex justify-content-between text-white  bg-info">
                     <div>
-                        <i class="bi bi-images me-1"></i>
-                        Garden Photos
+                        <i class="bi bi-brightness-high me-1"></i>
+                        Weather Forecast
                     </div>
-                    @if (_harvest != null)
-                    {
-                        <button type="button" class="btn btn-info" title="Garden Plan Gallery" onclick="@(() => _navigationManager.NavigateToGardenPlanImages(_harvest.HarvestCycleId))">
-                            <span class="bi bi-card-image text-white "></span>
-                        </button>
-                    }
                 </div>
                 <div class="card-body">
-                    @if (_images != null)
-                    {
-                        <div id="carouselImages" class="carousel slide" data-ride="carousel">
-                            <div class="carousel-indicators">
-                                @for (int index = 0; index < _images.Count; index++)
-                                {
-                                    <button type="button" data-bs-target="#carouselImages" data-bs-slide-to="@index" class="@(index==0?"active":"")" aria-current="@(index==0)" aria-label="@_images[index].Label"></button>
-                                }
-                            </div>
-                            <div class="carousel-inner">
-                                @foreach (var (image, index) in _images.Select((img, i) => (img, i)))
-                                {
-                                    <div class="carousel-item @(index==0 ? "active" : "")">
-                                        <div class=" d-flex justify-content-center">
-                                            <img src="@_imageService.GetRawImageUrl(image.FileName)" alt="@image.Label" class="d-block" style="max-height:400px">
-                                            <div class="carousel-caption d-none d-md-block">
-                                                <h5>@image.Label</h5>
-                                                <p>@image.CreatedDateTimeUtc.ToShortDateString()</p>
-                                            </div>
-                                         </div>
-                                    </div>
-                                }
-                        </div>
-                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselImages" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Previous</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#carouselImages" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Next</span>
-                            </button>
-                        </div>
-                    }
+                    <WeatherForecast Forecast="_forecast" />
                 </div>
             </div>
         </div>
@@ -218,6 +179,7 @@
     private string _freeGrowArea = "0";
     private int _numberOfGardenBeds;
     private int _numberOfFreeBeds;
+    private WeatherForecastModel? _forecast;
 
 
     protected async override Task OnInitializedAsync()
@@ -228,15 +190,13 @@
             var completedTask = _taskService.GetNumberOfCompletedTasks(_harvest.HarvestCycleId);
             var tasksTask = _taskService.GetActivePlantTasks(false);
             var harvestPlantTask = _harvestService.GetPlantHarvests(_harvest.HarvestCycleId, false);
-            var imageTask = _imageService.GetImages(RelatedEntityTypEnum.HarvestCycle, _harvest.HarvestCycleId, true);
-
-            await Task.WhenAll(completedTask, tasksTask, harvestPlantTask, imageTask);
+           
+            await Task.WhenAll(completedTask, tasksTask, harvestPlantTask);
 
             _numberOfCompletedTasks = completedTask.Result;
             var tasks = tasksTask.Result;
             _harvestPlants = harvestPlantTask.Result;
-            _images = imageTask.Result;
-
+          
             _numberOfActiveTasks = tasks.Count;
             _numberOfDueSoonTasks = tasks.Where(t => t.TargetDateStart < _now.AddDays(2) && t.TargetDateStart > _now).Count();
             _numberOfPastDueTasks = tasks.Where(t => t.TargetDateStart < _now).Count();
@@ -247,10 +207,13 @@
             {
                 var gardenTask = _gardenService.GetGarden(_harvest.GardenId, true);
                 var gardenBedsTask = _gardenService.GetGardenBeds(_harvest.GardenId, true);
-                await Task.WhenAll(gardenTask, gardenBedsTask);
+                var forecastTask = _growConditionsService.GetWeatherForecast(_harvest.GardenId);
+
+                await Task.WhenAll(gardenTask, gardenBedsTask, forecastTask);
 
                 var garden = gardenTask.Result;
                 var gardenBeds = gardenBedsTask.Result;
+                _forecast = forecastTask.Result;
 
                 if (gardenBeds != null)
                 {
@@ -274,6 +237,8 @@
                     }
 
                 }
+
+
 
             }
 
