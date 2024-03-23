@@ -36,6 +36,7 @@ public class IndoorFertilizeTaskGenerator : INotificationHandler<HarvestEvent>, 
                 await DeleteFertilizeIndoorsTask(harvestEvent);
                 break;
             case HarvestEventTriggerEnum.PlantHarvestCycleDeleted:
+            case HarvestEventTriggerEnum.PlantHarvestCycleCompleted:
                 await DeleteFertilizeIndoorsTask(harvestEvent);
                 break;
 
