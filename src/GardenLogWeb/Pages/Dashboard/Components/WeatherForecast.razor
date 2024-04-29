@@ -63,11 +63,11 @@
             }
 
             if (daily == null) daily = new WeatherForecastDayModel()
-            {
-                Name = dailyForecast.Name,
-                Sequence = sequence,
-                Class = GetClass(sequence)
-            };
+                {
+                    Name = dailyForecast.Name,
+                    Sequence = sequence,
+                    Class = GetClass(sequence)
+                };
 
             if (dailyForecast.IsDaytime)
             {
@@ -90,6 +90,13 @@
     {
         //https://github.com/metno/weathericons/tree/main/weather
         var conditions = dailyForecast.Conditions!;
+
+
+        if (conditions.Main.Contains("Thunderstorms", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
+            return "rainshowersandthunder_day.png";
+
+        if (conditions.Main.Contains("Thunderstorms", StringComparison.OrdinalIgnoreCase) && !dailyForecast.IsDaytime)
+            return "rainshowersandthunder_night.png";
 
         if (conditions.Main.Contains("Partly Sunny", StringComparison.OrdinalIgnoreCase) && dailyForecast.IsDaytime)
             return "partlycloudy_day.png";
