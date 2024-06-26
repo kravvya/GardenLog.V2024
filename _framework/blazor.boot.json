@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "GardenLogWeb",
   "resources": {
-    "hash": "sha256-C4HmC0a4jYdhx4LVhGC7QtDZdwumYc+GToA6y4h7kQc=",
+    "hash": "sha256-cOyq7y4K/5YIfD9Kx7Nr5V3PwQe6bzNbOzZNi0N4t9I=",
     "jsModuleNative": {
       "dotnet.native.8.0.6.suuomc2hr0.js": "sha256-YU6M9+jtDVnB8/wtrgIndOstzNh778Ls8g9XnbjorSk="
     },
@@ -27,10 +27,10 @@
       "ExcelNumberFormat.wasm": "sha256-DWrWJf+NGbjj12iqpO+Ufl4YS0bkW1yz6JwjocU15wY=",
       "FluentValidation.DependencyInjectionExtensions.wasm": "sha256-Op0rOaEe1Mqy+amRifbgm6EM7eisEb6eRAgpBJwHBb0=",
       "FluentValidation.wasm": "sha256-r9LyU/ai1EklmxBpjZXuv8cdAf8HD8fJyC6gTkgAx14=",
-      "GardenLog.SharedKernel.wasm": "sha256-EHtHSod+cJsbFrbQa9nNLoBE+om5czGwegCx1KYP/7Y=",
-      "GardenLogWeb.wasm": "sha256-4jXvdfG1zAwuKopzQifz47Qby9GAiBus0kKH6MGYtNM=",
-      "GrowConditions.Contract.wasm": "sha256-0X8QlR4qcTTYNAOvwOvCvVGlOb08f3LZjJPA7qtKW84=",
-      "ImageCatalog.Contract.wasm": "sha256-rvEYKE79HNNYttW9SLZqe3PC7PelBB7BB0Uz8yp9luE=",
+      "GardenLog.SharedKernel.wasm": "sha256-vJ1884VgJzPJ4BvHp7AKgXsuoCfoc7tBu13oum5XI/0=",
+      "GardenLogWeb.wasm": "sha256-olIQlGbHWxUWS/F3ZM/dEIGSJxinwlu5YQtJSMXdOgA=",
+      "GrowConditions.Contract.wasm": "sha256-sWEdYWa+0+88K2+uRpAV6O8a4PQhnaqIaiJ0tEAGdqA=",
+      "ImageCatalog.Contract.wasm": "sha256-3ZUJB+uPaJqYWL/siB4ftLDQd6JrrzR5D6MCzemAU0c=",
       "Irony.wasm": "sha256-vmJnOpZnIUHzxDh+yLQX/04qpF8AkhwV3Pqv7geGFCI=",
       "MediatR.Contracts.wasm": "sha256-/db+nahzjeSd5EhxUqFrpFzJ998Up6Vgs1PHrV3jqkU=",
       "Microsoft.AspNetCore.Authorization.wasm": "sha256-R5MhkxdRwnYbxHUas9A1kAoHQVavN9gb+DykSwCFD5A=",
@@ -39,7 +39,7 @@
       "Microsoft.AspNetCore.Components.wasm": "sha256-n3rHPX3p1/IcPhhbPliemKyTDAOI8ySPryBid/cCgsQ=",
       "Microsoft.AspNetCore.Components.Web.wasm": "sha256-DdGBbLFYsFmCY4tqjiIi0FGh3rJ8f7ABMXDVxpIatUA=",
       "Microsoft.AspNetCore.Components.WebAssembly.Authentication.wasm": "sha256-RJ8WPLwBc9eQkW67K/9C0mEj+p6ytX17fyHvJIEQEag=",
-      "Microsoft.AspNetCore.Components.WebAssembly.wasm": "sha256-eYOYO1OAfSZvYHgMzDRWumOeYjueZgHJLfXmPhdVl18=",
+      "Microsoft.AspNetCore.Components.WebAssembly.wasm": "sha256-WluO34luobMl+xNXaRULtR9f4WshbPS428uPFsp0LMI=",
       "Microsoft.AspNetCore.Metadata.wasm": "sha256-cacEl3RfU8gyZE9296fjnsvk5CXS6yfRiUe+wn9GpyI=",
       "Microsoft.Bcl.AsyncInterfaces.wasm": "sha256-uV6JPE8pFJZ3vgxDKUeimvMSk+wGuYyOKWg5xKqP7Qo=",
       "Microsoft.CSharp.wasm": "sha256-b3v9+fOT4jvB4Zz80kz/1BHCi+DtAOnHieYYk7RVEvE=",
@@ -58,11 +58,11 @@
       "Microsoft.Extensions.Options.wasm": "sha256-iRFKIZppdsDcIezL/0NgJnvtz8gfDuEqQxGRoAhklXM=",
       "Microsoft.Extensions.Primitives.wasm": "sha256-Ms2HR5Gpug/0uRAzdk4SUNT76Ml3CjFv9Jo+dUIMGac=",
       "Microsoft.JSInterop.wasm": "sha256-Sy6iFMHqNXL2gJtJGEAoKkL9YvoIZ2RCmY4r2lFbRs8=",
-      "Microsoft.JSInterop.WebAssembly.wasm": "sha256-aCgxiIU+arbpOkgLngl1hBQLocrFL2/t1zUJV8HXOzI=",
+      "Microsoft.JSInterop.WebAssembly.wasm": "sha256-nJo9AftA2/mHxtXapqHsgjzQgIHOpue2DnVtxkgTSME=",
       "netstandard.wasm": "sha256-WTYX9IxDOmiXIBOwF8AnZZSueEHEbyjeG4mlCGDEZSw=",
       "Newtonsoft.Json.wasm": "sha256-GlXMWKvDs45M2pACoR3Y4Qh8mcrOZGljqmvJY+6JZ5s=",
-      "PlantCatalog.Contract.wasm": "sha256-pukQipqUL/IgmEHyH9fyl78GgtyReBefUuWkl6pf/iA=",
-      "PlantHarvest.Contract.wasm": "sha256-wi3TIqPj7mCtjt9SQkeMJj2MRu6IjFM8NGhgHL0h4q8=",
+      "PlantCatalog.Contract.wasm": "sha256-DX6JwZDB9CrlsOFI3B/wBVye5fV8CERyCC0zVhIlrds=",
+      "PlantHarvest.Contract.wasm": "sha256-LTcS5MGo2VuApo17dlZOR6F6Lbz9e743iWCobTOtJ+g=",
       "Polly.Core.wasm": "sha256-IoO872Kh/8nO75dAwjEpY5VZBuizbixEk4agtrG5eNI=",
       "Polly.Extensions.Http.wasm": "sha256-bqX9l2dLJ0m0IilNsXvbO14i9Lx0oDeudAGIsS3kEAw=",
       "Polly.wasm": "sha256-1s4WDx8LSyQNbzK4VUuiYkx/bt4WMqx6EwGAD544iuo=",
@@ -140,7 +140,7 @@
       "System.Xml.Linq.wasm": "sha256-boUyMjD8tjpz+RHjMOdCJbIG/hcEQuorcGhKEvCs9Ys=",
       "System.Xml.ReaderWriter.wasm": "sha256-ipEHbhj9KZc+Y/k9XZCtlqW6JWORH6vGtCUAzZ0igzA=",
       "System.Xml.XDocument.wasm": "sha256-0Eh85oyPNkeF30V4ITii+t9dHDkLGlNbgfZtnsBHzrg=",
-      "UserManagement.Contract.wasm": "sha256-1twmM4jZSfRQIOTbgdqYgns7xg+WtN9VB51FXDMB6vA=",
+      "UserManagement.Contract.wasm": "sha256-+wFYS0WzpNVtTkFvbPx1Mzap2KOeKwr8ejH6eLHojLI=",
       "XLParser.wasm": "sha256-y9+iO5oW0od7XYaYhNN0cqGSKMAoLRD+xcX4uzqpF0U="
     }
   },
