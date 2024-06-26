@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "GardenLogWeb",
   "resources": {
-    "hash": "sha256-mIXXcW9aEUStsfqbBTCI7JOYL+na8lrMeBRyM+8yZKc=",
+    "hash": "sha256-eL9y50bckoxyn3dQ0wjCB1ihvLBgDupjIeyQuxy+9KE=",
     "jsModuleNative": {
       "dotnet.native.8.0.6.suuomc2hr0.js": "sha256-YU6M9+jtDVnB8/wtrgIndOstzNh778Ls8g9XnbjorSk="
     },
@@ -27,10 +27,10 @@
       "ExcelNumberFormat.wasm": "sha256-DWrWJf+NGbjj12iqpO+Ufl4YS0bkW1yz6JwjocU15wY=",
       "FluentValidation.DependencyInjectionExtensions.wasm": "sha256-Op0rOaEe1Mqy+amRifbgm6EM7eisEb6eRAgpBJwHBb0=",
       "FluentValidation.wasm": "sha256-r9LyU/ai1EklmxBpjZXuv8cdAf8HD8fJyC6gTkgAx14=",
-      "GardenLog.SharedKernel.wasm": "sha256-aHtZIfHQwYonbD9G+ZvV3T3jkpNHIJOLwL93e00i9qw=",
-      "GardenLogWeb.wasm": "sha256-T9SIWnosv2GnIyVJjO3dGJZudeMGfiz0gd0uvfpKZes=",
-      "GrowConditions.Contract.wasm": "sha256-wGRSpTXQw/nL8SB4HNSHVy8uNq08/XNzze5B0eyMEU8=",
-      "ImageCatalog.Contract.wasm": "sha256-D96LgW66zZ+jVWAWSIjuAcdt5T/ljgr5zfZtXLLjq1w=",
+      "GardenLog.SharedKernel.wasm": "sha256-hsio35ROEU+PIFBT9zAUsiFK3AigfriiUp48LZPRU24=",
+      "GardenLogWeb.wasm": "sha256-khKFImMRHGzx9roFUg3n5BpqGLI45WbD/GdgUgvGRSg=",
+      "GrowConditions.Contract.wasm": "sha256-cNjeczGfSUiqSTKlNxmJrqqFpABCTNmO9cTA/57Rs60=",
+      "ImageCatalog.Contract.wasm": "sha256-ri+slMtVnDse05vBftgt+VvD9gHkhWrc8EIvmNsIxU8=",
       "Irony.wasm": "sha256-vmJnOpZnIUHzxDh+yLQX/04qpF8AkhwV3Pqv7geGFCI=",
       "MediatR.Contracts.wasm": "sha256-/db+nahzjeSd5EhxUqFrpFzJ998Up6Vgs1PHrV3jqkU=",
       "Microsoft.AspNetCore.Authorization.wasm": "sha256-c9LJukkhZLFImau/UOwClSXxMVmsX3cfxfxScIuDViE=",
@@ -61,8 +61,8 @@
       "Microsoft.JSInterop.WebAssembly.wasm": "sha256-aCgxiIU+arbpOkgLngl1hBQLocrFL2/t1zUJV8HXOzI=",
       "netstandard.wasm": "sha256-WTYX9IxDOmiXIBOwF8AnZZSueEHEbyjeG4mlCGDEZSw=",
       "Newtonsoft.Json.wasm": "sha256-GlXMWKvDs45M2pACoR3Y4Qh8mcrOZGljqmvJY+6JZ5s=",
-      "PlantCatalog.Contract.wasm": "sha256-iBEuf8pSMA+tVP6EXBRNsy4tE+kPPPrTVx8ylPHJrpQ=",
-      "PlantHarvest.Contract.wasm": "sha256-NGAzPTasO6eV8zKwYc5Zf9fInNw3mVmKOeFJUTcJiPg=",
+      "PlantCatalog.Contract.wasm": "sha256-BVsDSPGJZj5fMoaYLhRWdwirkzzQV5Y/ja9mBmDswRo=",
+      "PlantHarvest.Contract.wasm": "sha256-1tjEf+Ozx0M3UA1DtH4mYl9/Assq4Xp0Zqpy7apnSS8=",
       "Polly.Core.wasm": "sha256-IoO872Kh/8nO75dAwjEpY5VZBuizbixEk4agtrG5eNI=",
       "Polly.Extensions.Http.wasm": "sha256-bqX9l2dLJ0m0IilNsXvbO14i9Lx0oDeudAGIsS3kEAw=",
       "Polly.wasm": "sha256-1s4WDx8LSyQNbzK4VUuiYkx/bt4WMqx6EwGAD544iuo=",
@@ -140,7 +140,7 @@
       "System.Xml.Linq.wasm": "sha256-boUyMjD8tjpz+RHjMOdCJbIG/hcEQuorcGhKEvCs9Ys=",
       "System.Xml.ReaderWriter.wasm": "sha256-ipEHbhj9KZc+Y/k9XZCtlqW6JWORH6vGtCUAzZ0igzA=",
       "System.Xml.XDocument.wasm": "sha256-0Eh85oyPNkeF30V4ITii+t9dHDkLGlNbgfZtnsBHzrg=",
-      "UserManagement.Contract.wasm": "sha256-tub2fE+CeAOd9eYJzuShZMzF+IzJt7zCX5fEj59Rhvc=",
+      "UserManagement.Contract.wasm": "sha256-uA+JeZCN8tesgdSQ35Ay4gjZcsOnHy85ZTgZbRUel2k=",
       "XLParser.wasm": "sha256-y9+iO5oW0od7XYaYhNN0cqGSKMAoLRD+xcX4uzqpF0U="
     }
   },
