@@ -67,7 +67,7 @@ public class NationalWeatherServiceApiClient : INationalWeatherServiceApiClient
                 Forecast = new WeatherForecast()
                 {
                     Temp = period.Temperature,
-                    Humidity = period.RelativeHumidity.Value,
+                    Humidity = period.RelativeHumidity?.Value,
                     ChanceOfPrecipitation = period.ProbabilityOfPrecipitation.Value,
                 },
                 Wind = new WindForecast()

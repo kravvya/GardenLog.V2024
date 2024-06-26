@@ -63,7 +63,7 @@ public class GrowConditionsService : IGrowConditionsService
 
         if (!response.IsSuccess)
         {
-            _toastService.ShowToast("Unable to get Work Notes", GardenLogToastLevel.Error);
+            _toastService.ShowToast("Unable to get Weather Forecast", GardenLogToastLevel.Error);
             return null;
         }
 
