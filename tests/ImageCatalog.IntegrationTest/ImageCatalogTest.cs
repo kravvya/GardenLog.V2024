@@ -23,7 +23,7 @@ namespace ImageCatalog.IntegrationTest
 
         #region File
         [Fact]
-        public async void File_GenerateSas_Should()
+        public async Task File_GenerateSas_Should()
         {
             var response = await _fileClient.GenerateSasUri(TEST_FILE_NAME);
 
@@ -31,7 +31,7 @@ namespace ImageCatalog.IntegrationTest
 
             _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+            Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
             Assert.NotEmpty(returnString);
         }
 
@@ -48,7 +48,7 @@ namespace ImageCatalog.IntegrationTest
 
             _output.WriteLine($"Service to create image responded with {response.StatusCode} code and {returnString} message");
 
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+            Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
             Assert.NotEmpty(returnString);
         }
 
@@ -64,7 +64,7 @@ namespace ImageCatalog.IntegrationTest
 
             _output.WriteLine($"Service responded with {response.StatusCode} code and {returnString} message");
 
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+            Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         }
 
        
@@ -78,7 +78,7 @@ namespace ImageCatalog.IntegrationTest
 
             _output.WriteLine($"Service responded with {response.StatusCode} code");
 
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+            Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
