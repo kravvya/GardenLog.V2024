@@ -1,10 +1,6 @@
-﻿using Amazon.Runtime.Internal.Util;
-using GrowConditions.Api.Data.ApiClients;
+﻿using GrowConditions.Api.Data.ApiClients;
 using GrowConditions.Api.Data.Repositories;
 using GrowConditions.Contract.ViewModels;
-using Microsoft.Extensions.Caching.Memory;
-using System.Net.Http;
-using UserManagement.Contract;
 
 namespace GrowConditions.Api.QueryHandlers;
 

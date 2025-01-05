@@ -1,12 +1,8 @@
-﻿
-using GardenLog.SharedKernel.Interfaces;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Configuration;
 using MongoDB.Driver.Core.Events;
-using MongoDB.Driver.Linq;
-using System.Collections.Generic;
 
 namespace GardenLog.SharedInfrastructure.MongoDB;
 
@@ -59,7 +55,6 @@ public class MongoDbContext : IMongoDBContext
         settings.RetryWrites = true;
         settings.WriteConcern = WriteConcern.WMajority;
         settings.ServerApi = new ServerApi(ServerApiVersion.V1);
-        settings.LinqProvider = LinqProvider.V3;
 
         settings.ClusterConfigurator = cb =>
         {
@@ -85,10 +80,6 @@ public class MongoDbContext : IMongoDBContext
         {
             Console.WriteLine(ex);
         }
-
-#pragma warning disable CS0618 // Type or member is obsolete
-        BsonDefaults.GuidRepresentationMode = GuidRepresentationMode.V3;
-#pragma warning restore CS0618 // Type or member is obsolete
 
         modelConfigurators.ToList().ForEach(c => c.OnModelCreating());
     }
