@@ -7,6 +7,7 @@ using GardenLog.SharedInfrastructure.MongoDB;
 using GardenLog.SharedKernel.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using PlantCatalog.Contract.Validators;
 using PlantCatalog.Domain.PlantAggregate;
 using PlantCatalog.Infrustructure.Data;
@@ -75,15 +76,7 @@ try
 
     builder.Services.AddCors(options =>
     {
-        options.AddPolicy(name: "glWebPolicy",
-                    policy =>
-                    {
-                        policy.WithOrigins("https://kravvya.github.io",
-                            "https://localhost:7014",
-                            "https://localhost:44318")
-                        .AllowAnyMethod()
-                        .AllowAnyHeader();
-                    });
+        options.AddGlWebPolicy();
     });
 
     // 1. Add Authentication Services

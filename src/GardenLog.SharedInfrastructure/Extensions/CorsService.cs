@@ -11,7 +11,8 @@ namespace GardenLog.SharedInfrastructure.Extensions
                    {
                        policy.WithOrigins("https://kravvya.github.io",
                            "https://localhost:7014",
-                           "https://localhost:44318")
+                           "https://localhost:44318",
+                           "http://localhost:5170")
                        .AllowAnyMethod()
                        .AllowAnyHeader();
                    });

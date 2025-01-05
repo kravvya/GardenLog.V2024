@@ -24,7 +24,7 @@ jobs:
     - name: Install .NET Core SDK
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: "8.0.x"
+        dotnet-version: "9.0.x"
     
     - name: Publish .NET Core Project
       run: dotnet publish src/GardenLogWeb/GardenLogWeb.csproj -c Release -o release
