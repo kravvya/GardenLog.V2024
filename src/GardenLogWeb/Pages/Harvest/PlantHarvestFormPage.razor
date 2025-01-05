@@ -211,8 +211,13 @@
                             <div class="modal-footer justify-content-between">
                                 @* <button type="button" class="btn btn-default text-danger disabled">Delete</button>*@
                                 <span>
-                                    <button type="submit" class="btn btn-primary" title="Save Changes">Save <span class="bi bi-file-earmark-post">&nbsp;</span></button>
-                                    <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() => ClosePage())">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    }
+                                    <button type="submit" class="btn btn-primary" title="Save Changes" disabled="@isSaving">Save <span class="bi bi-file-earmark-post">&nbsp;</span></button>
+
+                                    <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() => ClosePage())" disabled="@isSaving">>Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
                                 </span>
                             </div>
                         </div>
@@ -240,6 +245,7 @@
     private bool _isEdit => !string.IsNullOrWhiteSpace(PlantHarvestCycleId) ? true : false;
     private bool _hideSeedDetails = true;
     private bool _hideTransplantDetails = true;
+    private bool isSaving = false;
 
     private CustomValidation? customValidation;
     private EditContext? editContext;
@@ -359,6 +365,8 @@
 
     protected async Task HandleValidSubmit()
     {
+        isSaving = true;
+
         _logger.Log(LogLevel.Information, "Plant Harvest Form passed validations");
         customValidation?.ClearErrors();
 
@@ -389,6 +397,7 @@
             ClosePage();
         }
 
+        isSaving = false;
         await Task.CompletedTask;
     }
 
