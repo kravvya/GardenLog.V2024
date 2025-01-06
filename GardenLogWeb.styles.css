@@ -215,6 +215,29 @@ svg .top-null-resizer[b-reab0licoy] {
 #bigrect rect[b-5p3q5oghd5] {
     stroke: saddlebrown
 }
+
+/* Add this to your CSS file */
+/* Add this to your CSS file */
+.info-popup[b-5p3q5oghd5] {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    z-index: 1000;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.info-popup-content[b-5p3q5oghd5] {
+    position: relative;
+}
+
+.info-popup .close[b-5p3q5oghd5] {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+}
 /* /Pages/HarvestGardenLayout/Components/HarvestGardenLayoutView.razor.rz.scp.css */
 /*dl {
     display: flex;
