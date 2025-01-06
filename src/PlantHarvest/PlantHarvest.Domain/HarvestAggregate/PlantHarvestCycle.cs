@@ -166,9 +166,18 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         this.Set<int?>(() => this.DesiredNumberOfPlants, command.DesiredNumberOfPlants);
         this.Set<int?>(() => this.SpacingInInches, command.SpacingInInches);
         this.Set<double?>(() => this.PlantsPerFoot, command.PlantsPerFoot);
-        this.Set<string?>(() => this.PlantGrowthInstructionId, command.PlantGrowthInstructionId);
-        this.Set<string?>(() => this.PlantGrowthInstructionName, command.PlantGrowthInstructionName);
-        this.Set<PlantingMethodEnum>(() => this.PlantingMethod, command.PlantingMethod);
+        if (!string.IsNullOrEmpty(command.PlantGrowthInstructionId))
+        {
+            this.Set<string?>(() => this.PlantGrowthInstructionId, command.PlantGrowthInstructionId);
+        }
+        if (!string.IsNullOrEmpty(command.PlantGrowthInstructionName))
+        {
+            this.Set<string?>(() => this.PlantGrowthInstructionName, command.PlantGrowthInstructionName);
+        }
+        if (command.PlantingMethod!= PlantingMethodEnum.Unspecified)
+        {
+            this.Set<PlantingMethodEnum>(() => this.PlantingMethod, command.PlantingMethod);
+        }
 
         foreach (var evt in DomainEvents)
         {

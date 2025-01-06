@@ -63,7 +63,7 @@
 
                                             <div class="col-md-5">
                                                 <label for="GrowthInstruction" class="form-label">Planting Method</label>
-                                                <InputSelect class="form-select" @bind-Value="_plantHarvest.PlantGrowthInstructionId" id="GrowthInstruction" @oninput="@ReloadGrowOptions" disabled="@_isEdit">
+                                                <InputSelect class="form-select" @bind-Value="_plantHarvest.PlantGrowthInstructionId" id="GrowthInstruction" @oninput="@ReloadGrowOptions" >
                                                     @if (_growInstructions != null)
                                                     {
                                                         @foreach (var item in _growInstructions)

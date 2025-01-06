@@ -203,7 +203,7 @@ public class HarvestCommandHandler : IHarvestCommandHandler
             throw new ArgumentException("This plant is already a part of this plan", nameof(command.PlantVarietyId));
         }
 
-        var plantingMethodChanged = harvest.Plants.First(p => p.Id == command.PlantHarvestCycleId).PlantingMethod != command.PlantingMethod;
+        var plantingMethodChanged = harvest.Plants.First(p => p.Id == command.PlantHarvestCycleId).PlantingMethod != command.PlantingMethod && command.PlantingMethod != PlantingMethodEnum.Unspecified;
 
         _unitOfWork.Initialize(this.GetType().Name);
 

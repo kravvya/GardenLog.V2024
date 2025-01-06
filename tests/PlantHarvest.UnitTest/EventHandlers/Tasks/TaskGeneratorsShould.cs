@@ -91,7 +91,7 @@ public class TaskGeneratorsShould
 
         var harvest = HarvestHelper.GetHarvestCycle();
         var plantHarvestId = harvest.AddPlantHarvestCycle(HarvestHelper.GetCommandToCreatePlantHarvestCycle(Contract.Enum.PlantingMethodEnum.SeedIndoors));
-        harvest.UpdatePlantHarvestCycle(new UpdatePlantHarvestCycleCommand() { SeedingDate = DateTime.UtcNow, NumberOfSeeds = 101, SeedVendorName = "Good seeds", PlantHarvestCycleId = plantHarvestId });
+        harvest.UpdatePlantHarvestCycle(new UpdatePlantHarvestCycleCommand() { SeedingDate = DateTime.UtcNow, NumberOfSeeds = 101, SeedVendorName = "Good seeds", PlantHarvestCycleId = plantHarvestId, PlantingMethod = Contract.Enum.PlantingMethodEnum.SeedIndoors });
         var evt = harvest.DomainEvents.First(e => ((HarvestEvent)e).Trigger == HarvestEventTriggerEnum.PlantHarvestCycleSeeded);
 
         await IndoorSawTaskGenerator.Handle((HarvestEvent)evt, new CancellationToken());
