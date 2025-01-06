@@ -85,7 +85,7 @@
     protected override async Task OnInitializedAsync()
     {
         _harvests = await _harvestService.GetHarvestList(false);
-
+        _harvests = _harvests.OrderByDescending(h => h.StartDate).ToList();
 
         StateHasChanged();
     }
