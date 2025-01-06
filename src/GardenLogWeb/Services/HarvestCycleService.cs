@@ -23,6 +23,7 @@ public interface IHarvestCycleService
     Task<ApiResponse> DeleteGardenBedPlantHarvestCycle(string harvestId, string plantHarvestId, string id);
     Task<List<RelatedEntity>> BuildRelatedEntities(RelatedEntityTypEnum entityType, string entityId, string harvestCycleId);
     Task<HarvestCycleModel?> GetActiveHarvestCycle();
+    Task<List<GardenBedPlantHarvestCycleModel>> GetGardenBedUsageHistory(string gardenId, string gardenBedId);
 }
 
 public class HarvestCycleService : IHarvestCycleService
@@ -565,6 +566,22 @@ public class HarvestCycleService : IHarvestCycleService
             _toastService.ShowToast($"Garden Layout deleted.", GardenLogToastLevel.Success);
         }
         return response;
+    }
+
+    public async Task<List<GardenBedPlantHarvestCycleModel>> GetGardenBedUsageHistory(string gardenId, string gardenBedId)
+    {
+        var httpClient = _httpClientFactory.CreateClient(GlobalConstants.PLANTHARVEST_API);
+        var url = HarvestRoutes.GetGardenBedUsageHistory.Replace("{gardenId}", gardenId).Replace("{gardenBedId}", gardenBedId);
+
+        var response = await httpClient.ApiGetAsync<List<GardenBedPlantHarvestCycleModel>>(url, _logger);
+
+        if (!response.IsSuccess)
+        {
+            _toastService.ShowToast("Unable to get Garden Bed usage history", GardenLogToastLevel.Error);
+            return new List<GardenBedPlantHarvestCycleModel>();
+        }
+
+        return response.Response!;
     }
     #endregion
 
