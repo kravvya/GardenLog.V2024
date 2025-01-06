@@ -222,7 +222,7 @@
                                     @if (_isEdit)
                                     {
                                         <div>
-                                            <button type="button" class="btn btn-danger" title="Delete" @onclick="HandleDelete">Delete <span class="bi bi-trash">&nbsp;</span></button>
+                                            <button type="button" class="btn btn-danger" title="Delete" @onclick="HandleDelete" disabled="@isSaving">Delete <span class="bi bi-trash">&nbsp;</span></button>
                                         </div>
                                     }
                                 </div>

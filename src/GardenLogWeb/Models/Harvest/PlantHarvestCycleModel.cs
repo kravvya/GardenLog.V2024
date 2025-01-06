@@ -41,6 +41,16 @@ public record PlantHarvestCycleModel : PlantHarvestCycleViewModel
         return schedule.StartDate.ToShortDateString();
     }
 
+    public DateTime? GetSeasonStartDate()
+    {
+        if (PlantCalendar == null) return null;
+
+        var schedule = PlantCalendar.FirstOrDefault(s => s.TaskType == WorkLogReasonEnum.Plant || s.TaskType == WorkLogReasonEnum.TransplantOutside || s.TaskType == WorkLogReasonEnum.SowOutside || s.TaskType == WorkLogReasonEnum.SowIndoors);
+        if (schedule == null) return null;
+
+        return schedule.StartDate;
+    }
+
     public double GetPlantsPerFoot()
     {
         if(PlantsPerFoot.HasValue) return PlantsPerFoot.Value;

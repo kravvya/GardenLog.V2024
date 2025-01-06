@@ -93,6 +93,9 @@
         _harvest = harvest;
         _plants = await _harvestService.GetPlantHarvests(_harvest.HarvestCycleId, false);
 
+        // Sort plants by Start Date
+        _plants = _plants.OrderBy(p => p.GetSeasonStartDate()).ToList();
+
         _garden = await _gardenService.GetGarden(_harvest.GardenId, true);
 
         if (_garden == null) return;
