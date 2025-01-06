@@ -140,5 +140,28 @@ public class PlantTaskController : Controller
     {
         return Ok(await _queryHandler.GetCompletedTaskCount(harvestId));
     }
+
+    [HttpDelete]
+    [ActionName("DeleteSystemTasks")]
+    [Route(HarvestRoutes.DeleteSystemTasks)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> DeleteSystemTasks([FromRoute] string plantHarvestCycleId )
+    {
+        try
+        {
+            int result = await _handler.DeleteSystemGeneratedPlantTasks(plantHarvestCycleId);
+
+            return Ok(result);
+            
+        }
+        catch (ArgumentException ex)
+        {
+            ModelState.AddModelError(ex.ParamName!, ex.Message);
+            return BadRequest(ModelState);
+        }
+
+    }
     #endregion
 }

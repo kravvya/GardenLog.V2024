@@ -63,7 +63,7 @@
 
                                             <div class="col-md-5">
                                                 <label for="GrowthInstruction" class="form-label">Planting Method</label>
-                                                <InputSelect class="form-select" @bind-Value="_plantHarvest.PlantGrowthInstructionId" id="GrowthInstruction" @oninput="@ReloadGrowOptions" disabled="@_isEdit">
+                                                <InputSelect class="form-select" @bind-Value="_plantHarvest.PlantGrowthInstructionId" id="GrowthInstruction" @oninput="@ReloadGrowOptions">
                                                     @if (_growInstructions != null)
                                                     {
                                                         @foreach (var item in _growInstructions)
@@ -207,13 +207,25 @@
                                 </FormCard>
                             </div>
                         </div>
-                        <div class="col-12 mt-3">
-                            <div class="modal-footer justify-content-between">
-                                @* <button type="button" class="btn btn-default text-danger disabled">Delete</button>*@
-                                <span>
-                                    <button type="submit" class="btn btn-primary" title="Save Changes">Save <span class="bi bi-file-earmark-post">&nbsp;</span></button>
-                                    <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() => ClosePage())">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
-                                </span>
+                        <div class="row mt-3">
+                            <div class="col-11">
+                                <div class="modal-footer d-flex justify-content-between">
+                                    <div>
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        }
+                                        <button type="submit" class="btn btn-primary me-2" title="Save Changes" disabled="@isSaving">Save <span class="bi bi-file-earmark-post">&nbsp;</span></button>
+
+                                        <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() => ClosePage())" disabled="@isSaving">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                                    </div>
+                                    @if (_isEdit)
+                                    {
+                                        <div>
+                                            <button type="button" class="btn btn-danger" title="Delete" @onclick="HandleDelete">Delete <span class="bi bi-trash">&nbsp;</span></button>
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         </div>
                     </EditForm>
@@ -240,6 +252,7 @@
     private bool _isEdit => !string.IsNullOrWhiteSpace(PlantHarvestCycleId) ? true : false;
     private bool _hideSeedDetails = true;
     private bool _hideTransplantDetails = true;
+    private bool isSaving = false;
 
     private CustomValidation? customValidation;
     private EditContext? editContext;
@@ -323,11 +336,11 @@
             if (_plantHarvest != null && _growInstructions?.Count > 0)
             {
                 //if we are in edit mode and there is already Grow instruction selected. Do not overwrite with first default option
-                if(_plantHarvest.PlantGrowthInstructionId == null)
+                if (_plantHarvest.PlantGrowthInstructionId == null)
                 {
                     _plantHarvest.PlantGrowthInstructionId = _growInstructions.First().PlantGrowInstructionId;
                 }
-               
+
                 ReloadGrowOptions(new ChangeEventArgs() { Value = _plantHarvest.PlantGrowthInstructionId });
             }
         }
@@ -359,6 +372,8 @@
 
     protected async Task HandleValidSubmit()
     {
+        isSaving = true;
+
         _logger.Log(LogLevel.Information, "Plant Harvest Form passed validations");
         customValidation?.ClearErrors();
 
@@ -389,7 +404,30 @@
             ClosePage();
         }
 
+        isSaving = false;
         await Task.CompletedTask;
+    }
+
+    protected async Task HandleDelete()
+    {
+        if (_plantHarvest == null || _harvest == null) return;
+
+        isSaving = true;
+        _logger.Log(LogLevel.Information, "Deleting Plant Harvest");
+
+        ApiResponse response = await _harvestService.DeletePlantHarvest(_harvest.HarvestCycleId, _plantHarvest.PlantHarvestCycleId);
+
+        if (response.IsSuccess)
+        {
+            ClosePage();
+        }
+        else
+        {
+            // Handle error (e.g., show a message to the user)
+            _logger.Log(LogLevel.Error, "Failed to delete Plant Harvest");
+        }
+
+        isSaving = false;
     }
 
     protected void ClosePage()

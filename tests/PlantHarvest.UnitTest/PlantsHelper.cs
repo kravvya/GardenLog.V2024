@@ -9,9 +9,16 @@ internal class PlantsHelper
     public static string PLANT_VARIETY_ID = "TestPlantVarietyId";
     public static string GROW_INSTRUCTION_ID = "GrowInstructionId";
 
-    public static string GetGrowInstruction(PlantCatalog.Contract.Enum.PlantingMethodEnum plantingMethod)
+    public static string GetGrowInstructionAsSerializedString(PlantCatalog.Contract.Enum.PlantingMethodEnum plantingMethod)
     {
-        var grow = new PlantGrowInstructionViewModel()
+        var grow = PlantsHelper.GetGrowInstruction(plantingMethod);
+
+        return JsonSerializer.Serialize(grow, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
+
+    public static PlantGrowInstructionViewModel GetGrowInstruction(PlantCatalog.Contract.Enum.PlantingMethodEnum plantingMethod)
+    {
+       return  new PlantGrowInstructionViewModel()
         {
             PlantingMethod = plantingMethod,
 
@@ -48,7 +55,6 @@ internal class PlantsHelper
             SpacingInInches = 10
         };
 
-        return JsonSerializer.Serialize(grow, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
 
     public static string GetPlantVariety()

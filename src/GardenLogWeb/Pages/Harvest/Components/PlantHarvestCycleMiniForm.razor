@@ -142,8 +142,12 @@
                 <div class="col-12 mt-3">
                     <div class="modal-footer justify-content-between">
                         <span>
-                            <button type="submit" class="btn btn-primary" title="Save Changes">Save <span class="bi bi-file-earmark-post">&nbsp;</span></button>
-                            <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() => OnCancel())">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            }
+                            <button type="submit" class="btn btn-primary" title="Save Changes" disabled="@isSaving">Save <span class="bi bi-file-earmark-post">&nbsp;</span></button>
+                            <button type="button" class="btn btn-danger" title="Cancel" @onclick="@(() => OnCancel())" disabled="@isSaving">Cancel <span class="bi bi-x-circle">&nbsp;</span></button>
                         </span>
                     </div>
                 </div>
@@ -156,6 +160,7 @@
     [Parameter] public Func<PlantHarvestCycleModel?, Task>? OnClose { get; set; }
 
     private bool _isInitialized = false;
+    private bool isSaving = false;
 
     private PlantHarvestCycleModel? _plantHarvest = null;
     private PlantHarvestCycleMiniModel? _plantHarvestMini = null;
@@ -187,12 +192,14 @@
 
     protected async Task HandleValidSubmitAsync()
     {
+        isSaving = true;
         _logger.LogInformation( "Plant Harvest Mini Form passed validations");
         customValidation?.ClearErrors();
         _plantHarvest = await _harvestService.GetPlantHarvest(_plantHarvestMini!.HarvestCycleId, _plantHarvestMini!.PlantHarvestCycleId, true);
         if (_plantHarvest== null)
         {
             _toastService.ShowToast(ToastLevel.Error, "Oops. We enciuntered an error processing your request. Please try again later.");
+            isSaving = false;
             return;    
         }
 
@@ -261,6 +268,7 @@
 
         }
 
+        isSaving = false;
     }
 
     protected void HandleInValidSubmit()

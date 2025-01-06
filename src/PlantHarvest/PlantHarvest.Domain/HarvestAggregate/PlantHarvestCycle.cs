@@ -129,7 +129,7 @@ public class PlantHarvestCycle : BaseEntity, IEntity
 
     public void CompletePlantHarvestCycle(DateTime? date, Action<HarvestEventTriggerEnum, TriggerEntity> addHarvestEvent)
     {
-        if(!this.LastHarvestDate.HasValue)
+        if (!this.LastHarvestDate.HasValue)
             this.Set<DateTime?>(() => this.LastHarvestDate, date);
 
         foreach (var bed in this.GardenBedLayout)
@@ -141,7 +141,7 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         {
             var trigger = ((HarvestChildEvent)evt).Trigger;
 
-            addHarvestEvent(trigger, new TriggerEntity(EntityTypeEnum.PlantHarvestCycle, this.Id));          
+            addHarvestEvent(trigger, new TriggerEntity(EntityTypeEnum.PlantHarvestCycle, this.Id));
         }
     }
 
@@ -166,6 +166,19 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         this.Set<int?>(() => this.DesiredNumberOfPlants, command.DesiredNumberOfPlants);
         this.Set<int?>(() => this.SpacingInInches, command.SpacingInInches);
         this.Set<double?>(() => this.PlantsPerFoot, command.PlantsPerFoot);
+        if (!string.IsNullOrEmpty(command.PlantGrowthInstructionId))
+        {
+            this.Set<string?>(() => this.PlantGrowthInstructionId, command.PlantGrowthInstructionId);
+        }
+        if (!string.IsNullOrEmpty(command.PlantGrowthInstructionName))
+        {
+            this.Set<string?>(() => this.PlantGrowthInstructionName, command.PlantGrowthInstructionName);
+        }
+        if (command.PlantingMethod!= PlantingMethodEnum.Unspecified)
+        {
+            this.Set<PlantingMethodEnum>(() => this.PlantingMethod, command.PlantingMethod);
+        }
+
         foreach (var evt in DomainEvents)
         {
             var trigger = ((HarvestChildEvent)evt).Trigger;
@@ -216,6 +229,14 @@ public class PlantHarvestCycle : BaseEntity, IEntity
                 break;
             case "LastHarvestDate":
                 if (LastHarvestDate.HasValue) this.DomainEvents.Add(new HarvestChildEvent(HarvestEventTriggerEnum.PlantHarvestCycleCompleted, new TriggerEntity(EntityTypeEnum.PlantHarvestCycle, this.Id)));
+                break;
+            case "PlantGrowthInstructionId":
+            case "PlantGrowthInstructionName":
+            case "PlantingMethod":
+                if (!this.DomainEvents.Any(e => ((HarvestChildEvent)e).Trigger == HarvestEventTriggerEnum.PlantingMethodChanged))
+                {
+                    this.DomainEvents.Add(new HarvestChildEvent(HarvestEventTriggerEnum.PlantingMethodChanged, new TriggerEntity(EntityTypeEnum.PlantHarvestCycle, this.Id)));
+                }
                 break;
             default:
                 if (!this.DomainEvents.Any(e => ((HarvestChildEvent)e).Trigger == HarvestEventTriggerEnum.PlantHarvestCycleUpdated))

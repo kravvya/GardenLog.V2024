@@ -19,7 +19,7 @@ namespace PlantHarvest.UnitTest
             List<KeyValuePair<string, string>> expectedresponses = new();
 
             expectedresponses.Add(new KeyValuePair<string, string>(
-                    Routes.GetPlantGrowInstruction.Replace("{plantId}", PlantsHelper.PLANT_ID).Replace("{id}", PlantsHelper.GROW_INSTRUCTION_ID), PlantsHelper.GetGrowInstruction(plantingMethod)));
+                    Routes.GetPlantGrowInstruction.Replace("{plantId}", PlantsHelper.PLANT_ID).Replace("{id}", PlantsHelper.GROW_INSTRUCTION_ID), PlantsHelper.GetGrowInstructionAsSerializedString(plantingMethod)));
 
             expectedresponses.Add(new KeyValuePair<string, string>(
                     Routes.GetPlantVariety.Replace("{plantId}", PlantsHelper.PLANT_ID).Replace("{id}", PlantsHelper.PLANT_VARIETY_ID), PlantsHelper.GetPlantVariety()));
@@ -33,7 +33,7 @@ namespace PlantHarvest.UnitTest
 
         public static HttpClient GetUserManagementHttpClientForGarden()
         {
-            return HttpClientTestHelper.GetMockedHttpClient(HttpStatusCode.OK, UserManagementHelper.GetGarden(), new Uri(USER_MANAGEMENT_URL));
+            return HttpClientTestHelper.GetMockedHttpClient(HttpStatusCode.OK, UserManagementHelper.GetGardenAsString(), new Uri(USER_MANAGEMENT_URL));
         }
     }
 }

@@ -28,6 +28,7 @@ public interface IHarvestCommandHandler
 public class HarvestCommandHandler : IHarvestCommandHandler
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPlantTaskCommandHandler _taskCommandHandler;
     private readonly IHarvestCycleRepository _harvestCycleRepository;
     private readonly IPlantHarvestCycleRepository _plantHarvestCycleRepository;
     private readonly IGardenBedPlantHarvestCycleRepository _gardenBedPlantHarvestCycleRepository;
@@ -36,9 +37,10 @@ public class HarvestCommandHandler : IHarvestCommandHandler
     private readonly IScheduleBuilder _scheduleBuilder;
     private readonly IMediator _mediator;
 
-    public HarvestCommandHandler(IUnitOfWork unitOfWork, IHarvestCycleRepository harvestCycleRepository, IPlantHarvestCycleRepository plantHarvestCycleRepository, IGardenBedPlantHarvestCycleRepository gardenBedPlantHarvestCycleRepository, ILogger<HarvestCommandHandler> logger, IHttpContextAccessor httpContextAccessor, IScheduleBuilder scheduleBuilder, IMediator mediator)
+    public HarvestCommandHandler(IUnitOfWork unitOfWork, IPlantTaskCommandHandler taskCommandHandler, IHarvestCycleRepository harvestCycleRepository, IPlantHarvestCycleRepository plantHarvestCycleRepository, IGardenBedPlantHarvestCycleRepository gardenBedPlantHarvestCycleRepository, ILogger<HarvestCommandHandler> logger, IHttpContextAccessor httpContextAccessor, IScheduleBuilder scheduleBuilder, IMediator mediator)
     {
         _unitOfWork = unitOfWork;
+        _taskCommandHandler = taskCommandHandler;
         _harvestCycleRepository = harvestCycleRepository;
         _plantHarvestCycleRepository = plantHarvestCycleRepository;
         _gardenBedPlantHarvestCycleRepository = gardenBedPlantHarvestCycleRepository;
@@ -103,10 +105,10 @@ public class HarvestCommandHandler : IHarvestCommandHandler
 
         _harvestCycleRepository.Update(harvest);
 
-        foreach(var plant in harvest.Plants.Where(p => p.IsModified))
+        foreach (var plant in harvest.Plants.Where(p => p.IsModified))
         {
             _plantHarvestCycleRepository.UpdatePlantHarvestCycle(plant.Id, harvest);
-            foreach(var bed in plant.GardenBedLayout.Where(b => b.IsModified))
+            foreach (var bed in plant.GardenBedLayout.Where(b => b.IsModified))
             {
                 _gardenBedPlantHarvestCycleRepository.UpdateGardenBedPlantHarvestCycle(bed.Id, plant.Id, harvest);
             }
@@ -201,6 +203,8 @@ public class HarvestCommandHandler : IHarvestCommandHandler
             throw new ArgumentException("This plant is already a part of this plan", nameof(command.PlantVarietyId));
         }
 
+        var plantingMethodChanged = harvest.Plants.First(p => p.Id == command.PlantHarvestCycleId).PlantingMethod != command.PlantingMethod && command.PlantingMethod != PlantingMethodEnum.Unspecified;
+
         _unitOfWork.Initialize(this.GetType().Name);
 
         harvest.UpdatePlantHarvestCycle(command);
@@ -223,6 +227,11 @@ public class HarvestCommandHandler : IHarvestCommandHandler
         foreach (var bed in plant.GardenBedLayout.Where(b => b.IsModified))
         {
             _gardenBedPlantHarvestCycleRepository.UpdateGardenBedPlantHarvestCycle(bed.Id, plant.Id, harvest);
+        }
+
+        if (plantingMethodChanged)
+        {
+            await _taskCommandHandler.DeleteSystemGeneratedPlantTasks(command.PlantHarvestCycleId);
         }
 
         await _mediator.DispatchDomainEventsAsync(harvest);

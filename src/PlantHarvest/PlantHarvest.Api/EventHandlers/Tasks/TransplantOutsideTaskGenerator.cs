@@ -19,6 +19,7 @@ public class TransplantOutsideTaskGenerator : INotificationHandler<HarvestEvent>
         switch (harvestEvent.Trigger)
         {
             case HarvestEventTriggerEnum.PlantAddedToHarvestCycle:
+            case HarvestEventTriggerEnum.PlantingMethodChanged:
                 var plant = harvestEvent.Harvest!.Plants.First(plant => plant.Id == harvestEvent.TriggerEntity!.EntityId);
                 if (plant != null && plant.PlantingMethod == PlantingMethodEnum.Transplanting && !plant.TransplantDate.HasValue)
                 {

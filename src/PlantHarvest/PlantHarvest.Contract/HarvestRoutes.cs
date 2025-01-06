@@ -42,4 +42,5 @@ public static class HarvestRoutes
     public const string GetTasks = PlantTaskBase;
     public const string GetActiveTasks = PlantTaskBase + "/Active";
 
+    public const string DeleteSystemTasks = PlantTaskBase + "/plantharvestcycleid/{plantHarvestCycleId}/systemtasks";
 }

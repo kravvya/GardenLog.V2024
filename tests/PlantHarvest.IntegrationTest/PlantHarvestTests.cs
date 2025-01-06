@@ -246,6 +246,27 @@ public partial class PlantHarvestTests : IClassFixture<PlantHarvestServiceFixtur
     }
 
     [Fact]
+    public async Task Put_PlantHarvestCycle_GrowingMethod_ShouldUpdate()
+    {
+        var harvestId = await _plantHarvestClient.GetHarvestCycleIdToWorkWith(TEST_HARVEST_CYCLE_NAME);
+        var plant = await _plantHarvestClient.GetPlantHarvestCycleToWorkWith(harvestId, TEST_PLANT_ID, TEST_PLANT_VARIETY_ID);
+
+
+        plant.PlantingMethod = plant.PlantingMethod==Contract.Enum.PlantingMethodEnum.DirectSeed
+                ? Contract.Enum.PlantingMethodEnum.SeedIndoors
+                : Contract.Enum.PlantingMethodEnum.DirectSeed;
+
+        var response = await _plantHarvestClient.UpdatePlantHarvestCycle(plant);
+
+        var returnString = await response.Content.ReadAsStringAsync();
+
+        _output.WriteLine($"Service to update Plant Harvest Cycle responded with {response.StatusCode} code and {returnString} message");
+
+        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+        Assert.NotEmpty(returnString);
+    }
+
+    [Fact]
     public async Task Delete_PlantHarvestCycle_ShouldDelete()
     {
         var harvestId = await _plantHarvestClient.GetHarvestCycleIdToWorkWith(TEST_DELETE_HARVEST_CYCLE_NAME);
