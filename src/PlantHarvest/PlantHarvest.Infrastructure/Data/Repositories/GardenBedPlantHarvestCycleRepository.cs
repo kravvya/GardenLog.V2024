@@ -61,7 +61,21 @@ public class GardenBedPlantHarvestCycleRepository : BaseRepository<GardenBedPlan
         return beds;
     }
 
-   
+    public async Task<IReadOnlyCollection<GardenBedPlantHarvestCycleViewModel>> GetGardenBedViewsByGardenBedId(string gardenId, string gardenBedId)
+    {
+        var filter = Builders<GardenBedPlantHarvestCycle>.Filter.And(
+                   Builders<GardenBedPlantHarvestCycle>.Filter.Eq("GardenId", gardenId),
+                              Builders<GardenBedPlantHarvestCycle>.Filter.Eq("GardenBedId", gardenBedId));
+
+        var beds = await Collection
+         .Find<GardenBedPlantHarvestCycle>(filter)
+         .As<GardenBedPlantHarvestCycleViewModel>()
+         .ToListAsync();
+
+        return beds;
+    }
+
+
     public void AddGardenBedPlantHarvestCycle(string gardenBedPlantHarvestCycleId, string plantHarvestCyclceId, HarvestCycle harvestCyclce)
     {
         var gardenBed = harvestCyclce.Plants.First(g => g.Id == plantHarvestCyclceId).GardenBedLayout.First(b => b.Id == gardenBedPlantHarvestCycleId);

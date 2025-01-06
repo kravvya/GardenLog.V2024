@@ -1,4 +1,5 @@
 ﻿@inject ILogger<RectGardenBedWithPlants> _logger;
+@inject IJSRuntime JSRuntime;
 
 @if (GardenBed != null)
 {
@@ -8,7 +9,9 @@
           height="@(GardenBed?.GetHeightInPixels())" width="@(GardenBed?.GetWidthInPixels())"
           @attributes="AdditionalAttributes" class="@GardenBed?.CssClass"></rect>
 
-        <text x="0" y="-20" text-anchor="start" alignment-baseline="hanging" style="fill:#fff;fill-opacity: .95;">@GardenBed?.Name</text>
+        <text x="0" y="-20" text-anchor="start" alignment-baseline="hanging" style="fill:#fff;fill-opacity: .95;">
+            <a href="javascript:void(0)" style="cursor: pointer; text-decoration: underline;" @onclick="ShowInfoPopup">@GardenBed?.Name</a>
+        </text>
 
         @if (GardenBedHarvestPlants != null)
         {
@@ -44,6 +47,8 @@
 
     [Parameter] public Action<GardenBedPlantHarvestCycleModel> GardenBedPlantChanged { get; set; } = null!;
 
+    [Parameter] public EventCallback<(GardenBedModel, MouseEventArgs, double, double)> OnInfoBubbleClick { get; set; }
+
     private DraggablePlantSelector _draggableComponent = null!;
 
     private GardenBedPlantHarvestCycleModel? _selectedPlant;
@@ -70,6 +75,13 @@
         _logger.LogDebug($"OnDown for {plant.PlantName}");
         _draggableComponent.Intitialize(plant, Settings, e);
         PlantSelectedByMouseClick(plant);
+    }
+
+    private async Task ShowInfoPopup(MouseEventArgs e)
+    {
+        var scrollX = await JSRuntime.InvokeAsync<double>("eval", new object[] { "window.scrollX" });
+        var scrollY = await JSRuntime.InvokeAsync<double>("eval", new object[] { "window.scrollY" });
+        await OnInfoBubbleClick.InvokeAsync((GardenBed, e, scrollX, scrollY));
     }
 }
 

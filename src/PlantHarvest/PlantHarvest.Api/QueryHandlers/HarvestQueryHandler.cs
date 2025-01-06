@@ -2,12 +2,14 @@
 using GardenLog.SharedInfrastructure.Extensions;
 using PlantHarvest.Domain.HarvestAggregate;
 using PlantHarvest.Domain.WorkLogAggregate;
+using PlantHarvest.Infrastructure.Data.Repositories;
 
 namespace PlantHarvest.Api.QueryHandlers;
 
 public interface IHarvestQueryHandler
 {
     Task<IReadOnlyCollection<HarvestCycleViewModel>> GetAllHarvestCycles();
+    Task<IReadOnlyCollection<GardenBedPlantHarvestCycleViewModel>> GetGardenBedViewsByGardenBedId(string gardenId, string gardenBedId);
     Task<HarvestCycleViewModel> GetHarvestCycleByHarvestCycleId(string harvestCycleId);
     Task<string> GetHarvestCycleIdByHarvestCycleName(string name);
 
@@ -130,6 +132,23 @@ public class HarvestQueryHandler : IHarvestQueryHandler
             _logger.LogCritical(ex, "Exception readding plant harvest cycles for plant {plantId}", plantId);
             throw;
         }
+    }
+    #endregion
+
+    #region Garden Bed Usage
+    public async Task<IReadOnlyCollection<GardenBedPlantHarvestCycleViewModel>> GetGardenBedViewsByGardenBedId(string gardenId, string gardenBedId)
+    {
+        _logger.LogInformation("Received request to get garden bed usage {gardenBedId}", gardenBedId);
+
+        try
+        {
+            return await _gardenBedPlantHarvestCycleRepository.GetGardenBedViewsByGardenBedId(gardenId, gardenBedId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "Exception readding garden bed usage {gardenBedId}", gardenBedId);
+            throw;
+        }         
     }
     #endregion
 }

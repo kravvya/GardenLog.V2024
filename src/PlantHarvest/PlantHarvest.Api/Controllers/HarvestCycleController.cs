@@ -15,7 +15,7 @@ public class HarvestCycleController : Controller
     private readonly ILogger<HarvestCycleController> _logger;
 
     public HarvestCycleController(IHarvestCommandHandler handler, IHarvestQueryHandler queryHandler, ILogger<HarvestCycleController> logger)
-	{
+    {
         _handler = handler;
         _queryHandler = queryHandler;
         _logger = logger;
@@ -45,7 +45,7 @@ public class HarvestCycleController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex,"Exceptin getting harvest {id}", id);
+            _logger.LogCritical(ex, "Exceptin getting harvest {id}", id);
             throw;
         }
     }
@@ -335,6 +335,29 @@ public class HarvestCycleController : Controller
     #endregion
 
     #region Garden Bed Layout
+    [HttpGet()]
+    [ActionName("GetGardenBedUsageHistory")]
+    [Route(HarvestRoutes.GetGardenBedUsageHistory)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(IReadOnlyCollection<GardenBedPlantHarvestCycleViewModel>), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> GetGardenBedUsageHistory([FromRoute] string gardenId, [FromRoute] string gardenBedId)
+    {
+        try
+        {
+            var result = await _queryHandler.GetGardenBedViewsByGardenBedId(gardenId, gardenBedId);
+
+            return Ok(result);
+
+        }
+        catch (ArgumentException ex)
+        {
+            ModelState.AddModelError(ex.ParamName!, ex.Message);
+            return BadRequest(ModelState);
+        }
+
+    }
+
     [HttpPost()]
     [Route(HarvestRoutes.CreateGardenBedPlantHarvestCycle)]
     [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
@@ -360,7 +383,6 @@ public class HarvestCycleController : Controller
         return BadRequest();
     }
 
-
     [HttpPut()]
     [Route(HarvestRoutes.UpdateGardenBedPlantHarvestCycle)]
     [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
@@ -385,6 +407,7 @@ public class HarvestCycleController : Controller
 
         return BadRequest();
     }
+
     [HttpDelete()]
     [Route(HarvestRoutes.DeleteGardenBedPlantHarvestCycle)]
     [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
