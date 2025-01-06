@@ -10,4 +10,5 @@ public interface IPlantTaskRepository : IRepository<PlantTask>
     Task<IReadOnlyCollection<PlantTaskViewModel>> GetPlantTasksForUser(string userProfileId);
     Task<IReadOnlyCollection<PlantTaskViewModel>> GetActivePlantTasksForUser(string userProfileId);
     Task<long> GetNumberOfCompletedTasksForUser(string userProfileId, string harvestCycelId);
+    Task<IReadOnlyCollection<PlantTaskViewModel>> GetNotCompletedSystemGeneratedTasks(string plantHarvestCycleId, string userProfileId);
 }

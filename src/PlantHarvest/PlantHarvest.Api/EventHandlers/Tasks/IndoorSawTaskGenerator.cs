@@ -20,6 +20,7 @@ public class IndoorSawTaskGenerator : INotificationHandler<HarvestEvent>//, INot
         switch (harvestEvent.Trigger)
         {
             case HarvestEventTriggerEnum.PlantAddedToHarvestCycle:
+            case HarvestEventTriggerEnum.PlantingMethodChanged:
                 await CreateIndoorSowTask(harvestEvent);
                 break;
             case HarvestEventTriggerEnum.PlantHarvestCycleSeeded:

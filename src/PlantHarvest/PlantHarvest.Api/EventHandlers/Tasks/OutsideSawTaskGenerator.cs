@@ -20,6 +20,7 @@ public class OutsideSawTaskGenerator : INotificationHandler<HarvestEvent>//, INo
         switch (harvestEvent.Trigger)
         {
             case HarvestEventTriggerEnum.PlantAddedToHarvestCycle:
+            case HarvestEventTriggerEnum.PlantingMethodChanged:
                 await CreateOutsideSowTask(harvestEvent);
                 break;
             case HarvestEventTriggerEnum.PlantHarvestCycleSeeded:

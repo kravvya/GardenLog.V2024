@@ -1,4 +1,5 @@
-﻿using PlantHarvest.Contract.ViewModels;
+﻿using Azure;
+using PlantHarvest.Contract.ViewModels;
 using PlantHarvest.IntegrationTest.Clients;
 using PlantHarvest.IntegrationTest.Fixture;
 using SendGrid;
@@ -159,6 +160,23 @@ public partial class PlantHarvestTests // : IClassFixture<PlantHarvestServiceFix
         var tasks = await GetActivePlantTasksToWorkWith();
 
         Assert.True(tasks.Count > 0);
+    }
+
+    [Fact]
+    public async Task Get_Should_DeleteNotCompletedSystemTasks()
+    {
+        var harvestId = await _plantHarvestClient.GetHarvestCycleIdToWorkWith(PlantHarvestTests.TEST_HARVEST_CYCLE_NAME);
+        var plantHarvest = await _plantHarvestClient.GetPlantHarvestCycleToWorkWith(harvestId, PlantHarvestTests.TEST_PLANT_ID, PlantHarvestTests.TEST_PLANT_VARIETY_ID);
+        await _plantTaskClient.CreatePlantTask(harvestId, plantHarvest.PlantHarvestCycleId);
+
+        var response = await _plantTaskClient.DeleteSystemTasks(plantHarvest.PlantHarvestCycleId);
+
+        var returnString = await response.Content.ReadAsStringAsync();
+
+        _output.WriteLine($"Service to delete system tasks {response.StatusCode} code and {returnString} message");
+        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+        Assert.NotEmpty(returnString);
+        Assert.True(long.TryParse(returnString, out var counter));
     }
 
     [Fact]

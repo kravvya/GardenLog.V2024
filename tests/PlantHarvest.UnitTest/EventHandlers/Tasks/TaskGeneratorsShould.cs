@@ -3,10 +3,16 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PlantCatalog.Contract.ViewModels;
 using PlantHarvest.Api.EventHandlers.Tasks;
+using PlantHarvest.Api.Schedules;
+using PlantHarvest.Domain.HarvestAggregate;
 using PlantHarvest.Domain.HarvestAggregate.Events;
 using PlantHarvest.Domain.WorkLogAggregate.Events;
 using PlantHarvest.Infrastructure.ApiClients;
+using System.Collections.ObjectModel;
+using System.Reflection;
+using plantCatalog = PlantCatalog;
 
 namespace PlantHarvest.UnitTest.EventHandlers.Tasks;
 
@@ -538,7 +544,7 @@ public class TaskGeneratorsShould
 
         var harvest = HarvestHelper.GetHarvestCycle();
         var plantHarvestId = harvest.AddPlantHarvestCycle(HarvestHelper.GetCommandToCreatePlantHarvestCycle(Contract.Enum.PlantingMethodEnum.DirectSeed));
-        harvest.UpdatePlantHarvestCycle(new UpdatePlantHarvestCycleCommand() { LastHarvestDate = DateTime.UtcNow, TotalItems=50, TotalWeightInPounds=100, SeedVendorName = "Good seeds", PlantHarvestCycleId = plantHarvestId });
+        harvest.UpdatePlantHarvestCycle(new UpdatePlantHarvestCycleCommand() { LastHarvestDate = DateTime.UtcNow, TotalItems = 50, TotalWeightInPounds = 100, SeedVendorName = "Good seeds", PlantHarvestCycleId = plantHarvestId });
         var evt = harvest.DomainEvents.First(e => ((HarvestEvent)e).Trigger == HarvestEventTriggerEnum.PlantHarvestCycleCompleted);
 
 
@@ -584,11 +590,11 @@ public class TaskGeneratorsShould
         _taskCommandHandlerMock.Verify(t => t.CreatePlantTask(It.Is<CreatePlantTaskCommand>(c => c.Title == GerminateTaskGenerator.GERMINATE_TASK_TITLE)), Times.Once);
     }
 
-    
+
     [Fact]
     public async Task TaskGenerator_Deletes_Germinate_Task_When_PlantHarvest_Removed()
     {
-        var germinateTaskGenerator = new GerminateTaskGenerator(_taskCommandHandlerMock.Object, _taskQueryHandlerMock.Object, _plantCatalogApiClient,  new Mock<ILogger<GerminateTaskGenerator>>().Object);
+        var germinateTaskGenerator = new GerminateTaskGenerator(_taskCommandHandlerMock.Object, _taskQueryHandlerMock.Object, _plantCatalogApiClient, new Mock<ILogger<GerminateTaskGenerator>>().Object);
 
         var harvest = HarvestHelper.GetHarvestCycle();
         var plantHarvestId = harvest.AddPlantHarvestCycle(HarvestHelper.GetCommandToCreatePlantHarvestCycle(Contract.Enum.PlantingMethodEnum.DirectSeed));
@@ -655,7 +661,7 @@ public class TaskGeneratorsShould
 
         var harvest = HarvestHelper.GetHarvestCycle();
         var plantHarvestId = harvest.AddPlantHarvestCycle(HarvestHelper.GetCommandToCreatePlantHarvestCycle(Contract.Enum.PlantingMethodEnum.DirectSeed));
-        harvest.UpdatePlantHarvestCycle(new UpdatePlantHarvestCycleCommand() { GerminationDate = DateTime.UtcNow, GerminationRate=50, SeedVendorName = "Good seeds", PlantHarvestCycleId = plantHarvestId });
+        harvest.UpdatePlantHarvestCycle(new UpdatePlantHarvestCycleCommand() { GerminationDate = DateTime.UtcNow, GerminationRate = 50, SeedVendorName = "Good seeds", PlantHarvestCycleId = plantHarvestId });
         var evt = harvest.DomainEvents.First(e => ((HarvestEvent)e).Trigger == HarvestEventTriggerEnum.PlantHarvestCycleGerminated);
 
 
@@ -665,6 +671,50 @@ public class TaskGeneratorsShould
     }
     #endregion
 
+    #region Planing Method Change
+    [Fact]
+    public void TaskGenerator_Publishes_PlantingMethodChanged_Event_When_PlantingMethod_Updated()
+    {
+
+
+        var garden = UserManagementHelper.GetGarden();
+        var harvest = HarvestHelper.GetHarvestCycle();
+        var plantHarvestId = harvest.AddPlantHarvestCycle(HarvestHelper.GetCommandToCreatePlantHarvestCycle(Contract.Enum.PlantingMethodEnum.DirectSeed));
+        var plantHarvest = harvest.Plants.First(p => p.Id == plantHarvestId);
+
+        var growInstruction = PlantsHelper.GetGrowInstruction(plantCatalog.Contract.Enum.PlantingMethodEnum.DirectSeed);
+
+        PopulateSchedules(garden, harvest, plantHarvest, growInstruction);
+
+        // Assert that there are schedules
+        Assert.NotEmpty(plantHarvest.PlantCalendar);
+
+        // Assert that there is no schedule for DirectSeed
+        Assert.Contains(plantHarvest.PlantCalendar, s => s.TaskType == WorkLogReasonEnum.SowOutside);
+
+
+        harvest.UpdatePlantHarvestCycle(new UpdatePlantHarvestCycleCommand() { PlantingMethod = Contract.Enum.PlantingMethodEnum.SeedIndoors, PlantHarvestCycleId = plantHarvestId });
+        growInstruction = PlantsHelper.GetGrowInstruction(plantCatalog.Contract.Enum.PlantingMethodEnum.SeedIndoors);
+
+        PopulateSchedules(garden, harvest, plantHarvest, growInstruction);
+
+        // Assert that there are schedules
+        Assert.NotEmpty(harvest.Plants.First(p => p.Id == plantHarvestId).PlantCalendar);
+
+        // Assert that there are schedules
+        Assert.NotEmpty(harvest.Plants.First(p => p.Id == plantHarvestId).PlantCalendar);
+
+        // Assert that there is no schedule for DirectSeed
+        Assert.DoesNotContain(harvest.Plants.First(p => p.Id == plantHarvestId).PlantCalendar, s => s.TaskType == WorkLogReasonEnum.SowOutside);
+
+
+
+        Assert.NotNull(harvest.DomainEvents.FirstOrDefault(e => ((HarvestEvent)e).Trigger == HarvestEventTriggerEnum.PlantingMethodChanged));
+        Assert.Single(harvest.DomainEvents, e => ((HarvestEvent)e).Trigger == HarvestEventTriggerEnum.PlantingMethodChanged);
+    }
+
+
+    #endregion
 
     private void SetupHarvestQueryHandlerMock()
     {
@@ -710,10 +760,60 @@ public class TaskGeneratorsShould
               HarvestHelper.GetPlantTaskViewModel(HarvestHelper.PLANT_TASK_ID, HarvestHelper.PLANT_HARVEST_CYCLE_ID, WorkLogReasonEnum.Harvest)
          }).AsReadOnly());
 
-        _taskQueryHandlerMock.SetupGet(x => x.SearchPlantTasks(It.Is<PlantTaskSearch>(s => s.Reason == WorkLogReasonEnum.Information && s.IncludeResolvedTasks==false)).Result)
+        _taskQueryHandlerMock.SetupGet(x => x.SearchPlantTasks(It.Is<PlantTaskSearch>(s => s.Reason == WorkLogReasonEnum.Information && s.IncludeResolvedTasks == false)).Result)
      .Returns((new List<PlantTaskViewModel>()
        {
               HarvestHelper.GetPlantTaskViewModel(HarvestHelper.PLANT_TASK_ID, HarvestHelper.PLANT_HARVEST_CYCLE_ID, WorkLogReasonEnum.Information, GerminateTaskGenerator.GERMINATE_TASK_TITLE)
        }).AsReadOnly());
+    }
+
+    private List<IScheduler> GetSchedulers()
+    {
+        List<IScheduler> schedulers = new();
+        Assembly asm = Assembly.GetAssembly(typeof(ScheduleBuilder))!;
+
+        foreach (Type type in asm.GetTypes())
+        {
+            if (type.GetInterfaces().Contains(typeof(IScheduler)))
+            {
+                IScheduler obj = (IScheduler)Activator.CreateInstance(type)!;
+                Console.WriteLine("Instance created: " + obj.GetType().Name);
+                schedulers.Add(obj);
+            }
+        }
+
+        return schedulers;
+    }
+
+    private void PopulateSchedules(GardenViewModel garden, HarvestCycle harvest, PlantHarvestCycle plantHarvest, PlantGrowInstructionViewModel growInstruction)
+    {
+        List<CreatePlantScheduleCommand> plantSchedules = new List<CreatePlantScheduleCommand>();
+
+        var schedulers = GetSchedulers();
+
+        schedulers.Where(s => s.CanSchedule(growInstruction)).ToList().ForEach(s =>
+        {
+            var schedule = s.Schedule(plantHarvest, growInstruction, garden, null, null);
+            if (schedule != null)
+            {
+                plantSchedules.Add(schedule);
+            }
+        });
+
+        ApplyPlantSchedules(plantSchedules.AsReadOnly(), harvest, plantHarvest.Id);
+    }
+
+    private void ApplyPlantSchedules(ReadOnlyCollection<CreatePlantScheduleCommand>? schedules, HarvestCycle harvest, string plantHarvestCycleId)
+    {
+        if (schedules == null || schedules.Count == 0) { return; }
+
+        harvest.DeleteAllSystemGeneratedSchedules(plantHarvestCycleId);
+
+        foreach (var schedule in schedules)
+        {
+            schedule.PlantHarvestCycleId = plantHarvestCycleId;
+            harvest.AddPlantSchedule(schedule);
+        }
+
     }
 }

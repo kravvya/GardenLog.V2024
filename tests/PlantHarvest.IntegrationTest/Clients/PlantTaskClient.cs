@@ -3,6 +3,7 @@ using PlantHarvest.Contract;
 using PlantHarvest.Contract.Commands;
 using PlantHarvest.Contract.Query;
 using PlantHarvest.Contract.ViewModels;
+using PlantHarvest.Domain.HarvestAggregate;
 
 namespace PlantHarvest.IntegrationTest.Clients
 {
@@ -59,6 +60,12 @@ namespace PlantHarvest.IntegrationTest.Clients
         {
             var url = $"{this._baseUrl.OriginalString}{HarvestRoutes.GetTasks}/";
             return await this._httpClient.GetAsync(url);
+        }
+
+        public async Task<HttpResponseMessage> DeleteSystemTasks(string plantHarvestCycleId)
+        {
+            var url = $"{this._baseUrl.OriginalString}{HarvestRoutes.DeleteSystemTasks}";
+            return await this._httpClient.DeleteAsync(url.Replace("{plantHarvestCycleId}", plantHarvestCycleId));
         }
 
         public async Task<HttpResponseMessage> GetCompleteTaskCount(string harvestCycleId)

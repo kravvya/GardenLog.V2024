@@ -99,6 +99,22 @@ public class PlantTaskRepository : BaseRepository<PlantTask>, IPlantTaskReposito
 
     }
 
+    public async Task<IReadOnlyCollection<PlantTaskViewModel>> GetNotCompletedSystemGeneratedTasks(string plantHarvestCycleId, string userProfileId)
+    {
+        List<FilterDefinition<PlantTask>> filters = new();
+        filters.Add(Builders<PlantTask>.Filter.Eq("PlantHarvestCycleId", plantHarvestCycleId));
+        filters.Add(Builders<PlantTask>.Filter.Eq("IsSystemGenerated", true));
+        filters.Add(Builders<PlantTask>.Filter.Eq("CompletedDateTime", BsonNull.Value));
+        filters.Add(Builders<PlantTask>.Filter.Eq("UserProfileId", userProfileId));
+
+        var data = await Collection
+            .Find<PlantTask>(Builders<PlantTask>.Filter.And(filters))
+            .As<PlantTaskViewModel>()
+            .ToListAsync();
+
+        return data;
+    }
+
     protected override IMongoCollection<PlantTask> GetCollection()
     {
         return _unitOfWork.GetCollection<IMongoCollection<PlantTask>, PlantTask>(TASK_COLLECTION_NAME);

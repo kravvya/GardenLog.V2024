@@ -19,5 +19,6 @@ public enum HarvestEventTriggerEnum
     GardenBedPlantHarvestCycleCreated = 15,
     GardenBedPlantHarvestCycleUpdated = 16,
     GardenBedPlantHarvestCycleDeleted = 17,
-    HarvestCycleCompleted = 18
+    HarvestCycleCompleted = 18,
+    PlantingMethodChanged = 19
 }

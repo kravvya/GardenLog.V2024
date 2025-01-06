@@ -7,11 +7,18 @@ internal class UserManagementHelper
     public const string GARDEN_ID = "TestGarden";
     public const string USER_PROFILE_ID = "TestUserId";
 
-    public static string GetGarden()
+    public static string GetGardenAsString()
     {
-        var garden = new GardenViewModel()
+        var garden = UserManagementHelper.GetGarden();
+
+        return JsonSerializer.Serialize(garden, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
+
+    public static GardenViewModel GetGarden()
+    {
+       return new GardenViewModel()
         {
-            GardenId= GARDEN_ID,
+            GardenId = GARDEN_ID,
             Name = "Unit test garden",
             City = "Mound",
             StateCode = "MN",
@@ -21,7 +28,5 @@ internal class UserManagementHelper
             LastFrostDate = DateTime.Parse("05/15/1900"),
             FirstFrostDate = DateTime.Parse("09/15/1900")
         };
-
-        return JsonSerializer.Serialize(garden, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
 }
