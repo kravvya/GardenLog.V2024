@@ -4,42 +4,75 @@
 <div class="custom-modal" style="display:@(Show ? "block" : "none"); position: absolute; top:@Top; left:@Left; z-index: 1050; background-color: white; border: 1px solid #dee2e6; border-radius: .3rem; box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Garden Bed Usage History</h5>
-                <button type="button" class="btn-close" @onclick="Close"></button>
-            </div>
-            <div class="modal-body">
-                @if (UsageHistory != null && UsageHistory.Count > 0)
-                {
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th>Plant</th>
-                                <th>Plant Variety</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in UsageHistory)
-                            {
-                                <tr>
-                                    <td>@item.StartDate?.ToString("yyyy-MM")</td>
-                                    <td>@item.EndDate?.ToString("yyyy-MM")</td>
-                                    <td>@item.PlantName</td>
-                                    <td>@item.PlantVarietyName</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
-                else
-                {
-                    <p>No history available.</p>
-                }
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" @onclick="Close">Close</button>
+            <div class="card border-secondary">
+                <div class="card-header d-flex justify-content-between align-items-center  text-bg-secondary">
+                    <h5 class="card-title mb-0">Garden Bed Usage History</h5>
+                    <button type="button" class="btn-close" @onclick="Close"></button>
+                </div>
+                <div class="card-body">
+                    @if (UsageHistory != null && UsageHistory.Count > 0)
+                    {
+                        @if (ShowDetailedView)
+                        {
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Plant</th>
+                                        <th>Plant Variety</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in UsageHistory)
+                                    {
+                                        <tr>
+                                            <td>@item.StartDate?.ToString("yyyy-MM")</td>
+                                            <td>@item.EndDate?.ToString("yyyy-MM")</td>
+                                            <td>@item.PlantName</td>
+                                            <td>@item.PlantVarietyName</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Plant</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var group in UsageHistory.GroupBy(item => new { item.StartDate, item.EndDate, item.PlantName }).Select(g => g.First()))
+                                    {
+                                        <tr>
+                                            <td>@group.StartDate?.ToString("yyyy-MM")</td>
+                                            <td>@group.EndDate?.ToString("yyyy-MM")</td>
+                                            <td>@group.PlantName</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    }
+                    else
+                    {
+                        <p>No history available.</p>
+                    }
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="detailedView" @bind="ShowDetailedView">
+                        <label class="form-check-label" for="detailedView">
+                            Show Detailed View
+                        </label>
+                    </div>
+                    <button type="button" class="btn btn-secondary" @onclick="Close">Close</button>
+                </div>
             </div>
         </div>
     </div>
@@ -47,7 +80,7 @@
 
 @code {
     [Parameter] public string GardenId { get; set; } = string.Empty;
-    [Parameter] public string GardenBedId { get; set; } = string.Empty;    
+    [Parameter] public string GardenBedId { get; set; } = string.Empty;
     [Parameter] public bool Show { get; set; }
     [Parameter] public EventCallback<bool> OnClose { get; set; }
     [Parameter] public string Top { get; set; } = "0px";
@@ -55,6 +88,7 @@
 
 
     private List<GardenBedPlantHarvestCycleModel> UsageHistory { get; set; } = new();
+    private bool ShowDetailedView { get; set; } = false;
 
     protected override async Task OnParametersSetAsync()
     {
