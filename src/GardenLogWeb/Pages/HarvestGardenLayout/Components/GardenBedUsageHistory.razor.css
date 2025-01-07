@@ -1,0 +1,13 @@
+﻿.custom-modal {
+    display: block;
+    position: absolute;
+    z-index: 1050;
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: .3rem;
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+    padding: 1rem; /* Add padding around the content */
+    max-width: 90%; /* Ensure the modal doesn't exceed the viewport width */
+    max-height: 90%; /* Ensure the modal doesn't exceed the viewport height */
+    overflow: auto; /* Add scrollbars if the content exceeds the modal size */
+}

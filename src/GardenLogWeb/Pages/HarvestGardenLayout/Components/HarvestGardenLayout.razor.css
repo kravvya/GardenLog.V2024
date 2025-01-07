@@ -6,3 +6,26 @@
 #bigrect rect {
     stroke: saddlebrown
 }
+
+/* Add this to your CSS file */
+/* Add this to your CSS file */
+.info-popup {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    z-index: 1000;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.info-popup-content {
+    position: relative;
+}
+
+.info-popup .close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+}

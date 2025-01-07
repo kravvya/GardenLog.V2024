@@ -8,11 +8,11 @@
 @if (GardenBeds != null)
 {
     <svg width="@Settings.SvgWidth" height="@Settings.SvgHeight" viewBox="@Settings.StartX @Settings.StartY @Settings.ViewBoxX @Settings.ViewBoxY"
-     @onkeydown=@(e => _keyService.KeyDown(this, e))
-     @onmousemove=@(e => _mouseService.MouseMove(this, e))
-     @onmouseup=@(e => _mouseService.MouseUp(this, e))
-     @onmouseout=@(e => _mouseService.MouseLeave(this, e))
-     tabindex="0">
+         @onkeydown=@(e => _keyService.KeyDown(this, e))
+         @onmousemove=@(e => _mouseService.MouseMove(this, e))
+         @onmouseup=@(e => _mouseService.MouseUp(this, e))
+         @onmouseout=@(e => _mouseService.MouseLeave(this, e))
+         tabindex="0">
         <defs>
             @*small background box*@
             <pattern id="smallrect" x="0" y="0" width="48" height="48" viewBox="0 0 48 48" patternUnits="userSpaceOnUse">
@@ -43,12 +43,14 @@
         <g>
             @foreach (var bed in GardenBeds)
             {
-                <RectGardenBedWithPlants GardenBed=@bed SelectedPlant="@_selectedPlant" PlantSelectedByMouseClick=@PlantSelectedByMouseClick Settings=@Settings GardenBedHarvestPlants=@GetPlannedPlants(bed) GardenBedPlantChanged=@GardenBedPlantChanged fill="url(#bed-pat)"></RectGardenBedWithPlants>
+                <RectGardenBedWithPlants GardenBed=@bed SelectedPlant="@_selectedPlant" PlantSelectedByMouseClick=@PlantSelectedByMouseClick Settings=@Settings GardenBedHarvestPlants=@GetPlannedPlants(bed) GardenBedPlantChanged=@GardenBedPlantChanged fill="url(#bed-pat) " OnInfoBubbleClick="ShowGardenHistoryUsage"></RectGardenBedWithPlants>
             }
         </g>
 
     </svg>
 }
+
+<GardenBedUsageHistory GardenId="@Garden?.GardenId" GardenBedId="@_selectedGardenBed?.GardenBedId" Show="@_showInfoPopup" OnClose="CloseGardenHstoryUsage" Top="@_popupPositionY" Left="@_popupPositionX" />
 
 @code {
     [Parameter] public GardenModel? Garden { get; set; }
@@ -66,6 +68,10 @@
     [Parameter] public Action<GardenBedPlantHarvestCycleModel> GardenBedPlantChanged { get; set; } = null!;
 
     private GardenBedPlantHarvestCycleModel? _selectedPlant;
+    private string _popupPositionX;
+    private string _popupPositionY;
+    private bool _showInfoPopup = false;
+    private GardenBedModel _selectedGardenBed;
 
     protected override void OnInitialized()
     {
@@ -95,7 +101,7 @@
 
     protected async Task PlantSelectedByMouseClick(GardenBedPlantHarvestCycleModel? selectedPlant)
     {
-        if(selectedPlant!=null) _logger.LogDebug($"PlantSelectedByMouseClick {selectedPlant.PlantName}");
+        if (selectedPlant != null) _logger.LogDebug($"PlantSelectedByMouseClick {selectedPlant.PlantName}");
         _selectedPlant = selectedPlant;
         await NotifyViewOfSelectedGardenBedPlant(selectedPlant);
     }
@@ -117,6 +123,21 @@
         }
     }
 
+    private void ShowGardenHistoryUsage((GardenBedModel gardenBed, MouseEventArgs e, double scrollX, double scrollY) args)
+    {
+        _selectedGardenBed = args.gardenBed;
+        _popupPositionX = $"{args.e.ClientX + args.scrollX}px";
+        _popupPositionY = $"{args.e.ClientY + args.scrollY}px";
+        _showInfoPopup = true;
+        StateHasChanged();
+    }
+
+    private void CloseGardenHstoryUsage()
+    {
+        _selectedGardenBed = null;
+        _showInfoPopup = false;
+        StateHasChanged();
+    }
 
     public void Dispose()
     {
