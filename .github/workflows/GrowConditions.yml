@@ -37,6 +37,7 @@ jobs:
     - uses: Azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+        # https://github.com/Azure/login#using-a-service-principal
     - id: retrieve_secrets
       name: Retrieve secret from KV
       uses: azure/CLI@v1
