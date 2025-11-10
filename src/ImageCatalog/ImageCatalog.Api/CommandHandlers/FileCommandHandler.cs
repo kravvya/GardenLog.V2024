@@ -1,137 +1,149 @@
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Bmp;
-using SixLabors.ImageSharp.Formats.Gif;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Formats.Pbm;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.Formats.Tga;
-using SixLabors.ImageSharp.Formats.Webp;
-using SixLabors.ImageSharp.Processing;
-using System.Text.RegularExpressions;
-using Sharp = SixLabors.ImageSharp;
-
 namespace ImageCatalog.Api.Services;
 
 public interface IFileCommandHandler
 {
     string GenerateSasToken(string fileName);
-    void ResizeImageToThumbnail(string fileName);
-    Task ResizeImageToThumbnailAsync(string fileName);
+    void ProcessUploadedImage(string fileName);
+    Task ProcessUploadedImageAsync(string fileName);
 }
 
 public class FileCommandHandler : IFileCommandHandler
 {
     readonly IFileRepository _fileRepository;
     private readonly ILogger<FileCommandHandler> _logger;
+    private readonly IImageConversionService _conversionService;
+    private readonly IImageProcessor _thumbnailProcessor;
     private readonly int _thumbnailWidth;
 
-    public FileCommandHandler(IFileRepository fileRepository, ILogger<FileCommandHandler> logger, IConfiguration configuration)
+    public FileCommandHandler(
+        IFileRepository fileRepository, 
+        ILogger<FileCommandHandler> logger,
+        IImageConversionService conversionService,
+        IEnumerable<IImageProcessor> imageProcessors,
+        IConfiguration configuration)
     {
         _fileRepository = fileRepository;
         _logger = logger;
+        _conversionService = conversionService;
         _thumbnailWidth = configuration.GetValue<int>("ThumbnailWidth");
+        
+        // Use ImageSharp for all thumbnail generation (it handles JPEG well)
+        _thumbnailProcessor = imageProcessors.FirstOrDefault(p => p is ImageSharpProcessor) 
+            ?? throw new InvalidOperationException("ImageSharpProcessor not registered");
     }
 
     public string GenerateSasToken(string fileName) => _fileRepository.GenerateSasToken(fileName);
 
-    public void ResizeImageToThumbnail(string fileName)
+    public void ProcessUploadedImage(string fileName)
     {
         Task.Run(async () =>
         {
             try
             {
-                await ResizeImageToThumbnailAsync(fileName);
+                await ProcessUploadedImageAsync(fileName);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create thumbnail for {fileName}", fileName);
+                _logger.LogError(ex, "Failed to process uploaded image {fileName}", fileName);
             }
         });
     }
 
-    public async Task ResizeImageToThumbnailAsync(string fileName)
+    public async Task ProcessUploadedImageAsync(string fileName)
     {
         try
         {
-            _logger.LogInformation("Resize image {fileName}", fileName);
+            _logger.LogInformation("Processing uploaded image: {fileName}", fileName);
 
             var details = await _fileRepository.GetImageDetailFromStorage(fileName);
+            
+            _logger.LogInformation("Image details: {fileName}, Extension: {extension}, Size: {contentLength} bytes", 
+                details.FileName, details.FileExtension, details.ContentLength);
 
-            var encoder = GetEncoder(details.FileExtension);
+            // Step 1: Convert HEIC/HEIF to JPEG if needed (replaces original in storage)
+            var finalFileName = await ConvertToJpegIfNeeded(details);
 
-            if (encoder != null)
-            {
-                _logger.LogInformation("Processed image Name:{fileName} Size:{contentLength} Bytes", details.FileName, details.ContentLength);
-
-                using var output = new MemoryStream();
-                using Sharp.Image originalImage = Sharp.Image.Load(await _fileRepository.DownloadImageFromStorage(details.FileName));
-
-                var divisor = originalImage.Width / _thumbnailWidth;
-                var height = Convert.ToInt32(Math.Round((decimal)(originalImage.Height / divisor)));
-
-                originalImage.Mutate(x => x.Resize(_thumbnailWidth, height));
-                originalImage.Save(output, encoder);
-                output.Position = 0;
-                await _fileRepository.UploadThumbnailToStorage(output, details.ContentType, details.FileName);
-                
-                _logger.LogInformation("Successfully created thumbnail for {fileName}", fileName);
-            }
-            else
-            {
-                _logger.LogWarning("No encoder support for: {fileName}", details.FileName);
-            }
+            // Step 2: Create thumbnail from the (now JPEG) image
+            await CreateThumbnail(finalFileName);
+            
+            _logger.LogInformation("Successfully processed image: {finalFileName}", finalFileName);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception resizing image: {fileName}", fileName);
+            _logger.LogError(ex, "Exception processing image: {fileName}", fileName);
             throw;
         }
     }
 
-    public static IImageEncoder? GetEncoder(string extension)
+    private async Task<string> ConvertToJpegIfNeeded(ImageDetail details)
     {
-        IImageEncoder? encoder = null;
-
-        extension = extension.Replace(".", "");
-
-        var isSupported = Regex.IsMatch(extension, "gif|png|jpg|jpeg|bmp|pbm|tga|tiff|webp", RegexOptions.IgnoreCase);
-
-        if (isSupported)
+        var extension = details.FileExtension.ToLowerInvariant();
+        
+        // Only convert HEIC/HEIF files
+        if (extension != ".heic" && extension != ".heif")
         {
-            switch (extension.ToLower())
-            {
-                case "png":
-                    encoder = new PngEncoder();
-                    break;
-                case "jpg":
-                    encoder = new JpegEncoder();
-                    break;
-                case "jpeg":
-                    encoder = new JpegEncoder();
-                    break;
-                case "gif":
-                    encoder = new GifEncoder();
-                    break;
-                case "bmp":
-                    encoder = new BmpEncoder();
-                    break;
-                case "pbm":
-                    encoder = new PbmEncoder();
-                    break;
-                case "tga":
-                    encoder = new TgaEncoder();
-                    break;
-                case "tiff":
-                    encoder = new TgaEncoder();
-                    break;
-                case "webp":
-                    encoder = new WebpEncoder();
-                    break;
-                default:
-                    break;
-            }
+            _logger.LogDebug("{fileName} does not need conversion ({extension})", 
+                details.FileName, extension);
+            return details.FileName;
         }
 
-        return encoder;
+        _logger.LogInformation("Converting {fileName} from {extension} to JPEG", 
+            details.FileName, extension);
+
+        try
+        {
+            // Download the HEIC file
+            using var heicStream = await _fileRepository.DownloadImageFromStorage(details.FileName);
+            
+            // Convert to JPEG
+            var (jpegStream, width, height, newFileName, contentType) = 
+                await _conversionService.ConvertIfNeededAsync(heicStream, details.FileName, details.ContentType);
+
+            using (jpegStream)
+            {
+                _logger.LogInformation("Converted {oldFile} to {newFile} ({width}x{height})", 
+                    details.FileName, newFileName, width, height);
+
+                // Upload JPEG with the new filename (e.g., .heic -> .jpg)
+                await _fileRepository.UploadImageToStorage(jpegStream, contentType, newFileName);
+                
+                // Delete the original HEIC file if conversion was successful
+                if (newFileName != details.FileName)
+                {
+                    await _fileRepository.DeleteImageFromStorage(details.FileName);
+                    _logger.LogInformation("Deleted original HEIC file: {fileName}", details.FileName);
+                }
+            }
+
+            return newFileName;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to convert {fileName}, will use original", details.FileName);
+            return details.FileName; // Fall back to original on error
+        }
+    }
+
+    private async Task CreateThumbnail(string fileName)
+    {
+        _logger.LogInformation("Creating thumbnail for {fileName}", fileName);
+
+        // Download the (now JPEG) image
+        using var imageStream = await _fileRepository.DownloadImageFromStorage(fileName);
+        
+        // Create thumbnail using ImageSharp
+        var (thumbnailStream, width, height) = await _thumbnailProcessor.ResizeToJpegAsync(
+            imageStream, 
+            _thumbnailWidth, 
+            quality: 75);
+
+        using (thumbnailStream)
+        {
+            _logger.LogInformation("Created thumbnail for {fileName}: {width}x{height}", 
+                fileName, width, height);
+
+            // Upload thumbnail
+            await _fileRepository.UploadThumbnailToStorage(thumbnailStream, "image/jpeg", fileName);
+        }
     }
 }
