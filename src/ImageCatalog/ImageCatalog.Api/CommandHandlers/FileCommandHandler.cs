@@ -1,4 +1,4 @@
-﻿using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Bmp;
 using SixLabors.ImageSharp.Formats.Gif;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -36,7 +36,17 @@ public class FileCommandHandler : IFileCommandHandler
 
     public void ResizeImageToThumbnail(string fileName)
     {
-        Task.Run(() => ResizeImageToThumbnailAsync(fileName));
+        Task.Run(async () =>
+        {
+            try
+            {
+                await ResizeImageToThumbnailAsync(fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create thumbnail for {fileName}", fileName);
+            }
+        });
     }
 
     public async Task ResizeImageToThumbnailAsync(string fileName)
@@ -63,15 +73,17 @@ public class FileCommandHandler : IFileCommandHandler
                 originalImage.Save(output, encoder);
                 output.Position = 0;
                 await _fileRepository.UploadThumbnailToStorage(output, details.ContentType, details.FileName);
+                
+                _logger.LogInformation("Successfully created thumbnail for {fileName}", fileName);
             }
             else
             {
-                _logger.LogWarning("No encoder support for: {image.FileName}", details.FileName);
+                _logger.LogWarning("No encoder support for: {fileName}", details.FileName);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogInformation("Exception resizing image: {ex}", ex);
+            _logger.LogError(ex, "Exception resizing image: {fileName}", fileName);
             throw;
         }
     }
@@ -82,7 +94,7 @@ public class FileCommandHandler : IFileCommandHandler
 
         extension = extension.Replace(".", "");
 
-        var isSupported = Regex.IsMatch(extension, "gif|png|jpg|jpeg|bpm|pmb|tga|tiff|webp", RegexOptions.IgnoreCase);
+        var isSupported = Regex.IsMatch(extension, "gif|png|jpg|jpeg|bmp|pbm|tga|tiff|webp", RegexOptions.IgnoreCase);
 
         if (isSupported)
         {
@@ -103,7 +115,7 @@ public class FileCommandHandler : IFileCommandHandler
                 case "bmp":
                     encoder = new BmpEncoder();
                     break;
-                case "pmb":
+                case "pbm":
                     encoder = new PbmEncoder();
                     break;
                 case "tga":
