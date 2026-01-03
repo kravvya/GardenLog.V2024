@@ -460,7 +460,7 @@ Before proceeding to Phase 2, verify all items:
 
 **Test Updated:** Date/Time: [Step 3.1 completed - Email integration test uncommented and ready]
 
-**Notes:** Successfully uncommented Email_Should_Send() integration test. Test compiles without errors. Ready for deployment and testing.
+**Notes:** Successfully uncommented Email_Should_Send() integration test. Test compiles without errors and includes detailed diagnostic output. Test will validate Azure Communication Services email functionality during deployment. If test fails, output will show actual HTTP status code and error message to help diagnose configuration issues.
 
 ---
 

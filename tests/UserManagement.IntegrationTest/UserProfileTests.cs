@@ -98,13 +98,19 @@ public partial class GardenTests // : IClassFixture<UserManagementServiceFixture
     [Fact]
     public async Task Email_Should_Send()
     {
-
         var response = await _userProfileClient.SendEmail();
 
-        _output.WriteLine($"Service to send email responded with {response.StatusCode} code");
+        var returnString = await response.Content.ReadAsStringAsync();
 
-        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
+        _output.WriteLine($"Service to send email responded with {response.StatusCode} code and message: {returnString}");
 
+        if (!response.IsSuccessStatusCode)
+        {
+            _output.WriteLine($"Email test failed - this may be expected if Azure Communication Services is not configured in test environment");
+        }
+
+        Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK, 
+            $"Expected OK but got {response.StatusCode}. Response: {returnString}");
     }
 
     #endregion
