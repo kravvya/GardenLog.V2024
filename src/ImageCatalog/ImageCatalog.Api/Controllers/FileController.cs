@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -50,13 +50,13 @@ public class FileController : Controller
     {
         try
         {
-            _logger.LogInformation("Generating thumbnail image for {file}", fileName);
-            _fileService.ResizeImageToThumbnail(fileName);
+            _logger.LogInformation("Processing uploaded image for {file}", fileName);
+            _fileService.ProcessUploadedImage(fileName);
             return Accepted();
         }
         catch (Exception ex)
         {
-            _logger.LogError("Exception getting images: {ex}", ex);
+            _logger.LogError("Exception processing image: {ex}", ex);
             return Problem(ex.Message);
         }
     }

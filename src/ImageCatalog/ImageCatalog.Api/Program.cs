@@ -37,6 +37,13 @@ try
     builder.Services.AddSingleton<IFileRepository, BlobRepository>();
     builder.Services.AddScoped<IImageRepository, ImageRepository>();
 
+    // Register image processors
+    builder.Services.AddScoped<IImageProcessor, ImageSharpProcessor>();  // For PNG, JPEG, GIF, etc.
+    builder.Services.AddScoped<IImageProcessor, ImageMagickProcessor>(); // For HEIC/HEIF
+    
+    // Register image conversion service
+    builder.Services.AddScoped<IImageConversionService, ImageConversionService>();
+
     builder.Services.AddScoped<IImageQueryHandler, ImageQueryHandler>();
     builder.Services.AddScoped<IImageCommandHandler, ImageCommandHandler>();
 

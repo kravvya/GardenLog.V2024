@@ -2,7 +2,6 @@
 using PlantHarvest.Contract.ViewModels;
 using PlantHarvest.IntegrationTest.Clients;
 using PlantHarvest.IntegrationTest.Fixture;
-using SendGrid;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;

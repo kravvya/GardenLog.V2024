@@ -1,4 +1,5 @@
-﻿using GardenLog.SharedInfrastructure.ApiClients;
+﻿using Azure.Communication.Email;
+using GardenLog.SharedInfrastructure.ApiClients;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -12,7 +13,6 @@ using Serilog;
 using Serilog.Enrichers.Span;
 using Serilog.Formatting.Elasticsearch;
 using System.Security.Claims;
-using SendGrid.Extensions.DependencyInjection;
 
 namespace GardenLog.SharedInfrastructure.Extensions
 {
@@ -68,10 +68,13 @@ namespace GardenLog.SharedInfrastructure.Extensions
 
         public static void RegisterEmail(this WebApplicationBuilder builder)
         {
-            var password = builder.Configuration.GetValue<string>("email-password");
-            builder.Services.AddSendGrid(options =>
+            builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
+            
+            builder.Services.AddSingleton(serviceProvider =>
             {
-                options.ApiKey = password;
+                var configService = serviceProvider.GetRequiredService<IConfigurationService>();
+                var connectionString = configService.GetAcsEmailConnectionString();
+                return new EmailClient(connectionString);
             });
         }
 
