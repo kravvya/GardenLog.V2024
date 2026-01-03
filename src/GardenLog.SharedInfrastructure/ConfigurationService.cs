@@ -10,7 +10,7 @@ namespace GardenLog.SharedInfrastructure;
 public interface IConfigurationService
 {
     AuthSettings GetAuthSettings();
-   //string GetEmailPassword();
+    string GetAcsEmailConnectionString();
     string GetImageBlobConnectionString();
     string GetOpenWeartherApplicationId();
     MongoSettings? GetPlantCatalogMongoSettings();
@@ -184,28 +184,28 @@ public class ConfigurationService : IConfigurationService
     }
 
 
-    //public string GetEmailPassword()
-    //{
-    //    string? password;
+    public string GetAcsEmailConnectionString()
+    {
+        string? connectionString;
 
-    //    if (_kvClient != null)
-    //    {
-    //        password = _kvClient.GetSecret($"email-password").Value.Value;
-    //    }
-    //    else
-    //    {
-    //        password = _configuration.GetValue<string>("email-password");
-    //    }
+        if (_kvClient != null)
+        {
+            _logger.LogInformation("Will use kv for ACS Email connection string with prefix: {_pref}", _pref);
+            connectionString = _kvClient.GetSecret($"{_pref}acs-email-connection-string").Value.Value;
+        }
+        else
+        {
+            connectionString = _configuration.GetValue<string>("acs-email-connection-string");
+        }
 
-    //    if (string.IsNullOrWhiteSpace(password))
-    //    {
-    //        _logger.LogCritical("EMAIL PASSWORD is not found. Do not expect any good things to happen");
-    //    }
-    //    else
-    //    {
-    //        _logger.LogInformation("EMAIL PASSWORD WAS LOCATED! YEHAA");
-    //    }
-    //    return password!;
-    //}
-
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            _logger.LogCritical("ACS EMAIL CONNECTION STRING is not found. Do not expect any good things to happen");
+        }
+        else
+        {
+            _logger.LogInformation("ACS EMAIL CONNECTION STRING WAS LOCATED! YEHAA");
+        }
+        return connectionString ?? string.Empty;
+    }
 }

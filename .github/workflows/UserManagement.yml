@@ -32,7 +32,8 @@ jobs:
       auth0-clientsecret: ${{steps.retrieve_secrets.outputs.auth0-clientsecret}}
       auth0-apiclientsecret: ${{steps.retrieve_secrets.outputs.auth0-apiclientsecret}}
       registry-server: ${{steps.retrieve_secrets.outputs.registry-server}}
-      email-password: ${{steps.retrieve_secrets.outputs.email-password}}
+      acs-email-connection-string: ${{steps.retrieve_secrets.outputs.acs-email-connection-string}}
+      test-acs-email-connection-string: ${{steps.retrieve_secrets.outputs.test-acs-email-connection-string}}
       
     steps: 
     - uses: Azure/login@v1
@@ -50,7 +51,8 @@ jobs:
             echo auth0-clientsecret=$(az keyvault secret show --name "auth0-clientsecret" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo auth0-apiclientsecret=$(az keyvault secret show --name "auth0-apiclientsecret" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
             echo registry-server=$(az keyvault secret show --name "registry-server" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
-            echo email-password=$(az keyvault secret show --name "email-password" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo acs-email-connection-string=$(az keyvault secret show --name "acs-email-connection-string" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
+            echo test-acs-email-connection-string=$(az keyvault secret show --name "test-acs-email-connection-string" --vault-name "gardenlogvault" --query "value" -o tsv) >> $GITHUB_OUTPUT
 
   build:
     
@@ -61,7 +63,7 @@ jobs:
       mongodb-password: ${{needs.setup.outputs.test-mongodb-password}}
       auth0-clientsecret: ${{needs.setup.outputs.auth0-clientsecret}}
       auth0-apiclientsecret: ${{needs.setup.outputs.auth0-apiclientsecret}}
-      email-password: ${{needs.setup.outputs.email-password}}
+      acs-email-connection-string: ${{needs.setup.outputs.test-acs-email-connection-string}}
       ASPNETCORE_ENVIRONMENT: "Test"      
            
     needs: setup
@@ -135,4 +137,4 @@ jobs:
         containerAppName: ${{env.CONTAINER_APP_NAME}}
         resourceGroup: GardenLog_ResourceGroup
         imageToDeploy: ${{needs.setup.outputs.registry-server}}.azurecr.io/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
-        environmentVariables: "ASPNETCORE_ENVIRONMENT=Production mongodb-password=secretref:mongodb-password mongodb-server=secretref:mongodb-server mongodb-username=secretref:mongodb-username mongodb-databasename=secretref:mongodb-databasename email-password=secretref:email-password  auth0-clientsecret=secretref:auth0-clientsecret auth0-apiclientsecret=secretref:auth0-apiclientsecret"
+        environmentVariables: "ASPNETCORE_ENVIRONMENT=Production mongodb-password=secretref:mongodb-password mongodb-server=secretref:mongodb-server mongodb-username=secretref:mongodb-username mongodb-databasename=secretref:mongodb-databasename acs-email-connection-string=secretref:acs-email-connection-string  auth0-clientsecret=secretref:auth0-clientsecret auth0-apiclientsecret=secretref:auth0-apiclientsecret"
