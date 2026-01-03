@@ -1,4 +1,4 @@
-﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 
@@ -9,7 +9,9 @@ public interface IFileRepository
     Task<Stream> DownloadImageFromStorage(string fileName);
     string GenerateSasToken(string fileName);
     Task<ImageDetail> GetImageDetailFromStorage(string fileName);
+    Task UploadImageToStorage(Stream content, string contentType, string fileName);
     Task UploadThumbnailToStorage(Stream content, string fileType, string fileName);
+    Task DeleteImageFromStorage(string fileName);
 }
 
 public class BlobRepository : IFileRepository
@@ -32,9 +34,7 @@ public class BlobRepository : IFileRepository
 
         _imageContainer = blobServiceClient.GetBlobContainerClient(_config.ImageContainer);
         _thumbnailContainer = blobServiceClient.GetBlobContainerClient(_config.ThumbnailContainer);
-
     }
-
 
     public string GenerateSasToken(string fileName)
     {
@@ -54,7 +54,19 @@ public class BlobRepository : IFileRepository
         _logger.LogInformation("Generated SAS {sas}", sasUri);
 
         return sasUri.ToString();
+    }
 
+    public async Task UploadImageToStorage(Stream content, string contentType, string fileName)
+    {
+        var blob = _imageContainer.GetBlobClient(fileName);
+
+        await blob.UploadAsync(content, new BlobHttpHeaders
+        {
+            ContentType = contentType
+        },
+            conditions: null);
+
+        _logger.LogInformation("Uploaded image to storage: {fileName}", fileName);
     }
 
     public async Task UploadThumbnailToStorage(Stream content, string fileType, string fileName)
@@ -67,7 +79,15 @@ public class BlobRepository : IFileRepository
         },
             conditions: null);
 
+        _logger.LogInformation("Uploaded thumbnail to storage: {fileName}", fileName);
+    }
 
+    public async Task DeleteImageFromStorage(string fileName)
+    {
+        var blob = _imageContainer.GetBlobClient(fileName);
+        await blob.DeleteIfExistsAsync();
+        
+        _logger.LogInformation("Deleted image from storage: {fileName}", fileName);
     }
 
     public async Task<Stream> DownloadImageFromStorage(string fileName)
@@ -83,5 +103,4 @@ public class BlobRepository : IFileRepository
         var content = await blob.GetPropertiesAsync();
         return new ImageDetail(fileName, content.Value.ContentType, content.Value.ContentLength, Path.GetExtension(fileName));
     }
-
 }
