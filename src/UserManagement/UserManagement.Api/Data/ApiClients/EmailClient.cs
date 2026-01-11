@@ -44,7 +44,7 @@ namespace UserManagement.Api.Data.ApiClients
                 var emailRecipients = new EmailRecipients(toRecipients);
 
                 var emailMessage = new EmailMessage(
-                    senderAddress: "DoNotReply@slavgl.com",
+                    senderAddress: "GardenLog@slavgl.com",
                     emailRecipients,
                     emailContent);
 
@@ -79,7 +79,7 @@ namespace UserManagement.Api.Data.ApiClients
                 var emailRecipients = new EmailRecipients(toRecipients);
 
                 var emailMessage = new EmailMessage(
-                    senderAddress: "GardenLog <DoNotReply@slavgl.com>",
+                    senderAddress: "GardenLog@slavgl.com",
                     emailRecipients,
                     emailContent);
 
