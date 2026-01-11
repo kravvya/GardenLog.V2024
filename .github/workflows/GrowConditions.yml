@@ -34,7 +34,7 @@ jobs:
       registry-server: ${{steps.retrieve_secrets.outputs.registry-server}}
       
     steps: 
-    - uses: Azure/login@v1
+    - uses: Azure/login@v1.6.1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
         # https://github.com/Azure/login#using-a-service-principal
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [setup, build]    
     steps:    
-    - uses: Azure/login@v1
+    - uses: Azure/login@v1.6.1
       with:
        creds: ${{ secrets.AZURE_CREDENTIALS }}
     - name: Retrieve Container Registry Creds
@@ -124,7 +124,7 @@ jobs:
    
    steps:   
     - name: Log in to Azure
-      uses: azure/login@v1
+      uses: azure/login@v1.6.1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
     
