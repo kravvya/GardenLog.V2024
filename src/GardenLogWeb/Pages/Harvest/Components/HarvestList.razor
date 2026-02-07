@@ -32,7 +32,7 @@
                         <div>
                             @harvest.StartDate.ToShortDateString() @if (harvest.EndDate.HasValue)
                             {
-                                <span>- @harvest.EndDate</span>
+                                <span>- @harvest.EndDate.Value.ToShortDateString()</span>
                             }
                         </div>
                         <div>@harvest.Notes</div>
