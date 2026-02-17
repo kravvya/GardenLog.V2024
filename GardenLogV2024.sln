@@ -63,6 +63,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GardenLogWeb", "src\GardenL
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrowConditions.IntegrationTest", "tests\GrowConditions.IntegrationTest\GrowConditions.IntegrationTest.csproj", "{0D9AA9AD-4A09-4058-8D22-26399A9F09C1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GardenLog.Mcp", "GardenLog.Mcp", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GardenLog.Mcp.Infrastructure", "src\GardenLog.Mcp\GardenLog.Mcp.Infrastructure\GardenLog.Mcp.Infrastructure.csproj", "{E3CE6CEA-9FD2-2DF1-6F03-DD8897458C75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GardenLog.Mcp.Application", "src\GardenLog.Mcp\GardenLog.Mcp.Application\GardenLog.Mcp.Application.csproj", "{0A8FB846-1C5C-B708-DB7B-F39A878BF170}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GardenLog.Mcp.Api", "src\GardenLog.Mcp\GardenLog.Mcp.Api\GardenLog.Mcp.Api.csproj", "{69335189-4595-174D-AF76-C125BA6EB738}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -161,6 +169,18 @@ Global
 		{0D9AA9AD-4A09-4058-8D22-26399A9F09C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D9AA9AD-4A09-4058-8D22-26399A9F09C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D9AA9AD-4A09-4058-8D22-26399A9F09C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3CE6CEA-9FD2-2DF1-6F03-DD8897458C75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3CE6CEA-9FD2-2DF1-6F03-DD8897458C75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3CE6CEA-9FD2-2DF1-6F03-DD8897458C75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3CE6CEA-9FD2-2DF1-6F03-DD8897458C75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A8FB846-1C5C-B708-DB7B-F39A878BF170}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A8FB846-1C5C-B708-DB7B-F39A878BF170}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A8FB846-1C5C-B708-DB7B-F39A878BF170}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A8FB846-1C5C-B708-DB7B-F39A878BF170}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69335189-4595-174D-AF76-C125BA6EB738}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69335189-4595-174D-AF76-C125BA6EB738}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69335189-4595-174D-AF76-C125BA6EB738}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69335189-4595-174D-AF76-C125BA6EB738}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -194,6 +214,10 @@ Global
 		{ACDDEA33-61A1-462D-9968-68232CBA2C9C} = {A04093F1-AB9F-4FFB-B028-756762F47DBC}
 		{4407AAAA-1041-43E0-86BD-9D3FB3BD9567} = {51492653-FE5B-4D98-80F1-671FBC3E6344}
 		{0D9AA9AD-4A09-4058-8D22-26399A9F09C1} = {A04093F1-AB9F-4FFB-B028-756762F47DBC}
+		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {51492653-FE5B-4D98-80F1-671FBC3E6344}
+		{E3CE6CEA-9FD2-2DF1-6F03-DD8897458C75} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{0A8FB846-1C5C-B708-DB7B-F39A878BF170} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{69335189-4595-174D-AF76-C125BA6EB738} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A8047AAF-55B1-421E-91CC-7C5463BA1D4B}

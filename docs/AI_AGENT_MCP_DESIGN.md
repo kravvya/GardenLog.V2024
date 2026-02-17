@@ -114,16 +114,272 @@ After evaluating embedded (MCP in each API) vs centralized approaches, **central
 - **Metrics:** `GerminationRate`, `TotalWeightInPounds`, `TotalItems`, `NumberOfSeeds`, `NumberOfTransplants`
 - Planting method, spacing, seed company
 - GardenBedLayout (spatial data)
+- `PlantCalendar` array with scheduled tasks (StartDate, EndDate, TaskType, CompletedDateTime)
+  - **CRITICAL:** PlantCalendar is the source of truth for task schedules
+  - **GENERATION:** PlantCalendar schedules are auto-generated from PlantGrowthInstruction templates + Garden weather dates
+    - GrowInstructions define timing relative to weather: `BeforeLastFrost`, `AfterLastFrost`, `WarmSoil`, `MidSummer`
+    - System looks up Garden-Collection for the HarvestCycle's garden to get `LastFrostDate`, `FirstFrostDate`, `WarmSoilDate`
+    - Calculates actual dates: GrowInstruction says "4 weeks before last frost" + Garden.LastFrostDate (May 15) = StartDate (April 17)
+    - See: `ScheduleBuilder.GeneratePlantCalendarBasedOnGrowInstruction()` in PlantHarvest.Api
+  - Task generators create PlantTask records based on PlantCalendar schedules
+  - When PlantCalendar schedules are updated (via UpdatePlantScheduleCommand), the system triggers `PlantScheduleUpdated` events
+  - Task generators listen to these events and sync PlantTask records accordingly
+  - See: `IndoorSawTaskGenerator`, `TransplantOutsideTaskGenerator`, etc. in PlantHarvest.Api/EventHandlers/Tasks/
+  - The sync is bi-directional: updating task dates requires updating PlantCalendar schedules to maintain consistency
+
+**PlantTask** - Planned tasks (derived from PlantCalendar)
+- `Title`, `Type` (SowIndoors, TransplantOutside, Harvest, etc.)
+- `TargetDateStart`, `TargetDateEnd`, `CompletedDateTime`
+- Links to HarvestCycleId, PlantHarvestCycleId, PlantScheduleId
+- `IsSystemGenerated` flag
+- **NOTE:** PlantTask records are generated from and must stay synchronized with PlantCalendar schedules
+
+**WorkLog** - Completed activities (AUTHORITATIVE SOURCE for actual dates)
+- `Log` (text description), `EventDateTime` (when activity happened), `EnteredDateTime`
+- `Reason` (SowIndoors, TransplantOutside, Harvest, Watering, Fertilizing, etc.)
+- `RelatedEntities` array linking to HarvestCycle, PlantHarvestCycle, Plant, Garden
+- **Primary source for "what actually happened when"**
 
 **GardenBedPlantHarvestCycle** - Bed usage record
 - Which plants were in which beds
 - Start/end dates, location (X, Y, Length, Width)
 - Number of plants
 
+**Garden** - User's physical garden location
+- Name, location (city, state, lat/long), dimensions
+- **Weather Dates (CRITICAL for PlantCalendar generation):**
+  - `LastFrostDate` - Average last spring frost date for the location
+  - `FirstFrostDate` - Average first fall frost date for the location
+  - `WarmSoilDate` - Date when soil reaches planting temperature
+- `GardenBeds` array with bed layout (Name, Type, Length, Width, X, Y coordinates)
+- **Purpose:** Provides climate context to calculate actual planting dates from GrowInstruction templates
+
 **Plant** - Catalog plant type
 - Name, description, lifecycle, type (vegetable/herb/flower)
-- Environmental needs, days to maturity, harvest seasons
+- Environmental needs (MoistureRequirement, LightRequirement, GrowTolerance)
+- Days to maturity, harvest seasons, seed viability years
 - Contains PlantGrowInstructions and PlantVarieties
+
+**PlantGrowthInstruction** - Growing method templates (embedded in Plant)
+- `Name`, `PlantingMethod` (SeedIndoors, DirectSeed, Transplant)
+- **Weather-Relative Timing:**
+  - `StartSeedAheadOfWeatherCondition` (BeforeLastFrost, AfterLastFrost, WarmSoil, MidSummer)
+  - `StartSeedWeeksAheadOfWeatherCondition` (offset in weeks)
+  - `TransplantAheadOfWeatherCondition`, `TransplantWeeksAheadOfWeatherCondition`
+- Detailed instructions: `StartSeedInstructions`, `TransplantInstructions`, `GrowingInstructions`, `HarvestInstructions`
+- Fertilizer schedules, planting depth, spacing, days to sprout
+- **Used to generate PlantCalendar schedules** when plant is added to harvest cycle
+
+### Example MongoDB Documents
+
+**HarvestCycle Example:**
+```json
+{
+  "_id": "16edb239-d239-4bb5-a902-377a66364387",
+  "HarvestCycleName": "Homestead 2023 Plan",
+  "StartDate": { "$date": "2023-02-02T06:00:00.000Z" },
+  "EndDate": { "$date": "2023-10-20T00:00:00.000Z" },
+  "Notes": "Second year on homestead",
+  "UserProfileId": "auth0|up1",
+  "GardenId": "39131fc5-61f5-43e2-9243-a537a75487b1"
+}
+```
+
+**PlantHarvestCycle Example (Leeks):**
+```json
+{
+  "_id": "8df83545-8ae7-4de3-8493-7ff746fe3197",
+  "PlantCalendar": [
+    {
+      "_id": "7e20f372-ac9f-4c26-8218-b9f4cb71d350",
+      "StartDate": { "$date": "2023-01-30T00:00:00.000Z" },
+      "EndDate": { "$date": "2023-02-06T00:00:00.000Z" },
+      "TaskType": "SowIndoors",
+      "Notes": "Desired number of plants: 15. Sow in flats 1/4\" apart, 1/4\" deep.",
+      "IsSystemGenerated": true
+    },
+    {
+      "_id": "1c174770-1068-47eb-a4c3-5b51d369779e",
+      "StartDate": { "$date": "2023-04-17T00:00:00.000Z" },
+      "TaskType": "TransplantOutside",
+      "Notes": "Transplant when daytime temperatures are at least 45°F."
+    },
+    {
+      "_id": "4c6a892a-3927-4d14-84c6-472ce8e07aca",
+      "StartDate": { "$date": "2023-08-15T00:00:00.000Z" },
+      "TaskType": "Harvest",
+      "Notes": "When plants reach desired size, loosen with spading fork."
+    }
+  ],
+  "HarvestCycleId": "16edb239-d239-4bb5-a902-377a66364387",
+  "PlantId": "a461feac-a128-4b56-ab35-89ef71264107",
+  "PlantName": "Leeks",
+  "PlantVarietyId": "57c30df2-418c-4c6f-9bdd-4b73b1d7a2ac",
+  "PlantVarietyName": "Bandit",
+  "PlantGrowthInstructionId": "b295d016-35ed-4650-9e62-ab8b5791c4a9",
+  "PlantGrowthInstructionName": "February Seeding for 120 days",
+  "PlantingMethod": "SeedIndoors",
+  "NumberOfSeeds": 108,
+  "SeedingDate": { "$date": "2023-02-05T00:00:00.000Z" },
+  "GerminationDate": { "$date": "2023-02-10T00:00:00.000Z" },
+  "GerminationRate": "100",
+  "NumberOfTransplants": 72,
+  "TransplantDate": { "$date": "2023-04-27T23:59:48.520Z" },
+  "FirstHarvestDate": { "$date": "2023-09-17T04:05:53.734Z" },
+  "LastHarvestDate": { "$date": "2023-10-15T00:00:00.000Z" },
+  "TotalWeightInPounds": "15",
+  "Notes": "Lots of great looking leeks",
+  "DesiredNumberOfPlants": 15,
+  "SpacingInInches": 5
+}
+```
+
+**PlantTask Example:**
+```json
+{
+  "_id": "e9562189-d0e6-4632-bbd6-f98f9f5f4bb3",
+  "Title": "Sow Seeds Indoors",
+  "Type": "SowIndoors",
+  "CreatedDateTime": { "$date": "2023-02-04T11:04:57.438Z" },
+  "TargetDateStart": { "$date": "2023-01-30T00:00:00.000Z" },
+  "TargetDateEnd": { "$date": "2023-02-06T00:00:00.000Z" },
+  "CompletedDateTime": { "$date": "2023-02-05T00:00:00.000Z" },
+  "HarvestCycleId": "16edb239-d239-4bb5-a902-377a66364387",
+  "PlantHarvestCycleId": "2e3c9beb-8d42-4e3f-8051-2221ffaa881b",
+  "PlantName": "Leeks - Bulgarian Giant Leek",
+  "PlantScheduleId": "ec0d39e4-af75-46b4-98a7-97f59fdaa7eb",
+  "Notes": "Sow in flats in Feb.-March, 1/4\" apart.",
+  "IsSystemGenerated": true,
+  "UserProfileId": "auth0|up1"
+}
+```
+
+**Garden Example (showing weather dates used for PlantCalendar generation):**
+```json
+{
+  "_id": "39131fc5-61f5-43e2-9243-a537a75487b1",
+  "Name": "Steve's Garden",
+  "City": "Minnetrista",
+  "StateCode": "MN",
+  "Latitude": "44.97096",
+  "Longitude": "-93.66813",
+  "Notes": "Homestead Garden",
+  "UserProfileId": "auth0|up1",
+  "LastFrostDate": { "$date": "2023-05-15T00:00:00.000Z" },
+  "FirstFrostDate": { "$date": "2023-09-18T00:00:00.000Z" },
+  "WarmSoilDate": { "$date": "2023-06-07T00:00:00.000Z" },
+  "Length": 100,
+  "Width": 100,
+  "GardenBeds": [
+    {
+      "_id": "06662568-8957-493d-bb72-488a7db71cf0",
+      "Name": "In Ground Right 1",
+      "RowNumber": 1,
+      "Length": 120,
+      "Width": 30,
+      "X": 234,
+      "Y": 45,
+      "Notes": "Connected to in-ground left drip irrigation",
+      "Type": "InGroundBed",
+      "Rotate": 0
+    },
+    {
+      "_id": "319a1f16-da19-4e3f-9919-f283d52f6820",
+      "Name": "In Ground Right 2",
+      "RowNumber": 2,
+      "Length": 300,
+      "Width": 30,
+      "Notes": "Connected to in-ground left drip line",
+      "Type": "InGroundBed"
+    }
+  ]
+}
+```
+
+**WorkLog Example (Completed Activity):**
+```json
+{
+  "_id": "09971be8-df30-4556-b68f-7ed11376dd65",
+  "Log": "108 seeds of Leeks were planted indoors on 02/05/2023",
+  "EnteredDateTime": { "$date": "2023-02-06T06:25:14.740Z" },
+  "EventDateTime": { "$date": "2023-02-05T00:00:00.000Z" },
+  "Reason": "SowIndoors",
+  "UserProfileId": "auth0|up1",
+  "RelatedEntities": [
+    {
+      "EntityType": "HarvestCycle",
+      "EntityId": "16edb239-d239-4bb5-a902-377a66364387",
+      "EntityName": "Homestead 2023 Plan"
+    },
+    {
+      "EntityType": "PlantHarvestCycle",
+      "EntityId": "8df83545-8ae7-4de3-8493-7ff746fe3197",
+      "EntityName": "Leeks - Bandit"
+    }
+  ]
+}
+```
+
+**Plant with GrowInstructions Example (Cauliflower):**
+```json
+{
+  "_id": "facc42f4-d20c-4f72-846f-dc7b2e812f0e",
+  "Name": "Cauliflower",
+  "Description": "Some varieties are good for spring planting, most types best as mid-summer planting for fall harvest.",
+  "Color": "#eae9e1",
+  "Lifecycle": "Cool",
+  "Type": "Vegetable",
+  "MoistureRequirement": "ConsistentMoisture",
+  "LightRequirement": "PartShade",
+  "HarvestSeason": ["EarlySummer"],
+  "SeedViableForYears": 3,
+  "GrowInstructions": [
+    {
+      "_id": "9839a4b7-f414-4e32-99d3-768d541a543b",
+      "Name": "Start Indoors",
+      "PlantingMethod": "SeedIndoors",
+      "PlantingDepthInInches": "Depth4th",
+      "SpacingInInches": 18,
+      "StartSeedAheadOfWeatherCondition": "BeforeLastFrost",
+      "StartSeedWeeksAheadOfWeatherCondition": 4,
+      "TransplantAheadOfWeatherCondition": "BeforeLastFrost",
+      "TransplantWeeksAheadOfWeatherCondition": 0,
+      "HarvestSeason": "Summer",
+      "DaysToSproutMin": 7,
+      "DaysToSproutMax": 14,
+      "FertilizerForSeedlings": "Starter",
+      "FertilizerFrequencyForSeedlingsInWeeks": 2,
+      "StartSeedInstructions": "For spring-planted cauliflower, start seeds indoors in April. Apply fertilizer beginning when first true leaf appears.",
+      "TransplantInstructions": "Transplant outdoors when seedlings are 4–5 weeks old. Water in with liquid starter solution.",
+      "HarvestInstructions": "Harvest when heads reach usable size, before flower buds open."
+    },
+    {
+      "_id": "ea38fed0-84e9-428c-897b-7fa037578eb1",
+      "Name": "Direct seed in July",
+      "PlantingMethod": "DirectSeed",
+      "StartSeedAheadOfWeatherCondition": "MidSummer",
+      "StartSeedWeeksAheadOfWeatherCondition": 0,
+      "HarvestSeason": "Fall",
+      "DaysToSproutMin": 7,
+      "DaysToSproutMax": 10,
+      "FertilizerAtPlanting": "Compost",
+      "Fertilizer": "AllPurpose",
+      "FertilizeFrequencyInWeeks": 4
+    }
+  ]
+}
+```
+
+**Note:** When a plant is added to a harvest cycle with a specific GrowInstructionId, the system:
+1. Looks up the **GrowInstruction** template from the Plant catalog (e.g., "Start seeds 4 weeks before last frost")
+2. Gets the **Garden's weather dates** from Garden-Collection (LastFrostDate, FirstFrostDate, WarmSoilDate)
+3. Calculates actual calendar dates: `GrowInstruction.StartSeedWeeksAheadOfWeatherCondition` + `Garden.LastFrostDate` = StartDate
+   - Example: 4 weeks before LastFrostDate (May 15) = April 17
+4. Generates **PlantCalendar** schedules with TaskType, StartDate, EndDate on PlantHarvestCycle
+5. Task generators then create **PlantTask** records from these PlantCalendar schedules
+6. Users complete tasks and log actual activities in **WorkLog** with EventDateTime
+
+This flow connects: **GrowInstruction (template)** → **Garden (climate dates)** → **PlantCalendar (calculated schedule)** → **PlantTask (task records)** → **WorkLog (actual completion)**
 
 ## Security Architecture
 
@@ -501,6 +757,15 @@ db.createUser({
 })
 ```
 
+**API URL Configuration:**
+
+API URLs are configured in Program.cs based on environment:
+
+- **Production**: Azure Container Apps URLs (default)
+- **Development**: Also defaults to Azure URLs, but can be uncommented to use localhost URLs if all APIs are running locally
+
+This matches the pattern in GardenLogWeb where production URLs are the default for reliability, with optional local override for full-stack integration testing.
+
 ### Step 3: MCP Server Setup with ModelContextProtocol Package
 
 **Program.cs:**
@@ -548,13 +813,60 @@ else
 
 builder.Services.AddAuthorization();
 
-// Register data services
+// Register MongoDB data services (for complex analytical tools)
 builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddScoped<IPlantHarvestQueryService, PlantHarvestQueryService>();
-builder.Services.AddScoped<IPlantCatalogQueryService, PlantCatalogQueryService>();
-builder.Services.AddScoped<IGardenQueryService, GardenQueryService>();
-builder.Services.AddScoped<IWeatherQueryService, WeatherQueryService>();
 builder.Services.AddScoped<IUserContextAccessor, UserContextAccessor>();
+
+// Configure API URLs based on environment
+string plantCatalogUrl;
+string plantHarvestUrl;
+string userManagementUrl;
+string growConditionsUrl;
+
+if (builder.Environment.IsProduction())
+{
+    // Production: Azure Container Apps
+    plantCatalogUrl = "https://plantcatalogapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
+    plantHarvestUrl = "https://plantharvestapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
+    userManagementUrl = "https://usermanagementapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
+    growConditionsUrl = "https://growconditionsapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
+}
+else
+{
+    // Development: Can override with local URLs for integration testing
+    // plantCatalogUrl = "https://localhost:5051";
+    // plantHarvestUrl = "http://localhost:5049";
+    // userManagementUrl = "http://localhost:5212";
+    // growConditionsUrl = "http://localhost:5XXX";
+    
+    // Default to production URLs even in development (same as GardenLogWeb pattern)
+    plantCatalogUrl = "https://plantcatalogapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
+    plantHarvestUrl = "https://plantharvestapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
+    userManagementUrl = "https://usermanagementapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
+    growConditionsUrl = "https://growconditionsapi-containerapp.politecoast-efa2ff8d.eastus.azurecontainerapps.io";
+}
+
+// Register HTTP clients to existing APIs (for simple wrapper tools)
+builder.Services.AddHttpClient("PlantCatalogApi", client =>
+{
+    client.BaseAddress = new Uri(plantCatalogUrl);
+}).AddHttpMessageHandler<UserAuthenticationHandler>();
+
+builder.Services.AddHttpClient("PlantHarvestApi", client =>
+{
+    client.BaseAddress = new Uri(plantHarvestUrl);
+}).AddHttpMessageHandler<UserAuthenticationHandler>();
+
+builder.Services.AddHttpClient("UserManagementApi", client =>
+{
+    client.BaseAddress = new Uri(userManagementUrl);
+}).AddHttpMessageHandler<UserAuthenticationHandler>();
+
+builder.Services.AddHttpClient("GrowConditionsApi", client =>
+{
+    client.BaseAddress = new Uri(growConditionsUrl);
+}).AddHttpMessageHandler<UserAuthenticationHandler>();
 
 // Configure MCP Server with HTTP transport
 builder.Services
@@ -691,6 +1003,69 @@ public class ExampleTool
 - Return types are strongly-typed (not object)
 - **Return existing Contract ViewModels** from API projects for consistency
 - Exceptions are handled by the MCP framework
+
+**Two Implementation Patterns:**
+
+1. **MongoDB-Based Tools** (for complex analytics):
+```csharp
+[McpServerToolType]
+public class GetWorkLogHistoryTool
+{
+    private readonly IMongoCollection<WorkLog> _collection;
+    private readonly IUserContextAccessor _userContext;
+
+    [McpServerTool(Name = "get_worklog_history")]
+    [Description("Query completed activities with flexible filtering")]
+    public async Task<IReadOnlyCollection<WorkLogViewModel>> ExecuteAsync(
+        [Description("Start date filter")] DateTime? startDate = null,
+        [Description("Reason filter")] string? reason = null,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = _userContext.GetUserId();
+        
+        // Build MongoDB filter
+        var filter = Builders<WorkLog>.Filter.Eq(w => w.UserProfileId, userId);
+        if (startDate.HasValue)
+            filter = Builders<WorkLog>.Filter.And(filter, 
+                Builders<WorkLog>.Filter.Gte(w => w.EventDateTime, startDate.Value));
+        
+        var results = await _collection.Find(filter).ToListAsync(cancellationToken);
+        return results.Select(MapToViewModel).ToList();
+    }
+}
+```
+
+2. **API-Calling Tools** (for simple wrappers):
+```csharp
+[McpServerToolType]
+public class GetPlantDetailsTool
+{
+    private readonly HttpClient _httpClient; // IHttpClientFactory injected
+    private readonly IUserContextAccessor _userContext;
+
+    [McpServerTool(Name = "get_plant_details")]
+    [Description("Get plant catalog information including grow instructions")]
+    public async Task<PlantViewModel> ExecuteAsync(
+        [Description("Plant ID")] string? plantId = null,
+        [Description("Plant name alternative")] string? plantName = null,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = _userContext.GetUserId();
+        
+        // Add user context header
+        using var request = new HttpRequestMessage(HttpMethod.Get, 
+            $"/api/plant/{plantId}");
+        request.Headers.Add("X-User-Id", userId);
+        
+        // Call existing PlantCatalog API
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        
+        // Return Contract ViewModel directly from API
+        return await response.Content.ReadFromJsonAsync<PlantViewModel>(cancellationToken);
+    }
+}
+```
 
 **Specific tools will be created based on actual use cases and questions.**
 
@@ -1245,14 +1620,446 @@ public class McpEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 
 ## Tool Reference
 
-### Tools To Be Defined
+### MCP Tool Design Principles
 
-Tools will be created based on specific questions and use cases. Each tool will:
-- Be defined with `[McpServerTool]` attribute
-- Have clear description for agent understanding
-- Accept strongly-typed parameters
-- Return existing Contract ViewModels
-- Enforce user context and data isolation
+Based on analysis of existing APIs and internal agent requirements (see INTERNAL_AGENT_DESIGN.md), MCP tools should be:
+
+1. **Flexible** - Support date ranges, multiple filters, various query patterns to avoid boxing in future use cases
+2. **MongoDB-friendly** - Query MongoDB directly when existing APIs lack needed flexibility
+3. **API-leveraging** - Use existing APIs where they provide sufficient functionality
+4. **Agent-oriented** - Return rich data that enables AI reasoning (not just IDs)
+
+### Existing API Analysis
+
+**APIs with Good Coverage:**
+- ✅ **GardenController.GetGarden(gardenId)** - Gets garden with beds and weather dates
+- ✅ **HarvestController.GetGardenBedUsageHistory(gardenId, gardenBedId)** - Perfect for crop rotation validation
+- ✅ **HarvestController.GetPlantHarvestCyclesByPlant(plantId)** - Historical plantings by plant (identity only)
+- ✅ **PlantController.GetPlantById(id)** - Gets plant with GrowInstructions embedded
+
+**API Gaps Requiring MongoDB Queries:**
+- ❌ **WorkLogController.GetAllWorkLogs** - Only filters by single entity, no date range or reason filters
+- ❌ No flexible PlantHarvestCycle search - can't filter by date range, metrics, multiple plants
+- ❌ No PlantTask flexible search endpoint - no date range, reason, or completion status queries
+- ❌ No cross-entity analytics - can't correlate WorkLog dates with PlantCalendar schedules
+
+**Decision:** Build flexible MCP tools with MongoDB repositories to support agent reasoning, while allowing future APIs to replace them if enhanced.
+
+---
+
+## MCP Tools Specification
+
+### Tool Categories
+
+1. **Historical Data Query Tools** - Flexible queries for analyzing past seasons (MongoDB)
+2. **Cross-Entity Correlation Tools** - Connect WorkLog, PlantCalendar, metrics for pattern detection (MongoDB)
+3. **Garden Context Tools** - Gardens, beds, climate data (API calls)
+4. **Plant Catalog Tools** - Plants, varieties, grow instructions (API calls)
+
+**Implementation Pattern:**
+- **Complex analytical tools** (requiring flexible filtering, cross-collection queries, or metrics not in APIs) query MongoDB directly
+- **Simple catalog/context tools** (where existing APIs are sufficient) make HTTP calls to existing APIs
+- All tools present a unified MCP interface to the agent - the agent doesn't need to know which backend is used
+
+**Note:** Following the design philosophy of "raw data for agent reasoning", tools return comprehensive data rather than pre-calculated analysis. For example, crop rotation analysis is performed by the agent using raw bed history and plant family data, rather than a dedicated tool that calculates violations.
+
+---
+
+### 1. get_worklog_history
+
+**Purpose:** Query completed activities with flexible filtering for date optimization analysis
+
+**Parameters:**
+- `startDate` (DateTime?, optional) - Filter activities from this date
+- `endDate` (DateTime?, optional) - Filter activities up to this date
+- `reason` (string?, optional) - WorkLogReason (SowIndoors, TransplantOutside, Harvest, etc.)
+- `plantId` (string?, optional) - Filter by specific plant
+- `harvestCycleId` (string?, optional) - Filter by specific harvest season
+- `plantName` (string?, optional) - Alternative to plantId for natural language queries
+- `limit` (int?, default: 100) - Max results to return
+
+**Returns:** `IReadOnlyCollection<WorkLogViewModel>`
+- Log text, EventDateTime, Reason, RelatedEntities
+
+**Query Approach:**
+- MongoDB query on WorkLog-Collection filtered by UserProfileId
+- Apply date range, reason, and related entity filters
+- If plantName provided, resolve to plantId first via PlantCatalog API
+- Order by EventDateTime descending
+
+**Enables:**
+- "Show me all times we planted tomatoes indoors in the last 5 years"
+- "When did we harvest peppers in 2023 vs 2024?"
+- Date optimization analysis for internal agent
+
+**Existing API:** ❌ Current WorkLogController.GetAllWorkLogs only filters by single entity
+
+---
+
+### 2. get_plant_harvest_cycles
+
+**Purpose:** Flexible search across PlantHarvestCycle records with metrics for outcome analysis
+
+**Parameters:**
+- `plantId` (string?, optional) - Filter by plant
+- `plantName` (string?, optional) - Alternative to plantId
+- `harvestCycleId` (string?, optional) - Filter by harvest season
+- `startDate` (DateTime?, optional) - Filter by SeedingDate or TransplantDate >= this date
+- `endDate` (DateTime?, optional) - Filter by LastHarvestDate <= this date
+- `minGerminationRate` (int?, optional) - Filter by GerminationRate >= this value
+- `includeMetrics` (bool, default: true) - Include yield/germination data
+- `includePlantCalendar` (bool, default: false) - Include embedded PlantCalendar schedules
+- `includeGardenBeds` (bool, default: false) - Include bed assignments
+- `limit` (int?, default: 50) - Max results
+
+**Returns:** `IReadOnlyCollection<PlantHarvestCycleViewModel>`
+- Plant name, variety, all dates (SeedingDate, GerminationDate, TransplantDate, HarvestDate)
+- Metrics: GerminationRate, TotalWeightInPounds, TotalItems
+- PlantCalendar array (if requested)
+- GardenBedLayout (if requested)
+
+**Query Approach:**
+- MongoDB query on PlantHarvestCycle-Collection filtered by UserProfileId
+- Apply all filters
+- Use aggregation to join Plant data for name resolution
+- Optionally join GardenBedPlantHarvestCycle for bed info
+
+**Enables:**
+- "Show me all tomato plantings with > 90% germination rate"
+- "What was the yield for peppers planted in 2023?"
+- Outcome correlation for date optimization agent
+
+**Existing API:** ⚠️ Partial - GetPlantHarvestCyclesByPlant exists but returns identity-only, no metrics, no filters
+
+---
+
+### 3. get_garden_bed_history
+
+**Purpose:** Historical bed usage for crop rotation validation
+
+**Parameters:**
+- `gardenBedId` (string) - Required: specific bed from Garden.GardenBeds
+- `gardenId` (string) - Required: which garden owns this bed
+- `startDate` (DateTime?, optional) - Filter from this date
+- `endDate` (DateTime?, optional) - Filter to this date  
+- `includeMetrics` (bool, default: false) - Include yield data
+
+**Returns:** `IReadOnlyCollection<GardenBedPlantHarvestCycleViewModel>`
+- Plant name, variety, start/end dates, location in bed
+- Linked to PlantHarvestCycle for additional details
+
+**Query Approach:**
+- Call existing API via HTTP client: **HarvestController.GetGardenBedUsageHistory(gardenId, gardenBedId)**
+- MCP tool makes authenticated HTTP request to PlantHarvest API
+- If date filtering needed, apply post-query filtering in tool
+- Returns Contract ViewModel directly from API
+
+**Enables:**
+- "What was planted in Bed 1 over the last 3 years?"
+- Crop rotation validation for internal agent
+- Succession planting analysis
+
+**Existing API:** ✅ **Yes - HarvestController.GetGardenBedUsageHistory** already exists
+
+---
+
+### 4. get_planting_data_for_analysis
+
+**Purpose:** Gather template dates, historical actual dates, and outcomes for agent to analyze and recommend optimal planting timing
+
+**Parameters:**
+- `plantId` (string) - Required: plant to analyze
+- `plantName` (string?, optional) - Alternative to plantId
+- `taskType` (string?, optional) - "SowIndoors", "TransplantOutside", etc.
+- `gardenId` (string?, optional) - Specific garden context for weather dates
+- `yearCount` (int, default: 3) - Look back this many years
+
+**Returns:** Custom ViewModel with:
+```json
+{
+  "plantName": "Tomato",
+  "plantId": "plant_123",
+  "taskType": "SowIndoors",
+  "currentYear": 2026,
+  "gardenContext": {
+    "gardenName": "Steve's Garden",
+    "lastFrostDate": "2026-05-15",
+    "firstFrostDate": "2026-09-18",
+    "warmSoilDate": "2026-06-07"
+  },
+  "growInstructionTemplate": {
+    "name": "Start Indoors",
+    "weatherCondition": "BeforeLastFrost",
+    "weeksOffset": 6,
+    "calculatedDateForThisYear": "2026-04-03",
+    "instructions": "Start seeds indoors 6 weeks before last frost..."
+  },
+  "historicalActuals": [
+    {
+      "year": 2024,
+      "eventDate": "2024-03-20",
+      "source": "WorkLog",
+      "daysBeforeTemplate": 14,
+      "germinationRate": 92,
+      "totalYieldPounds": 45,
+      "harvestStartDate": "2024-07-15",
+      "daysToFirstHarvest": 117
+    },
+    {
+      "year": 2023,
+      "eventDate": "2023-03-18",
+      "source": "WorkLog",
+      "daysBeforeTemplate": 16,
+      "germinationRate": 88,
+      "totalYieldPounds": 52,
+      "harvestStartDate": "2023-07-10",
+      "daysToFirstHarvest": 114
+    },
+    {
+      "year": 2022,
+      "eventDate": "2022-04-05",
+      "source": "WorkLog",
+      "daysBeforeTemplate": -2,
+      "germinationRate": 70,
+      "totalYieldPounds": 38,
+      "harvestStartDate": "2022-07-28",
+      "daysToFirstHarvest": 114
+    }
+  ]
+}
+```
+
+**Query Approach:**
+1. Get Plant + GrowInstructions via PlantCatalog API
+2. Get Garden with weather dates via UserManagement API
+3. Calculate template date from GrowInstruction + Garden weather dates for current year
+4. Query WorkLog for historical actual dates (filter by plantId + reason + yearCount back)
+5. Query PlantHarvestCycle for each historical planting to get outcomes (GerminationRate, yields, harvest dates)
+6. Calculate deviation for each historical actual vs its year's template date
+7. Return RAW DATA - no recommendations, no averages, no confidence scores
+8. Let the agent analyze patterns, correlate dates with outcomes, and make recommendations
+
+**Enables:**
+- "When should I plant peppers this year based on my history?"
+- Agent can reason about patterns: "You planted earlier in 2023/2024 with better results"
+- Agent can consider context: weather forecasts, user preferences, risk tolerance
+- Date optimization use case from internal agent design
+- Agent makes nuanced decisions based on full context vs simple averaging
+
+**Existing API:** ❌ No equivalent - requires cross-collection data gathering
+
+**Why No Pre-Calculated Recommendations:**
+- AI agents have reasoning capabilities to identify patterns humans might miss
+- Agent can incorporate real-time context (current weather, user schedule, frost predictions)
+- Different users may interpret "success" differently (yield vs early harvest vs disease resistance)
+- Agent can explain its reasoning in natural language based on the data
+- More flexible than hardcoded algorithms
+
+---
+
+### 5. get_garden_details
+
+**Purpose:** Get garden context including weather dates and bed layout
+
+**Parameters:**
+- `gardenId` (string?, optional) - Specific garden, or user's default
+- `gardenName` (string?, optional) - Alternative to gardenId
+
+**Returns:** `GardenViewModel`
+- Garden name, location, weather dates (LastFrostDate, FirstFrostDate, WarmSoilDate)
+- GardenBeds array with layout
+
+**Query Approach:**
+- Call existing API via HTTP client: **UserManagement.GardenController.GetGarden(gardenId)**
+- MCP tool makes authenticated HTTP request to UserManagement API
+- If name provided, call GetGardenByName endpoint
+- Returns Contract ViewModel directly from API
+
+**Enables:**
+- "What is my garden's last frost date?"
+- Context for date calculations
+- Bed selection for rotation suggestions
+
+**Existing API:** ✅ **Yes - GardenController.GetGarden and GetGardenByName**
+
+---
+
+### 6. get_plant_details
+
+**Purpose:** Get plant catalog information including grow instructions
+
+**Parameters:**
+- `plantId` (string?, optional) - Specific plant ID
+- `plantName` (string?, optional) - Alternative to plantId
+- `includeGrowInstructions` (bool, default: true) - Include embedded GrowInstructions
+- `includeVarieties` (bool, default: false) - Include varieties
+
+**Returns:** `PlantViewModel`
+- Plant name, description, lifecycle, type
+- GrowInstructions array (weather-relative timing rules)
+- Varieties array (if requested)
+
+**Query Approach:**
+- Call existing API via HTTP client: **PlantCatalog.PlantController.GetPlantById(id)**
+- MCP tool makes authenticated HTTP request to PlantCatalog API
+- If name provided, call GetAllPlants and filter, or use search endpoint
+- Returns Contract ViewModel directly from API
+
+**Enables:**
+- "What are the grow instructions for tomatoes?"
+- Understanding template timing rules
+- Date calculation context
+
+**Existing API:** ✅ **Yes - PlantController.GetPlantById**
+
+---
+
+### 7. search_harvest_cycles
+
+**Purpose:** Find harvest cycles with flexible filtering
+
+**Parameters:**
+- `year` (int?, optional) - Filter by year
+- `gardenId` (string?, optional) - Filter by garden
+- `startDate` (DateTime?, optional) - Filter by HarvestCycle.StartDate
+- `endDate` (DateTime?, optional) - Filter by HarvestCycle.EndDate
+- `includeArchived` (bool, default: false) - Include past seasons
+
+**Returns:** `IReadOnlyCollection<HarvestCycleViewModel>`
+- HarvestCycle name, start/end dates, garden reference
+
+**Query Approach:**
+- Call existing API via HTTP client: **HarvestController.GetAllHarvestCycles()**
+- MCP tool makes authenticated HTTP request to PlantHarvest API
+- Apply filters post-query if API doesn't support them
+- Returns Contract ViewModels directly from API
+
+**Enables:**
+- "Show me all harvests from 2023"
+- Context for multi-year analysis
+- Season selection for historical queries
+
+**Existing API:** ⚠️ Partial - GetAllHarvestCycles exists but no filters
+
+---
+
+## Tool Implementation Priority
+
+### Phase 1: MongoDB-Based Analytical Tools (Complex Queries)
+1. **get_worklog_history** - MongoDB query with flexible filtering
+2. **get_plant_harvest_cycles** - MongoDB query with metrics and cross-collection joins
+3. **get_planting_data_for_analysis** - MongoDB query gathering cross-collection data
+
+### Phase 2: API-Based Context Tools (Simple Wrappers)
+4. **get_garden_bed_history** - HTTP call to HarvestController.GetGardenBedUsageHistory
+5. **get_garden_details** - HTTP call to GardenController.GetGarden
+6. **get_plant_details** - HTTP call to PlantController.GetPlantById (includes PlantFamily)
+7. **search_harvest_cycles** - HTTP call to HarvestController.GetAllHarvestCycles
+
+**Implementation Note:** Tools #4-7 are simple HTTP client wrappers that authenticate and forward requests to existing APIs. They make the agent's interface consistent (everything is an MCP tool) while avoiding duplication of API logic.
+
+**Crop Rotation Analysis:** Agent uses `get_garden_bed_history` + `get_plant_details` (PlantFamily classification) to reason about rotation quality, detect violations, and suggest alternatives - no dedicated pre-calculation tool needed.
+
+---
+
+## Data Requirements & Enhancements
+
+### Required for Full Functionality:
+
+1. **Plant Family Classification:**
+   - Add `PlantFamily` enum to Plant catalog: Brassica, Solanaceae, Cucurbit, Legume, Allium, Root, Leafy, etc.
+   - Needed for crop rotation analysis
+   - Alternative: Build lookup table in MCP layer initially
+
+2. **Success Indicators:**
+   - Ensure PlantHarvestCycle.GerminationRate is consistently populated
+   - Track quality ratings or success flags
+   - Needed for outcome-based recommendations
+
+3. **MongoDB Indexes:**
+   - WorkLog: Compound index on (UserProfileId, EventDateTime, Reason)
+   - PlantHarvestCycle: Compound index on (UserProfileId, PlantId, SeedingDate)
+   - GardenBedPlantHarvestCycle: Compound index on (GardenBedId, StartDate)
+
+4. **ViewModels:**
+   - Create `PlantingDataViewModel` for get_planting_data_for_analysis (returns raw data for agent analysis)
+   - Or return dynamic objects if MCP SDK supports it
+
+---
+
+## Summary: API vs MongoDB Decision Matrix
+
+| Tool | Existing API | Decision | Rationale |
+|------|-------------|----------|-----------|
+| get_worklog_history | ❌ Too limited | **MongoDB** | API lacks date range + reason filtering |
+| get_plant_harvest_cycles | ⚠️ Partial | **MongoDB** | API lacks metrics, dates, flexible filters |
+| get_garden_bed_history | ✅ Good | **Call API** | GetGardenBedUsageHistory sufficient |
+| get_planting_data_for_analysis | ❌ None | **MongoDB** | Cross-collection data gathering required |
+| get_garden_details | ✅ Perfect | **Call API** | GetGarden is sufficient |
+| get_plant_details | ✅ Perfect | **Call API** | GetPlantById is sufficient (includes PlantFamily) |
+| search_harvest_cycles | ⚠️ Basic | **Call API** | GetAllHarvestCycles + post-filter acceptable |
+
+**Conclusion:** All 7 tools exposed via MCP for unified agent interface. Tools #1, #2, #4 query MongoDB directly for complex analytics not available in APIs. Tools #3, #5, #6, #7 make HTTP calls to existing APIs via HttpClient, avoiding duplication while providing consistent MCP interface. Agent performs crop rotation analysis using raw bed history + plant family data rather than pre-calculated violation detection. This keeps us flexible for evolving agent requirements without boxing ourselves in.
+  - Recommended planting window (start/end dates)
+  - Based on: scheduled task target dates + historical actual planting dates
+  - Statistics: average date, earliest, latest dates from history
+- **Query Approach:**
+  - **PRIMARY:** Query WorkLog collection filtered by Reason + UserProfileId
+    - Get all EventDateTime values for actual completed activities
+    - This is the authoritative source for "what actually happened"
+  - **SECONDARY:** Query PlantHarvestCycle.PlantCalendar array for scheduled dates
+    - PlantCalendar is the source of truth for planned schedules
+    - Contains StartDate, EndDate, TaskType for each scheduled activity
+    - Task generators create PlantTask records from these schedules
+  - **TERTIARY:** Query PlantTask collection for TargetDateStart (derived from PlantCalendar)
+  - **FALLBACK:** Query PlantHarvestCycle for SeedingDate/TransplantDate (summary fields, may be computed)
+  - Calculate: average date across all years, typical range, standard deviation
+  - Consider garden's LastFrostDate for outdoor planting recommendations
+  - Return confidence level based on number of data points
+  - **Note:** Distinguish between "when we planned" (PlantCalendar) vs "when we actually did it" (WorkLog)
+
+**Additional Supporting Tools:**
+
+`get_succession_planting_patterns`
+- Analyze crop rotation: what follows what in garden beds
+- Parameters: `gardenBedId` (optional), `minOccurrences` (int, default: 2)
+- Returns: Common plant succession patterns (tomatoes → garlic → beans)
+
+`get_plant_performance_summary`
+- Plant success metrics over years
+- Parameters: `plantName`, `gardenBedId` (optional)
+- Returns: Year-over-year yields, germination rates, days to harvest, notes
+
+**Important Note on Data Sources:**
+
+When querying for "when did we actually do X" vs "when was X scheduled", understand the relationship:
+
+**For Actual Completed Activities (what happened):**
+1. **WorkLog.EventDateTime** (AUTHORITATIVE) - User-logged actual activities with definitive dates
+2. **PlantTask.CompletedDateTime** - When tasks were marked complete in task system
+3. **PlantHarvestCycle summary dates** (SeedingDate, TransplantDate, etc.) - Computed or manually entered
+
+**For Planned/Scheduled Activities (what was planned):**
+1. **PlantHarvestCycle.PlantCalendar[]** (PRIMARY SOURCE) - Embedded schedule array with StartDate, EndDate, TaskType
+   - This is the master schedule that drives task generation
+   - **Generated from:** PlantGrowthInstruction templates + Garden weather dates
+     - GrowInstruction: "Start seeds 4 weeks before last frost"
+     - Garden.LastFrostDate: May 15, 2023
+     - Calculated PlantCalendar.StartDate: April 17, 2023
+   - Task generators (IndoorSawTaskGenerator, etc.) read PlantCalendar to create PlantTask records
+   - When schedules change, PlantScheduleUpdated events trigger task synchronization
+2. **PlantTask.TargetDateStart/End** - Task records derived from PlantCalendar schedules
+3. **PlantGrowthInstruction** (TEMPLATE) - Weather-relative timing rules (e.g., "4 weeks before last frost")
+   - Used to generate PlantCalendar when plant added to harvest
+   - Not specific to any year - defines relative timing pattern
+
+**Critical Synchronization Rule:**
+- PlantCalendar schedules and PlantTask records MUST stay synchronized
+- Updating task dates requires updating the corresponding PlantCalendar schedule
+- The system enforces this through domain events: `PlantScheduleUpdated` → Task generators update PlantTask records
+- See code: `PlantHarvestCycle.UpdatePlantSchedule()` → `PlantSchedule.Update()` → raises `PlantScheduleUpdated` event
+
+WorkLog is the single source of truth for actual activities because users log what they did when they did it. PlantCalendar is the source of truth for schedules/plans. GrowInstructions are templates that generate PlantCalendar schedules.
 
 **Tools will be added to this section as they are implemented.**
 
