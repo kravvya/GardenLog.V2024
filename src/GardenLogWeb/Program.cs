@@ -18,6 +18,8 @@ builder.Services.AddSingleton<ICacheService, CacheService>();
 builder.Services.AddSingleton<IMouseService, MouseService>();
 builder.Services.AddSingleton<IKeyService, KeyService>();
 
+builder.Services.AddScoped<IAccessTokenService, AccessTokenService>();
+
 builder.Services.AddScoped<IPlantService, PlantService>();
 
 builder.Services.AddScoped<IHarvestCycleService, HarvestCycleService>();
