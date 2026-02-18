@@ -88,24 +88,33 @@ This ensures user-level data isolation throughout the chain.
 
 ### Current Tools
 
-1. **get_plant_details** - Retrieves plant information from PlantCatalog API
-   - Parameter: `plantId` (required)
-  - Returns: Combined payload with `plant` metadata and `growInstructions` list
-2. **get_worklog_history** - Searches user-scoped work logs from PlantHarvest API
-  - Parameters: `startDate`, `endDate`, `reason`, `limit`
-  - Returns: WorkLog history ordered by event date
-3. **get_plant_harvest_cycles** - Searches user-scoped plant harvest cycles from PlantHarvest API
-  - Parameters: `plantId`, `harvestCycleId`, `startDate`, `endDate`, `minGerminationRate`, `limit`
-  - Returns: Plant harvest cycle records with optional calendar/layout data
-4. **get_garden_details** - Retrieves garden details from UserManagement API
-  - Parameters: `gardenId` or `gardenName`, `includeGardenBeds`
-  - Returns: Garden details including optional garden bed list
-5. **get_garden_bed_history** - Retrieves bed occupancy history from PlantHarvest API
-  - Parameters: `gardenId`, `gardenBedId`, `startDate`, `endDate`, `limit`
-  - Returns: Historical bed usage for rotation analysis
-6. **search_harvest_cycles** - Searches harvest cycles for the authenticated user
+1. **search_plants** - Searches plants by name from PlantCatalog API
+  - Parameters: `plantName`, `limit`
+  - Returns: Matching plant name records with `plantId`
+2. **get_plant_details** - Retrieves plant information from PlantCatalog API
+  - Parameters: `plantId` (required)
+  - Returns: Combined payload with `plant` metadata and `growInstructions`
+3. **get_current_harvest_cycle** - Resolves the active harvest cycle for the authenticated user
+  - Parameters: `gardenId` (optional), `asOfDate` (optional)
+  - Returns: Current harvest cycle where `startDate <= asOfDate` and `endDate` is not set
+4. **search_harvest_cycles** - Searches harvest cycles for the authenticated user
   - Parameters: `harvestCycleName`, `gardenId`, `year`, `startDate`, `endDate`, `limit`
   - Returns: Matching harvest cycles sorted by start date
+5. **get_harvest_cycle_plants** - Returns distinct plants in a harvest cycle
+  - Parameters: `harvestCycleId`, `includePlantHarvestCycles` (default `true`)
+  - Returns: One row per plant plus variety summary and optional full `plantHarvestCycles` (including `plantCalendar` dates)
+6. **get_plant_harvest_cycles** - Searches user-scoped plant harvest cycles from PlantHarvest API
+  - Parameters: `plantId`, `harvestCycleId`, `startDate`, `endDate`, `minGerminationRate`, `limit`
+  - Returns: Plant harvest cycle records with calendar/layout data
+7. **get_worklog_history** - Searches user-scoped work logs from PlantHarvest API
+  - Parameters: `plantId`, `startDate`, `endDate`, `reason`, `limit`
+  - Returns: WorkLog history ordered by event date
+8. **get_garden_details** - Retrieves garden details from UserManagement API
+  - Parameters: `gardenId` or `gardenName`, `includeGardenBeds`
+  - Returns: Garden details including optional garden bed list
+9. **get_garden_bed_history** - Retrieves bed occupancy history from PlantHarvest API
+  - Parameters: `gardenId`, `gardenBedId`, `startDate`, `endDate`, `limit`
+  - Returns: Historical bed usage for rotation analysis
 
 ## Authentication Pattern
 

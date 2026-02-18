@@ -67,6 +67,58 @@ The agent will analyze historical data to recommend date adjustments:
 - **Plant/GrowInstructions:** Original templates for comparison
 - **Garden:** Weather dates and location for microclimate patterns
 
+### MCP Tool Sequence: "When should I start planting [plant]?"
+
+Use this order for external-agent style planning questions (for example: "When should I seed onions?").
+
+1. **Resolve plant identity**
+   - Tool: `search_plants`
+   - Input: `plantName` text from user
+   - Output: canonical `plantId` (exact match preferred; contains fallback)
+
+2. **Resolve current seasonal context**
+   - Tool: `get_current_harvest_cycle`
+   - Input: optional `gardenId` (if known), optional `asOfDate`
+   - Rule: `StartDate <= asOfDate` and `EndDate == null`
+   - Output: current `harvestCycleId` (or null)
+
+3. **Get baseline grow instruction timing**
+   - Tool: `get_plant_details`
+   - Input: `plantId`
+   - Output: grow-instruction timing anchors (for example "10-12 weeks before last frost")
+
+4. **Get planned schedule dates from real cycles**
+   - Tool: `get_plant_harvest_cycles`
+   - Input: `plantId` (+ optional `harvestCycleId` from step 2)
+   - Output: `PlantCalendar` planned dates (`SowIndoors`, `TransplantOutside`, etc.) + cycle `notes`
+
+5. **Evaluate cycle notes for quality signals**
+   - Source: `get_plant_harvest_cycles` response
+   - Required check: read each cycle `notes` and classify as positive/neutral/negative for seeding outcomes
+   - Examples:
+     - Positive: strong germination, good bulb/plant size, strong yield
+     - Negative: poor germination, weak size/yield, known context issues (shade, bed conditions)
+   - Rule: do not use date frequency alone; weight recommendations toward dates with positive notes and flag dates tied to negative notes
+
+6. **Get historical actual dates**
+   - Tool: `get_worklog_history`
+   - Input: `plantId`, `reason` (for example `SowIndoors`), optional date range
+   - Output: actual event dates from prior seasons
+
+7. **Compose recommendation report**
+   - Planned: planned date(s) from `PlantCalendar`
+   - Historical: past actual dates from `WorkLog`
+   - Outcome quality: positive/negative signals from `PlantHarvestCycle.notes`
+   - Recommendation: date window + single suggested date
+   - Confidence: based on consistency, number of observations, and note quality signals
+
+**Output format target:**
+- Planned date
+- Past dates (last 2-3 seasons)
+- Notes summary (positive vs negative outcomes tied to those dates)
+- Recommended date window + recommended single date
+- Short rationale (instruction baseline + historical pattern + note quality)
+
 **Example Recommendation:**
 ```
 🤖 Agent Suggestion: Optimize Tomato Planting
@@ -86,6 +138,64 @@ Historical outcomes when planted earlier:
 
 Do you want to adjust the schedule? [Yes] [Not this year] [Never for this plant]
 ```
+
+### MCP Tool Sequence: "For every plant in this cycle, when should we seed, and where does it differ from plan?"
+
+Use this sequence for full-cycle planning questions (for example: "go through every plant in this harvest cycle and calculate when we should seed it; if different from planned seed date, call it out").
+
+1. **Resolve current cycle**
+   - Tool: `get_current_harvest_cycle`
+   - Output: active `harvestCycleId`, `gardenId`, cycle metadata
+
+2. **Enumerate plants present in the active cycle**
+   - Tool: `get_harvest_cycle_plants`
+   - Input: `harvestCycleId`
+   - Output: distinct cycle plants (canonical `plantId` + `plantName`, optional variety summary)
+
+3. **Extract planned seeding dates for each cycle plant**
+   - Tool: `get_plant_harvest_cycles`
+   - Input: `plantId` + active `harvestCycleId`
+   - Output: `PlantCalendar` seeding task(s): `SowIndoors` and/or `SowOutside`
+   - Rule: normalize to a representative planned seeding date (single date or window start)
+
+4. **Fetch historical actual seeding dates**
+   - Tool: `get_worklog_history`
+   - Input: `plantId`, `reason` in (`SowIndoors`, `SowOutside`)
+   - Output: historical actual seeding event dates
+   - Rule: use most relevant seasons (typically last 2-3) and de-duplicate same-day multi-variety events
+
+5. **Derive recommendation date per plant**
+   - If sufficient history: compute representative date (median/cluster center) by sow type
+   - If sparse/no history: fallback to planned date
+   - Optionally weight by cycle note quality (positive/neutral/negative) when available
+
+6. **Compare recommendation vs plan**
+   - Compute day delta: `recommendedDate - plannedDate`
+   - Mark status:
+     - `Match` when delta is within tolerance (for example ±2 days)
+     - `Different` otherwise, with signed day difference
+
+7. **Return actionable full-cycle report**
+   - One row per plant with:
+     - plant name
+     - planned seed date/window
+     - recommended seed date
+     - status (`Match` / `Different`)
+     - short rationale (history volume + consistency + note quality)
+
+**Output format target (full-cycle):**
+- Plant
+- Planned seed date (current cycle)
+- Recommended seed date
+- Difference (days)
+- Status (Match / Different)
+- Rationale (1 line)
+
+**Operational guardrails:**
+- Keep MCP-only access pattern (no direct datastore reads from MCP layer)
+- Batch calls in parallel where possible
+- Preserve deterministic fallback to planned date when history is insufficient
+- Surface confidence explicitly for sparse-history plants
 
 **Benefits:**
 - **Personalized schedules** based on actual garden microclimate and practices
@@ -199,6 +309,22 @@ Better bed options:
 1. **Plant Family Classification:** Add PlantFamily enum or property to Plant catalog (Brassica, Solanaceae, Cucurbit, Legume, Allium, etc.)
 2. **Outcome Metrics:** Ensure PlantHarvestCycle consistently captures GerminationRate, yield data, quality ratings
 3. **Success Indicators:** Define what constitutes "successful" harvest (thresholds for metrics)
+
+### MCP Tooling Gaps (Speed Improvements)
+
+The following MCP additions would further reduce call volume and response time for full-cycle planning:
+
+1. **`get_harvest_cycle_seed_plan(harvestCycleId)`**
+   - Returns planned seeding tasks for all plants in cycle
+   - Includes normalized planned seed date/window per plant
+
+2. **`get_harvest_cycle_seed_history(harvestCycleId | plantIds[])`**
+   - Returns historical sow events pre-aggregated by plant and year
+   - Includes `SowIndoors`/`SowOutside` split and representative date stats
+
+3. **`get_cycle_seed_recommendations(harvestCycleId)` (optional server-side synthesis)**
+   - Domain API computes recommendation + delta vs plan and confidence
+   - Keeps MCP thin while reducing client orchestration complexity
 
 ### Agent Architecture
 
