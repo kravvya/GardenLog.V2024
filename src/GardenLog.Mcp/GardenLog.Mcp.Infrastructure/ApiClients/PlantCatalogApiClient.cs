@@ -12,6 +12,8 @@ public record PlantCatalogPlantDetails
 public interface IPlantCatalogApiClient
 {
     Task<PlantCatalogPlantDetails?> GetPlantDetails(string plantId);
+    Task<string?> GetPlantIdByName(string plantName);
+    Task<IReadOnlyCollection<PlantNameOnlyViewModel>> GetAllPlantNames();
 }
 
 public class PlantCatalogApiClient : IPlantCatalogApiClient
@@ -82,5 +84,36 @@ public class PlantCatalogApiClient : IPlantCatalogApiClient
         }
 
         return details;
+    }
+
+    public async Task<string?> GetPlantIdByName(string plantName)
+    {
+        if (string.IsNullOrWhiteSpace(plantName))
+        {
+            return null;
+        }
+
+        var route = Routes.GetIdByPlantName.Replace("{name}", Uri.EscapeDataString(plantName));
+        var response = await _httpClient.ApiGetAsync<string>(route);
+
+        if (!response.IsSuccess || string.IsNullOrWhiteSpace(response.Response))
+        {
+            return null;
+        }
+
+        return response.Response;
+    }
+
+    public async Task<IReadOnlyCollection<PlantNameOnlyViewModel>> GetAllPlantNames()
+    {
+        var response = await _httpClient.ApiGetAsync<List<PlantNameOnlyViewModel>>(Routes.GetAllPlantNames);
+
+        if (!response.IsSuccess || response.Response == null)
+        {
+            _logger.LogError("Unable to get plant names");
+            return Array.Empty<PlantNameOnlyViewModel>();
+        }
+
+        return response.Response;
     }
 }

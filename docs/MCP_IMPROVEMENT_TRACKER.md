@@ -20,8 +20,9 @@ Purpose: Track MCP improvements in one place so we can implement in order and ch
 - [x] Add/adjust integration tests for expected non-empty results.
 - [x] Fix implementation and validate via local build.
 - [x] Enforce API-first behavior in MCP (`plantId` required, no in-memory fallback).
-- [ ] Validate via deployed MCP tool call.
+- [x] Validate via deployed MCP tool call.
 - [ ] Confirm backward compatibility for existing parameters.
+- Note: After Harvest API redeploy, deployed MCP returns onion records correctly and required `plantId` enforcement remains active.
 
 ### B. `get_worklog_history` broad queries return empty unexpectedly
 
@@ -32,7 +33,8 @@ Purpose: Track MCP improvements in one place so we can implement in order and ch
 - [x] Add server-side `plantId` filter to WorkLog search.
 - [x] Make `plantId` required end-to-end for WorkLog search path.
 - [x] Add test coverage for broad and filtered queries.
-- [ ] Validate from deployed MCP end-to-end.
+- [x] Validate from deployed MCP end-to-end.
+- Note: After Harvest API redeploy, deployed MCP returns onion worklogs correctly and required `plantId` enforcement remains active.
 
 ### C. `get_garden_details` initial unscoped call fails with unclear error
 
@@ -42,6 +44,7 @@ Purpose: Track MCP improvements in one place so we can implement in order and ch
 - [x] Implement single-garden auto-resolution for unscoped calls.
 - [ ] Add tests for error semantics and success path.
 - [ ] Validate deployed MCP caller sees actionable error text.
+- Note: Deployed MCP unscoped call now succeeds (single garden auto-resolution observed). Error-message path still needs explicit multi/zero-garden validation.
 
 ### D. Oversized payload friction
 
