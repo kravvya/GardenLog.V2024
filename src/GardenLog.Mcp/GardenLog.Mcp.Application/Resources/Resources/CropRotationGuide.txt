@@ -1,0 +1,182 @@
+# Crop Rotation Validation - Workflow Guide
+
+## Purpose
+Validate crop rotation for plants assigned to beds in the current harvest cycle:
+- Detect same plant in same bed within 3 years (critical violation)
+- Detect same plant family in same bed within 3 years (warning)
+- Provide risk assessment and recommendations
+
+**Scope:** This guide only analyzes plants that are already assigned to beds. If plant is not assigned to a bed, skip analysis.
+
+## Plant Family Relationships
+
+### Major Families to Track:
+- **Brassicas (Cabbage family):** Broccoli, Cauliflower, Cabbage, Brussels Sprouts, Kale, Mustard, Turnip, Rutabaga, Radish, Kohlrabi
+- **Solanaceae (Nightshade family):** Tomatoes, Peppers, Eggplant, Potatoes, Tomatillos
+- **Cucurbits:** Cucumbers, Squash (all types), Zucchini, Melons, Pumpkins, Gourds
+- **Legumes:** Beans (all types), Peas (all types), Lentils, Peanuts
+- **Alliums:** Onions, Garlic, Leeks, Shallots, Scallions, Chives
+- **Apiaceae (Carrot family):** Carrots, Parsnips, Celery, Parsley, Cilantro, Dill, Fennel
+- **Chenopodiaceae:** Beets, Chard, Spinach
+- **Asteraceae:** Lettuce, Endive, Artichoke
+
+**Note:** Plant family classification may need to be added to PlantCatalog domain model. Currently inferred from plant names/types.
+
+## Tool Call Sequence
+
+### Step 1: Resolve Plant Identity
+**Tool:** `search_plants`
+- **Input:** `plantName` (from user question)
+- **Output:** `plantId`, `plantName`, `type` (e.g., Vegetable)
+- **Extract:** Plant family from name/type (see mapping above)
+
+### Step 2: Resolve Current Garden Context
+**Tool:** `get_current_harvest_cycle`
+- **Output:** `harvestCycleId`, `gardenId`
+- **Use:** To identify which garden we're analyzing
+
+**Alternate:** If user specified garden by name:
+**Tool:** `get_garden_details`
+- **Input:** `gardenName`
+- **Output:** `gardenId`, `gardenBeds` (if `includeGardenBeds: true`)
+
+### Step 3: Identify Target Bed from Current Plan
+**Tool:** `get_plant_harvest_cycles`
+- **Input:** `plantId` (from Step 1), `harvestCycleId` (from Step 2)
+- **Output:** Plant harvest cycle records with `gardenBedLayout` array
+- **Extract:** `gardenBedId` where plant is currently assigned/planned
+- **Rule:** This shows where the plant is planned to grow in the current cycle
+
+**If No Bed Assignment:**
+- Plant is in cycle but not assigned to a bed yet (gardenBedLayout is empty)
+- **Action:** Stop analysis - inform user that plant needs to be assigned to a bed first
+- Example message: "Plant not assigned to a bed yet. Assign to a bed to analyze rotation."
+
+### Step 4: Get Bed History (3-Year Lookback)
+**Tool:** `get_garden_bed_history`
+- **Input:** `gardenId`, `gardenBedId`, `startDate` (3 years ago), `endDate` (today)
+- **Output:** Array of `GardenBedPlantHarvestCycleViewModel` records
+- **Available Fields:**
+  - `plantId`, `plantName`
+  - `plantVarietyId`, `plantVarietyName`
+  - `harvestCycleId` (GUID, not name)
+  - `startDate` - bed occupancy start
+  - `endDate` - bed occupancy end
+  - `gardenBedId`, `gardenId`
+  - `numberOfPlants`, layout coordinates
+- **Extract:** List of plants grown in this bed with occupancy periods
+- **Note:** Does NOT include `harvestCycleName` - only GUID. To display cycle name in report, would need to call `get_current_harvest_cycle` or similar for each unique harvestCycleId (performance consideration)
+
+### Step 5: Classify Plant Families (Historical + Target)
+For each plant from Step 4 history + target plant from Step 1:
+- Determine plant family using name/type matching
+- **Implementation note:** May need helper function or lookup table
+- Group by year and family
+
+### Step 6: Detect Rotation Violations
+**Check 1 - Same Plant (Critical):**
+- If target plant appears in bed history within last 3 years
+- **Severity:** Critical (Red)
+- **Message:** "Same plant in same bed within 3 years - high disease/pest risk"
+
+**Check 2 - Same Family (Warning):**
+- If target plant family appears in bed history within last 3 years
+- But NOT same exact plant
+- **Severity:** Warning (Yellow)
+- **Message:** "Same family in same bed within 3 years - nutrient depletion risk"
+
+**Check 3 - Good Rotation (Info):**
+- If target plant family NOT in bed history for 3+ years
+- **Severity:** Info (Green)
+- **Message:** "Good rotation - this bed is ready for [plant family]"
+
+### Step 7: Generate Rotation Report
+```
+## Crop Rotation Analysis: [Plant] in [Bed Name]
+
+⚠️ **Rotation Warning Detected**
+
+**Plant:** Cauliflower (Brassica family)
+**Bed:** In Ground Right 1
+**Current Cycle:** 2026
+
+**History for this bed:**
+- Broccoli (Brassica family, occupied 2024-05-15 to 2024-09-20) ← SAME FAMILY
+- Cabbage (Brassica family, occupied 2023-05-10 to 2023-09-15) ← SAME FAMILY
+- Tomatoes (Nightshade family, occupied 2022-05-12 to 2022-10-01)
+
+**Risk:** Brassicas in same bed 3 years in a row
+
+**Problems:**
+- Depleted calcium and other nutrients required by Brassicas
+- Clubroot disease buildup in soil
+- Increased flea beetle and cabbage moth pressure
+
+**Recommendations:**
+1. Amend soil heavily with lime/calcium before planting to address depletion
+2. Monitor closely for disease symptoms (clubroot, flea beetles)
+3. Consider moving to a different bed for better rotation
+```
+
+## Companion Planting Notes (Bonus)
+
+If data supports it, can also mention beneficial companions:
+- **Legumes before heavy feeders:** Beans/peas replenish nitrogen → good before tomatoes/peppers/brassicas
+- **Alliums deter pests:** Onions/garlic before susceptible crops
+- **Avoid back-to-back heavy feeders:** Tomatoes after corn/squash depletes soil
+
+**Example enhancement:**
+```
+✅ **In Ground Left 1** - Last: Beans (Legumes)
+   - Excellent: Legumes replenished nitrogen, perfect for heavy-feeding tomatoes
+```
+
+## Edge Cases
+
+### No Bed History Available:
+- May be a new bed or system just implemented
+- Status: "Insufficient history - no rotation concerns detected"
+- Proceed with planting
+
+### Historical Data Incomplete:
+- Bed history only goes back 1-2 years
+- Note limited confidence: "Based on 2 years of data (recommend 3+ for rotation)"
+
+### Multiple Locations for Target Plant:
+- User has same plant in multiple beds
+- Analyze each bed separately
+- Show best and worst placements
+
+### User Asking Generally:
+- "Should I rotate my tomatoes?" (no bed specified)
+- Show ALL current/planned tomato locations
+- Highlight any with rotation violations
+
+### Family Classification Unknown:
+- Plant not in known family mapping
+- Treat as "Unknown family"
+- Can't validate family-level rotation (only exact plant match)
+
+## Output Tone
+
+### Critical Violations:
+- Strong, clear warnings (⚠️ or ❌)
+- Explain specific disease/pest risks
+- Provide actionable alternatives
+
+### Acceptable Gaps:
+- Informative, not alarming
+- Note "acceptable but not ideal"
+
+### Good Rotations:
+- Positive reinforcement (✅)
+- Brief explanation of benefits
+
+## Implementation Notes
+
+**Challenge:** Plant family classification not currently in data model
+**Workaround:** Infer from plant name/type (Tomatoes → Nightshade)
+**Future Enhancement:** Add `plantFamily` enum to PlantCatalog.Plant domain model
+
+**Data Gap:** `get_garden_bed_history` is the key tool - must return plantId, plantName, year
+**Verify:** Tool returns necessary fields before implementing full workflow

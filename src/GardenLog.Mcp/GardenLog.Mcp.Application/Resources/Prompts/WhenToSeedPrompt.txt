@@ -1,0 +1,52 @@
+# Task: Analyze When to Seed {plantName}
+
+## Objective
+Provide a comprehensive seeding date recommendation for {plantName} by:
+1. Finding the plant in the catalog
+2. Analyzing the current harvest cycle's planned dates
+3. Reviewing historical actual seeding dates
+4. Evaluating outcome quality from past cycles
+5. Generating a date recommendation with confidence level
+
+## Workflow Reference
+Follow the complete 7-step workflow defined in:
+**Resource:** gardenlog://guides/when-to-seed
+
+## Key Requirements
+
+### Data Analysis:
+- Do NOT rely solely on date frequency - evaluate outcome quality signals
+- Prioritize dates with positive outcome notes (strong germination, good size, high yield)
+- Flag or avoid dates with negative outcome notes (poor germination, small size, known issues)
+- If outcomes are mixed, explain the context (e.g., "worked in full sun, not in shade")
+
+### Output Format:
+Provide a structured response with:
+1. **Planned Date** - from current cycle schedule
+2. **Historical Actual Dates** - last 2-3 seasons with day differences
+3. **Outcome Quality Analysis** - summarize notes for each season (positive/negative/neutral)
+4. **Recommended Date** - single date or narrow window
+5. **Confidence Level** - High/Medium/Low based on data consistency and quality
+6. **Rationale** - 1-2 sentences explaining the recommendation
+
+### Edge Cases to Handle:
+- No active harvest cycle - show baseline timing and historical pattern
+- No historical data - note "first time growing" and suggest following planned date
+- Multiple varieties with different dates - provide breakdown or ask for clarification
+- Conflicting quality signals - call out explicitly with context
+
+## Expected Tool Calls
+You will need to call these MCP tools in sequence:
+1. search_plants (plantName="{plantName}")
+2. get_current_harvest_cycle
+3. get_plant_details (plantId from step 1)
+4. get_plant_harvest_cycles (plantId, harvestCycleId from step 2)
+5. get_worklog_history (plantId, reason="SowIndoors" or "SowOutside")
+
+Refer to the resource guide for detailed parameters and data extraction patterns.
+
+## Current Context
+- Today's Date: Use current date for cycle context
+- Plant: {plantName}
+
+Begin the analysis now.

@@ -47,9 +47,11 @@ try
     // Add healthchecks
     builder.Services.AddBasicHealthChecks();
 
-    // Configure MCP Server with auto-discovery of [McpServerTool] methods
+    // Configure MCP Server with auto-discovery of [McpServerTool] methods, resources, and prompts
     builder.Services.AddMcpServer()
     .WithToolsFromAssembly(typeof(GetPlantDetailsTool).Assembly)
+    .WithResourcesFromAssembly(typeof(GetPlantDetailsTool).Assembly)
+    .WithPromptsFromAssembly(typeof(GetPlantDetailsTool).Assembly)
      .WithHttpTransport(x =>
               {
                   // use stateless mode to prevent issues when running in multiple replicas behind a load balancer

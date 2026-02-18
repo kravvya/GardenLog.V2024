@@ -1,0 +1,201 @@
+# Full Cycle Seed Plan Analysis - Workflow Guide
+
+## Purpose
+Answer questions like "For every plant in this cycle, when should we seed it?" by:
+- Enumerating all plants in the active harvest cycle
+- Calculating recommended seeding dates based on historical data
+- Comparing recommendations against planned dates
+- Highlighting discrepancies that need attention
+
+## Tool Call Sequence
+
+### Step 1: Resolve Current Cycle
+**Tool:** `get_current_harvest_cycle`
+- **Input:** Optional `asOfDate` (defaults to today)
+- **Output:** `harvestCycleId`, `gardenId`, `harvestCycleName`, cycle date range
+- **Edge Case:** If null, no active cycle - cannot proceed with this workflow
+
+### Step 2: Enumerate Plants in Active Cycle
+**Tool:** `get_harvest_cycle_plants`
+- **Input:** `harvestCycleId` (from Step 1)
+- **Optional:** Set `includePlantVarieties: false` for faster response (excludes full PlantHarvestCycle details)
+- **Output:** Array of `HarvestCyclePlantToolResult` with:
+  - `plantId`, `plantName`
+  - `plantGrowthInstructionId`, `plantGrowthInstructionName`
+  - `varietyCount`, `varietyNames` array
+  - `schedules` - all PlantScheduleViewModel for this plant
+  - `plantVarieties` - full PlantHarvestCycleViewModel array (if includePlantVarieties=true)
+- **Extract:** List of unique plants (grouped by plantId + growthInstructionId)
+
+### Step 3: For Each Plant - Get Planned Seeding Dates
+**Tool:** `get_plant_harvest_cycles`
+- **Input:** `plantId` + active `harvestCycleId`
+- **Output:** Array of plant harvest cycles (one per variety) with `plantCalendar`
+- **Extract:** Tasks where `taskType == 'SowIndoors'` or `'SowOutside'`
+- **Rule:** Normalize to representative planned date:
+  - Use `startDate` of seeding task
+  - If date range (`startDate` to `endDate`), use `startDate` as primary
+  - Store variety name (`plantVarietyName`) for multi-variety plants
+
+### Step 4: For Each Plant - Fetch Historical Seeding Dates
+**Tool:** `get_worklog_history`
+- **Input:** `plantId`, `reason` in (`'SowIndoors'`, `'SowOutside'`)
+- **Optional:** Limit to recent seasons (e.g., `startDate >= 3 years ago`)
+- **Output:** Array of worklog entries with `eventDateTime`
+- **Extract:** Last 2-3 seasons
+- **Deduplication:** Multiple varieties seeded same day = single event
+
+### Step 5: For Each Plant - Evaluate Cycle Note Quality
+**Source:** `notes` field from `get_plant_harvest_cycles` results (Step 3)
+- **Classify each cycle as:** Positive / Neutral / Negative
+- **Use signals from quality guide:**
+  - Positive: strong germination, good size/yield, positive language
+  - Negative: poor germination, small size, bed/location issues
+  - Neutral: no notes or generic
+
+### Step 6: For Each Plant - Derive Recommendation
+**If sufficient history (2+ seasons):**
+- Weight toward dates with positive outcomes
+- Avoid dates with negative outcomes (unless context-specific like shade)
+- Calculate representative date:
+  - If consistent: median or most common date
+  - If variable: provide date range
+
+**If sparse/no history (0-1 seasons):**
+- Fallback to planned date from Step 3
+- Flag as "Insufficient history"
+
+### Step 7: For Each Plant - Compare Recommendation vs Plan
+**Calculate delta:**
+```
+delta_days = recommended_date - planned_date
+```
+
+**Classify status:**
+- **Match:** `abs(delta_days) <= 2` (within tolerance)
+- **Different:** `abs(delta_days) > 2`
+  - **Earlier:** negative delta (e.g., -5 days)
+  - **Later:** positive delta (e.g., +3 days)
+
+### Step 8: Generate Full-Cycle Report
+**Format:** Tabular output showing all plants
+
+```
+## Seed Plan Analysis for [Harvest Cycle Name]
+
+| Plant | Planned Date | Recommended Date | Difference | Status | Rationale |
+|-------|-------------|------------------|------------|--------|-----------|
+| Tomatoes | Mar 15 | Mar 20 | +5 days | Different | 3 years: Mar 18-22, 90%+ germ |
+| Peppers | Mar 15 | Mar 15 | 0 days | Match | Consistent history |
+| Lettuce | Apr 1 | Apr 1 | 0 days | Match | Insufficient history (1 year) |
+| Onions | Feb 27 | Feb 25 | -2 days | Match | 3 years: Feb 24-26, 100% germ |
+
+**Summary:**
+- Total plants: 12
+- Matches (±2 days): 9
+- Need adjustment: 3 (Tomatoes +5d, Cucumbers +7d, Squash -4d)
+
+**Plants needing attention:**
+1. **Tomatoes:** Historical success at Mar 20 vs planned Mar 15 → Consider delaying 5 days
+2. **Cucumbers:** Seeded 7 days later in past 2 years with better germination
+3. **Squash:** Earlier seeding (4 days) showed stronger plants
+```
+
+## Rationale Column Guidelines
+
+**Keep it concise (1 line):**
+- State data volume: "3 years @ Feb 24-26" or "2 seasons"
+- Mention outcome quality: "100% germ" or "strong yields"
+- Flag if insufficient history: "First time" or "1 year only"
+- Note context issues: "Avoid shade beds"
+
+**Examples:**
+- "3 years consistent @ Mar 20-22, 95%+ germination"
+- "2 seasons with excellent bulb size"
+- "Insufficient history - follow planned date"
+- "1 year only, poor outcome (shade issue)"
+
+## Operational Guardrails
+
+### Parallelization:
+- **Step 2:** Single call (enumerate plants)
+- **Steps 3-4:** Can parallelize per-plant calls if API supports it
+- Consider batching to avoid rate limits
+
+### Performance:
+- If cycle has 20+ plants, consider progress updates
+- Use `includePlantHarvestCycles: false` in Step 2 to reduce payload
+- Fetch only recent history (3 years max) in Step 4
+
+### Sparse Data Handling:
+- **First-time plants:** Flag as "Insufficient history - follow plan"
+- **Single season:** Note low confidence, still show the date
+- **No planned date:** Should not happen, but handle gracefully ("No schedule found")
+
+### Multi-Variety Handling:
+- If plant has 3+ varieties with SAME seeding date → group as one row
+- If varieties have DIFFERENT dates → separate rows or note variance: "3 varieties: Feb 20-28"
+
+## Edge Cases
+
+### Plant Not Yet Scheduled:
+- Appears in cycle but no `plantCalendar` entry
+- Status: "Not scheduled"
+- Rationale: "Add to schedule"
+
+### Historical Data Shows Major Shift:
+- E.g., Planned = Mar 1, Historical avg = Apr 1 (+31 days)
+- Flag this as "Significant difference - verify grow instructions"
+
+### Negative Outcomes Dominate:
+- If 2+ seasons with negative notes
+- Status: "Review"
+- Rationale: "Poor outcomes historically - consider skipping or changing variety"
+
+### Current Date Past Planned Date:
+- If today > planned date, mark as "Overdue" or "In progress"
+- Check if already seeded (look at worklog for current cycle)
+
+## Example Full Report
+
+**Question:** "For every plant in this cycle, calculate when we should seed it. Flag where it differs from the plan."
+
+**Response:**
+```
+## Seed Plan Analysis for Homestead 2026 Plan
+
+**Analysis Date:** February 18, 2026
+**Cycle:** Homestead 2026 Plan at Steve's Garden
+**Total Plants:** 15
+
+### Summary
+- ✅ Matches (±2 days): 12 plants
+- ⚠️ Need adjustment: 3 plants
+
+### All Plants
+
+| Plant | Planned Seed | Recommended | Difference | Status | Rationale |
+|-------|-------------|-------------|------------|--------|-----------|
+| Onions | Feb 27 | Feb 25 | -2 days | Match | 3yrs @ Feb 24-26, 100% germ |
+| Tomatoes | Mar 15 | Mar 20 | +5 days | Different | 3yrs @ Mar 18-22, 92%+ germ |
+| Peppers | Mar 15 | Mar 15 | 0 days | Match | 2yrs consistent, excellent |
+| Lettuce | Apr 1 | Apr 1 | 0 days | Match | 1yr only - follow plan |
+| Cucumbers | Apr 15 | Apr 22 | +7 days | Different | 2yrs later = better germ |
+| [... more plants ...]
+
+### Plants Needing Attention
+
+**1. Tomatoes (+5 days adjustment recommended)**
+- Planned: March 15
+- Recommended: March 20
+- History: Successful starts on Mar 18, 20, 22 with 90%+ germination
+- Action: Consider delaying to Mar 20
+
+**2. Cucumbers (+7 days adjustment recommended)**
+- Planned: April 15  
+- Recommended: April 22
+- History: Apr 22-24 seeding showed 95% germination vs 70% at Apr 15 in 2024
+- Action: Delay to Apr 22 for soil warmth
+
+**3. Validation OK - No changes needed for remaining 13 plants**
+```

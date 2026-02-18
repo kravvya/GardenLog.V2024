@@ -1,0 +1,150 @@
+# When to Seed [Plant] - Workflow Guide
+
+## Purpose
+Answer questions like "When should I seed tomatoes?" by analyzing:
+- Baseline grow instruction timing
+- Planned dates from current cycle
+- Historical actual seeding dates
+- Outcome quality signals from cycle notes
+
+## Tool Call Sequence
+
+### Step 1: Resolve Plant Identity
+**Tool:** `search_plants`
+- **Input:** `plantName` (text from user question)
+- **Output:** canonical `plantId` 
+- **Handling:** Prefer exact match; use "contains" fallback if needed
+
+### Step 2: Resolve Current Harvest Cycle
+**Tool:** `get_current_harvest_cycle`
+- **Input:** `asOfDate` (optional, defaults to today)
+- **Rule:** Returns cycle where `startDate <= asOfDate` and `endDate == null`
+- **Output:** `harvestCycleId`, `gardenId`, cycle metadata
+- **Edge Case:** If null, user has no active cycle - mention this in response
+
+### Step 3: Get Baseline Grow Instructions
+**Tool:** `get_plant_details`
+- **Input:** `plantId` (from Step 1)
+- **Output:** `growInstructions` array with timing anchors
+- **Extract:** Look for `startSeedAheadOfWeatherCondition`, `startSeedWeeksAheadOfWeatherCondition`
+- **Example:** "10-12 weeks before last frost"
+
+### Step 4: Get Planned Schedule Dates
+**Tool:** `get_plant_harvest_cycles`
+- **Input:** `plantId`, optionally `harvestCycleId` (from Step 2)
+- **Output:** `plantCalendar` array with task dates
+- **Extract:** Find tasks where `taskType == 'SowIndoors'` or `taskType == 'SowOutside'`
+- **Format:** `startDate` is the planned seeding date
+- **Multiple Varieties:** May return multiple cycles (one per variety) - identify by `plantVarietyName`
+
+### Step 5: Evaluate Cycle Notes for Quality Signals
+**Source:** `notes` field from Step 4 results
+**Critical:** Do NOT rely on date frequency alone - evaluate outcome quality
+
+**Positive Signals** (prioritize these dates):
+- Strong/high/excellent germination
+- Good/large bulb or plant size
+- Strong/high yield or harvest
+- Positive outcome language
+
+**Negative Signals** (flag/avoid these dates):
+- Poor/low germination
+- Small/tiny/weak size
+- Context issues: shade, bed conditions, pests
+- Negative outcome language
+
+**Neutral:**
+- No notes or generic notes
+- Use date with caution, lower confidence
+
+### Step 6: Get Historical Actual Seeding Dates
+**Tool:** `get_worklog_history`
+- **Input:** `plantId`, `reason` (use `'SowIndoors'` or `'SowOutside'` based on grow instruction)
+- **Optional:** `startDate`/`endDate` to limit to recent seasons (e.g., last 3 years)
+- **Output:** `eventDateTime` = actual seeding dates
+- **Extract:** Last 2-3 seasons for pattern analysis
+- **Deduplication:** Same day + multiple varieties = count as one event
+
+### Step 7: Compose Recommendation Report
+Generate response with:
+
+#### Format:
+```
+**Planned Date:** [Date from Step 4 plantCalendar]
+**Historical Actual Dates:**
+- [Year]: [Date] ([Days difference from planned])
+- [Year]: [Date] ([Days difference from planned])
+
+**Outcome Quality Analysis:**
+- [Year] ([Date]): [Outcome summary from notes]
+- [Year] ([Date]): [Outcome summary from notes]
+
+**Recommended Date:** [Calculated recommendation]
+**Confidence:** [High/Medium/Low based on data consistency and quality]
+
+**Rationale:** [1-2 sentences explaining the recommendation based on:
+- Grow instruction baseline
+- Historical pattern (consistency across years)
+- Note quality signals (positive vs negative outcomes)
+- Any relevant warnings]
+```
+
+## Recommendation Logic
+
+### Date Calculation:
+1. **With Quality Notes:** Weight toward dates with positive outcomes, avoid negative ones
+2. **Multiple Positive Results:** Use median or cluster center of successful dates
+3. **Sparse History:** Fallback to planned date from Step 4
+4. **No Active Cycle:** Show baseline timing from grow instructions + mention planning future cycle
+
+### Confidence Levels:
+- **High:** 3+ seasons with consistent dates AND positive outcomes
+- **Medium:** 2 seasons OR mixed outcomes OR some negative signals
+- **Low:** 1 season only OR inconsistent dates OR negative outcomes dominate
+
+## Edge Cases
+
+### No Current Cycle:
+- Still provide historical analysis
+- Show baseline timing from grow instructions
+- Suggest: "For your next cycle, consider..."
+
+### No Historical Data:
+- Use planned date from current cycle (if exists)
+- Reference baseline grow instruction timing
+- Note: "First time growing this plant - follow planned schedule"
+
+### Conflicting Data:
+- If positive outcomes at one date AND negative at another, call this out explicitly
+- Example: "Early seeding (Feb 24) worked well in sunny beds, but not in shade"
+
+### Multiple Varieties:
+- If user asked generally ("onions") but has multiple varieties with different dates:
+  - Provide date range covering all varieties
+  - OR ask user to specify variety
+  - OR provide variety-specific breakdown
+
+## Example Output
+
+**Question:** "When should I seed onions?"
+
+**Response:**
+```
+**Planned Date:** February 27, 2026 (current cycle)
+
+**Historical Actual Dates:**
+- 2025: February 24 (3 days early)
+- 2024: February 25-26 (2-3 days early)
+- 2023: February 26 (1 day early)
+
+**Outcome Quality Analysis:**
+- 2023 (Feb 26): 100% germination → "Huge sweet onion" (Ailsa Craig), "Lots of great size onions" (Red Mountain) ✅
+- 2024 (Feb 25-26): 100% germination, successful harvests ✅
+- 2025 (Feb 24): 100% germination. Note: Small bulbs due to partial shade location (not timing issue) ⚠️
+
+**Recommended Date:** February 24-26, 2026
+**Optimal Single Date:** February 25, 2026
+**Confidence:** High (3 consistent seasons with positive outcomes)
+
+**Rationale:** Your historical pattern shows successful seeding 2-3 days before the planned date. Best outcomes occurred when seeded Feb 25-26. The 2025 small bulb issue was due to bed placement (shade), not timing. Ensure full sun location for optimal bulb development.
+```
