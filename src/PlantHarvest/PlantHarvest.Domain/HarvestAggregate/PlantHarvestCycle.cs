@@ -5,7 +5,6 @@ namespace PlantHarvest.Domain.HarvestAggregate;
 
 public class PlantHarvestCycle : BaseEntity, IEntity
 {
-    public string UserProfileId { get; private set; } = string.Empty;
     public string PlantId { get; private set; } = string.Empty;
     public string PlantName { get; private set; } = string.Empty;
 
@@ -38,6 +37,7 @@ public class PlantHarvestCycle : BaseEntity, IEntity
     public int? DesiredNumberOfPlants { get; private set; }
     public int? SpacingInInches { get; private set; }
     public double? PlantsPerFoot { get; private set; }
+    public string UserProfileId { get; private set; } = string.Empty;
 
     private readonly List<PlantSchedule> _plantCalendar = new();
     public IReadOnlyCollection<PlantSchedule> PlantCalendar => _plantCalendar.AsReadOnly();
