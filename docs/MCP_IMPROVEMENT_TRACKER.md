@@ -17,7 +17,7 @@ Purpose: Track MCP improvements in one place so we can implement in order and ch
 - [x] Reproduce with known onion plant ID (`75579cc4-6889-4e30-9702-b10a38f7f15c`) and user context.
 - [x] Verify API contract alignment (`plantId` vs `plantHarvestCycleId` vs related filters).
 - [x] Inspect PlantHarvest search route mapping and query handler filtering.
-- [ ] Add/adjust integration tests for expected non-empty results.
+- [x] Add/adjust integration tests for expected non-empty results.
 - [x] Fix implementation and validate via local build.
 - [x] Enforce API-first behavior in MCP (`plantId` required, no in-memory fallback).
 - [ ] Validate via deployed MCP tool call.
@@ -31,7 +31,7 @@ Purpose: Track MCP improvements in one place so we can implement in order and ch
 - [x] Fix query logic and/or projection mapping.
 - [x] Add server-side `plantId` filter to WorkLog search.
 - [x] Make `plantId` required end-to-end for WorkLog search path.
-- [ ] Add test coverage for broad and filtered queries.
+- [x] Add test coverage for broad and filtered queries.
 - [ ] Validate from deployed MCP end-to-end.
 
 ### C. `get_garden_details` initial unscoped call fails with unclear error
@@ -165,6 +165,7 @@ This is the default plan the agent should follow using exposed tools.
 - [x] Phase 1: Fix bug A (`get_plant_harvest_cycles`) - code changes complete
 - [x] Phase 2: Fix bug B (`get_worklog_history`) - code changes complete
 - [x] Phase 3: Fix bug C (`get_garden_details` error semantics) - code changes complete
+- [x] Targeted local integration tests for Phase 1/2 passed
 - [ ] Phase 4: Debate and revise Agent Plan with user (gate)
 - [ ] Phase 5: Validate revised agent plan on 3 real user questions
 - [ ] Phase 6: Description updates across all existing tools

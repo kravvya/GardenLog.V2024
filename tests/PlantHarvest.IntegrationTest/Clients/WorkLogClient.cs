@@ -59,7 +59,14 @@ namespace PlantHarvest.IntegrationTest.Clients
 
         public async Task<HttpResponseMessage> SearchWorkLogs(WorkLogSearch search)
         {
+            if (string.IsNullOrWhiteSpace(search.PlantId))
+            {
+                throw new ArgumentException("plantId is required.", nameof(search));
+            }
+
             var queryParams = new List<string>();
+
+            queryParams.Add($"plantId={Uri.EscapeDataString(search.PlantId)}");
 
             if (search.StartDate.HasValue)
             {
