@@ -2,11 +2,7 @@ using GardenLog.Mcp.Application.Services;
 using GardenLog.Mcp.Application.Tools;
 using GardenLog.Mcp.Infrastructure.ApiClients;
 using GardenLog.Mcp.Infrastructure.Authentication;
-using GardenLog.SharedInfrastructure;
 using GardenLog.SharedInfrastructure.Extensions;
-using GardenLog.SharedInfrastructure.Healthchecks;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using ModelContextProtocol.Server;
 using Serilog;
 using Serilog.Enrichers.Span;
 
@@ -34,6 +30,9 @@ try
     // Unlike PlantHarvest which uses Auth0AuthenticationHandler (gets new service token),
     // MCP forwards the user's token to maintain user context through the call chain
     builder.Services.AddHttpClient<IPlantCatalogApiClient, PlantCatalogApiClient>()
+        .AddHttpMessageHandler<UserAuthenticationHandler>();
+
+    builder.Services.AddHttpClient<IPlantHarvestApiClient, PlantHarvestApiClient>()
         .AddHttpMessageHandler<UserAuthenticationHandler>();
 
     // Configure Authentication - Always require valid Auth0 JWT

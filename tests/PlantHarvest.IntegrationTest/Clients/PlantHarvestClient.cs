@@ -9,6 +9,7 @@ using System.Text.Json;
 using Xunit.Abstractions;
 using System.Net.Http.Json;
 using PlantHarvest.Contract;
+using PlantHarvest.Contract.Query;
 
 namespace PlantHarvest.IntegrationTest.Clients
 {
@@ -128,6 +129,49 @@ namespace PlantHarvest.IntegrationTest.Clients
         {
             var url = $"{this._baseUrl.OriginalString}{HarvestRoutes.GetPlantHarvestCycle}";
             return await this._httpClient.GetAsync(url.Replace("{harvestId}", harvestId).Replace("{id}", id));
+        }
+
+        public async Task<HttpResponseMessage> SearchPlantHarvestCycles(PlantHarvestCycleSearch search)
+        {
+            var queryParams = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(search.PlantId))
+            {
+                queryParams.Add($"plantId={Uri.EscapeDataString(search.PlantId)}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(search.HarvestCycleId))
+            {
+                queryParams.Add($"harvestCycleId={Uri.EscapeDataString(search.HarvestCycleId)}");
+            }
+
+            if (search.StartDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(search.StartDate.Value.ToString("o"))}");
+            }
+
+            if (search.EndDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(search.EndDate.Value.ToString("o"))}");
+            }
+
+            if (search.MinGerminationRate.HasValue)
+            {
+                queryParams.Add($"minGerminationRate={search.MinGerminationRate.Value}");
+            }
+
+            if (search.Limit.HasValue)
+            {
+                queryParams.Add($"limit={search.Limit.Value}");
+            }
+
+            var url = $"{this._baseUrl.OriginalString}{HarvestRoutes.SearchPlantHarvestCycles}";
+            if (queryParams.Count > 0)
+            {
+                url = $"{url}?{string.Join("&", queryParams)}";
+            }
+
+            return await this._httpClient.GetAsync(url);
         }
 
         private static CreatePlantHarvestCycleCommand PopulateCreatePlantHarvestCycleCommand(string harvestId, string plantId, string plantVarietyId)

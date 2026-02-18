@@ -1,4 +1,5 @@
 ﻿using PlantHarvest.Contract.ViewModels;
+using PlantHarvest.Contract.Query;
 using PlantHarvest.IntegrationTest.Clients;
 using PlantHarvest.IntegrationTest.Fixture;
 using System.Net.Http.Json;
@@ -224,6 +225,42 @@ public partial class PlantHarvestTests : IClassFixture<PlantHarvestServiceFixtur
 
         _output.WriteLine($"Get_PlantHarvestCycles_ByPlantId - Found '{returnString}' by searching by plant Id");
         Assert.Contains(plant.PlantHarvestCycleId, returnString);
+    }
+
+    [Fact]
+    public async Task Get_SearchPlantHarvestCycles_Should_Return_FilteredRecords()
+    {
+        var harvestId = await _plantHarvestClient.GetHarvestCycleIdToWorkWith(TEST_HARVEST_CYCLE_NAME);
+        var plant = await _plantHarvestClient.GetPlantHarvestCycleToWorkWith(harvestId, TEST_PLANT_ID, TEST_PLANT_VARIETY_ID);
+
+        var search = new PlantHarvestCycleSearch
+        {
+            PlantId = TEST_PLANT_ID,
+            HarvestCycleId = harvestId,
+            StartDate = DateTime.UtcNow.AddYears(-5),
+            Limit = 50
+        };
+
+        var searchResponse = await _plantHarvestClient.SearchPlantHarvestCycles(search);
+        var returnString = await searchResponse.Content.ReadAsStringAsync();
+
+        _output.WriteLine($"Search PlantHarvestCycles responded with {searchResponse.StatusCode} code and {returnString} message");
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, searchResponse.StatusCode);
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters =
+                {
+                    new JsonStringEnumConverter(),
+                },
+        };
+
+        var plants = await searchResponse.Content.ReadFromJsonAsync<List<PlantHarvestCycleViewModel>>(options);
+        Assert.NotNull(plants);
+        Assert.NotEmpty(plants);
+        Assert.Contains(plants, p => p.PlantHarvestCycleId == plant.PlantHarvestCycleId);
     }
 
     [Fact]

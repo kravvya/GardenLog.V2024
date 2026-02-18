@@ -1,4 +1,6 @@
 ﻿using GardenLog.SharedKernel.Enum;
+using PlantHarvest.Contract.Enum;
+using PlantHarvest.Contract.Query;
 using PlantHarvest.Contract.ViewModels;
 using PlantHarvest.IntegrationTest.Clients;
 using PlantHarvest.IntegrationTest.Fixture;
@@ -118,6 +120,44 @@ public partial class PlantHarvestTests // : IClassFixture<PlantHarvestServiceFix
 
         Assert.NotNull(workLogs);
         Assert.NotEmpty(workLogs);
+    }
+
+    [Fact]
+    public async Task Get_SearchWorkLogs_Should_Return_FilteredRecords()
+    {
+        var harvestId = await _plantHarvestClient.GetHarvestCycleIdToWorkWith(PlantHarvestTests.TEST_HARVEST_CYCLE_NAME);
+
+        var createResponse = await _workLogClient.CreateWorkLog(RelatedEntityTypEnum.HarvestCycle, harvestId);
+        Assert.Equal(System.Net.HttpStatusCode.OK, createResponse.StatusCode);
+
+        var search = new WorkLogSearch
+        {
+            StartDate = DateTime.UtcNow.AddDays(-2),
+            EndDate = DateTime.UtcNow.AddDays(2),
+            Reason = WorkLogReasonEnum.Information,
+            Limit = 50
+        };
+
+        var searchResponse = await _workLogClient.SearchWorkLogs(search);
+        var returnString = await searchResponse.Content.ReadAsStringAsync();
+
+        _output.WriteLine($"Search WorkLogs responded with {searchResponse.StatusCode} code and {returnString} message");
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, searchResponse.StatusCode);
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters =
+                {
+                    new JsonStringEnumConverter(),
+                },
+        };
+
+        var workLogs = await searchResponse.Content.ReadFromJsonAsync<List<WorkLogViewModel>>(options);
+        Assert.NotNull(workLogs);
+        Assert.NotEmpty(workLogs);
+        Assert.Contains(workLogs, w => w.Reason == WorkLogReasonEnum.Information);
     }
 
     #endregion

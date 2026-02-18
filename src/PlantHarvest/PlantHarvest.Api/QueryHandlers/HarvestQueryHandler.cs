@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using GardenLog.SharedInfrastructure.Extensions;
+using PlantHarvest.Contract.Query;
 using PlantHarvest.Domain.HarvestAggregate;
 using PlantHarvest.Domain.WorkLogAggregate;
 using PlantHarvest.Infrastructure.Data.Repositories;
@@ -16,6 +17,7 @@ public interface IHarvestQueryHandler
     Task<PlantHarvestCycleViewModel> GetPlantHarvestCycle(string harvestCycleId, string id);
     Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> GetPlantHarvestCycles(string harvestCycleId);
     Task<IReadOnlyCollection<PlantHarvestCycleIdentityOnlyViewModel>> GetPlantHarvestCyclesByPlantId(string plantId);
+    Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> SearchPlantHarvestCycles(PlantHarvestCycleSearch search);
 }
 
 
@@ -130,6 +132,22 @@ public class HarvestQueryHandler : IHarvestQueryHandler
         catch (Exception ex)
         {
             _logger.LogCritical(ex, "Exception readding plant harvest cycles for plant {plantId}", plantId);
+            throw;
+        }
+    }
+
+    public async Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> SearchPlantHarvestCycles(PlantHarvestCycleSearch search)
+    {
+        _logger.LogInformation("Received request to search plant harvest cycles");
+        string userProfileId = _httpContextAccessor.HttpContext?.User.GetUserProfileId(_httpContextAccessor.HttpContext.Request.Headers)!;
+
+        try
+        {
+            return await _plantHarvestCycleRepository.SearchPlantHarvestCyclesForUser(search, userProfileId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "Exception searching plant harvest cycles");
             throw;
         }
     }

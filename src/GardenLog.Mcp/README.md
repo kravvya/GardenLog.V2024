@@ -91,6 +91,12 @@ This ensures user-level data isolation throughout the chain.
 1. **get_plant_details** - Retrieves plant information from PlantCatalog API
    - Parameter: `plantId` (required)
   - Returns: Combined payload with `plant` metadata and `growInstructions` list
+2. **get_worklog_history** - Searches user-scoped work logs from PlantHarvest API
+  - Parameters: `startDate`, `endDate`, `reason`, `limit`
+  - Returns: WorkLog history ordered by event date
+3. **get_plant_harvest_cycles** - Searches user-scoped plant harvest cycles from PlantHarvest API
+  - Parameters: `plantId`, `harvestCycleId`, `startDate`, `endDate`, `minGerminationRate`, `limit`
+  - Returns: Plant harvest cycle records with optional calendar/layout data
 
 ## Authentication Pattern
 
@@ -193,7 +199,6 @@ public class MyTool
 
 - [ ] Test with real Auth0 JWT token
 - [ ] Add more API-wrapper tools (get_garden_details, search_harvest_cycles)
-- [ ] Add MongoDB-based tools (get_worklog_history, get_plant_harvest_cycles)
 - [ ] Add error handling and retry policies
 - [ ] Add audit logging
 - [ ] Deploy to Azure Container Apps

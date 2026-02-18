@@ -16,6 +16,7 @@ public static class HarvestRoutes
     public const string UpdatePlantHarvestCycle = PlantHarvestBase + "/{harvestId}/PlantHarvestCycles/{id}";
     public const string DeletePlantHarvestCycle = PlantHarvestBase + "/{harvestId}/PlantHarvestCycles/{id}";   
     public const string GetPlantHarvestCyclesByPlant = PlantHarvestBase + "/PlanHarvestCycles/Plants/{plantId}/";
+    public const string SearchPlantHarvestCycles = PlantHarvestBase + "/PlantHarvestCycles/search";
 
     public const string CreatePlantSchedule = PlantHarvestBase + "/{harvestId}/PlantHarvestCycles/{plantHarvestId}/schedules";
     public const string UpdatePlantSchedule = PlantHarvestBase + "/{harvestId}/PlantHarvestCycles/{plantHarvestId}/schedules/{id}";
@@ -33,6 +34,7 @@ public static class HarvestRoutes
     public const string DeleteWorkLog = WorkLogBase + "/{id}";
 
     public const string GetWorkLogs = WorkLogBase + "/{entityType}/{entityId}";
+    public const string SearchWorkLogs = WorkLogBase + "/search";
 
     public const string PlantTaskBase = "/v1/api/tasks";
     public const string CreateTask = PlantTaskBase;
