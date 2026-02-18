@@ -1,0 +1,105 @@
+@inject IJSRuntime JS
+
+@if (_isVisible)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">User Access Token</h5>
+                    <button type="button" class="btn-close" @onclick="Close" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @if (string.IsNullOrEmpty(Token))
+                    {
+                        <p>Loading token...</p>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <p><strong>Your authentication token for external applications</strong></p>
+                            <p class="small mb-2">Use this token as the Bearer authentication token when connecting external applications or AI agents.</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Token:</label>
+                            <textarea class="form-control font-monospace small" rows="10" readonly>@Token</textarea>
+                        </div>
+
+                        <button class="btn btn-primary" @onclick="CopyToClipboard">
+                            <i class="bi bi-clipboard"></i> Copy Token
+                        </button>
+
+                        @if (_copied)
+                        {
+                            <span class="text-success ms-2">
+                                <i class="bi bi-check-circle-fill"></i> Copied to clipboard!
+                            </span>
+                        }
+
+                        <div class="alert alert-warning mt-3">
+                            <p class="small mb-0">
+                                <strong>Security Note:</strong> This token expires with your login session. 
+                                Keep it secure and don't share it publicly.
+                            </p>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Close">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter]
+    public string? Token { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private bool _isVisible;
+    private bool _copied;
+
+    public void Show()
+    {
+        _isVisible = true;
+        _copied = false;
+        StateHasChanged();
+    }
+
+    public void Close()
+    {
+        _isVisible = false;
+        OnClose.InvokeAsync();
+    }
+
+    private async Task CopyToClipboard()
+    {
+        if (!string.IsNullOrEmpty(Token))
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("navigator.clipboard.writeText", Token);
+                _copied = true;
+                StateHasChanged();
+
+                // Reset copied message after 3 seconds
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(3000);
+                    _copied = false;
+                    await InvokeAsync(StateHasChanged);
+                });
+            }
+            catch (Exception)
+            {
+                // Clipboard API might not be available in some contexts
+                _copied = false;
+            }
+        }
+    }
+}

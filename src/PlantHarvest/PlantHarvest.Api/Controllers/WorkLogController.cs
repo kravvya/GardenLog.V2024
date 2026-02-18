@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PlantCatalog.Contract;
 using PlantHarvest.Contract.Enum;
+using PlantHarvest.Contract.Query;
 using PlantHarvest.Domain.WorkLogAggregate.Events.Meta;
 using System.Net;
 
@@ -36,6 +37,28 @@ public class WorkLogController : Controller
         RelatedEntityTypEnum type = Enum.Parse<RelatedEntityTypEnum>(entityType);
         return Ok(await _queryHandler.GetWorkLogs(type, entityId));
 
+    }
+
+    [HttpGet()]
+    [ActionName("SearchWorkLogs")]
+    [Route(HarvestRoutes.SearchWorkLogs)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType(typeof(IReadOnlyCollection<WorkLogViewModel>), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult<IReadOnlyCollection<WorkLogViewModel>>> SearchWorkLogs(
+        DateTime? startDate,
+        DateTime? endDate,
+        WorkLogReasonEnum? reason,
+        int? limit)
+    {
+        var query = new WorkLogSearch
+        {
+            StartDate = startDate,
+            EndDate = endDate,
+            Reason = reason,
+            Limit = limit
+        };
+
+        return Ok(await _queryHandler.SearchWorkLogs(query));
     }
 
     [HttpPost]

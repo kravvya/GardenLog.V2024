@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PlantCatalog.Contract;
+using PlantHarvest.Contract.Query;
 using System.Net;
 
 namespace PlantHarvest.Api.Controllers;
@@ -162,6 +163,32 @@ public class HarvestCycleController : Controller
     public async Task<ActionResult<IReadOnlyCollection<PlantHarvestCycleViewModel>>> GetPlantHarvestCycleByHarvestCycleIdAsync(string harvestId)
     {
         return Ok(await _queryHandler.GetPlantHarvestCycles(harvestId));
+    }
+
+    [HttpGet()]
+    [ActionName("SearchPlantHarvestCycles")]
+    [Route(HarvestRoutes.SearchPlantHarvestCycles)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType(typeof(IReadOnlyCollection<PlantHarvestCycleViewModel>), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult<IReadOnlyCollection<PlantHarvestCycleViewModel>>> SearchPlantHarvestCycles(
+        string? plantId,
+        string? harvestCycleId,
+        DateTime? startDate,
+        DateTime? endDate,
+        int? minGerminationRate,
+        int? limit)
+    {
+        var search = new PlantHarvestCycleSearch
+        {
+            PlantId = plantId,
+            HarvestCycleId = harvestCycleId,
+            StartDate = startDate,
+            EndDate = endDate,
+            MinGerminationRate = minGerminationRate,
+            Limit = limit
+        };
+
+        return Ok(await _queryHandler.SearchPlantHarvestCycles(search));
     }
 
     [HttpGet()]

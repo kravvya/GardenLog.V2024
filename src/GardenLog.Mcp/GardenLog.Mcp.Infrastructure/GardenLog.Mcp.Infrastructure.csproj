@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver" Version="3.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\GardenLog.SharedInfrastructure\GardenLog.SharedInfrastructure.csproj" />
+    <ProjectReference Include="..\..\PlantCatalog\PlantCatalog.Contract\PlantCatalog.Contract.csproj" />
+    <ProjectReference Include="..\..\PlantHarvest\PlantHarvest.Contract\PlantHarvest.Contract.csproj" />
+    <ProjectReference Include="..\..\UserManagement\UserManagement.Contract\UserManagement.Contract.csproj" />
+    <ProjectReference Include="..\..\GrowConditions\GrowConditions.Contract\GrowConditions.Contract.csproj" />
+  </ItemGroup>
+
+</Project>

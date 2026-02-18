@@ -5,6 +5,7 @@ using PlantCatalog.Contract;
 using PlantHarvest.Contract;
 using PlantHarvest.Contract.Commands;
 using PlantHarvest.Contract.Enum;
+using PlantHarvest.Contract.Query;
 using PlantHarvest.Contract.ViewModels;
 
 namespace PlantHarvest.IntegrationTest.Clients
@@ -54,6 +55,39 @@ namespace PlantHarvest.IntegrationTest.Clients
         {
             var url = $"{this._baseUrl.OriginalString}{HarvestRoutes.GetWorkLogs}/";
             return await this._httpClient.GetAsync(url.Replace("{entityType}", entityType.ToString()).Replace("{entityId}", entityId));
+        }
+
+        public async Task<HttpResponseMessage> SearchWorkLogs(WorkLogSearch search)
+        {
+            var queryParams = new List<string>();
+
+            if (search.StartDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(search.StartDate.Value.ToString("o"))}");
+            }
+
+            if (search.EndDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(search.EndDate.Value.ToString("o"))}");
+            }
+
+            if (search.Reason.HasValue)
+            {
+                queryParams.Add($"reason={Uri.EscapeDataString(search.Reason.Value.ToString())}");
+            }
+
+            if (search.Limit.HasValue)
+            {
+                queryParams.Add($"limit={search.Limit.Value}");
+            }
+
+            var url = $"{this._baseUrl.OriginalString}{HarvestRoutes.SearchWorkLogs}";
+            if (queryParams.Count > 0)
+            {
+                url = $"{url}?{string.Join("&", queryParams)}";
+            }
+
+            return await this._httpClient.GetAsync(url);
         }
 
         private static CreateWorkLogCommand PopulateCreateWorkLogCommand(RelatedEntityTypEnum entityType, string entityId)

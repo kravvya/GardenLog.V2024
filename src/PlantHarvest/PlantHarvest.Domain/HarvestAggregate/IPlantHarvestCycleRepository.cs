@@ -1,4 +1,6 @@
 ﻿
+using PlantHarvest.Contract.Query;
+
 namespace PlantHarvest.Domain.HarvestAggregate;
 
 
@@ -14,5 +16,6 @@ public interface IPlantHarvestCycleRepository : IRepository<PlantHarvestCycle>
     Task<PlantHarvestCycleViewModel> GetPlantHarvestCycleView(string harvestCycleId, string id);
     Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> GetPlantHarvestCycleViews(string harvestCycleId);
     Task<IReadOnlyCollection<PlantHarvestCycleIdentityOnlyViewModel>> GetPlantHarvestCyclesByPlantId(string plantId);
+    Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> SearchPlantHarvestCyclesForUser(PlantHarvestCycleSearch search, string userProfileId);
     void DeletePlantHarvestCycle(string harvestCyclceId);
 }
