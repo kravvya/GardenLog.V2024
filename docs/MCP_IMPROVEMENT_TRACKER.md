@@ -139,10 +139,11 @@ This is the default plan the agent should follow using exposed tools.
 
 ### High-priority candidates
 
-- [ ] `search_plants`
+- [x] `search_plants`
   - Input: plant name text
   - Output: canonical `plantId`, `plantName`, aliases/tags
   - Why: eliminate indirect plant-ID discovery.
+  - Status: Implemented in MCP using existing PlantCatalog routes (`GetIdByPlantName` exact-first + `GetAllPlantNames` fallback contains matching).
 
 - [ ] `get_planting_window`
   - Input: `plantId`, `gardenId`, optional year and planting method
@@ -155,6 +156,12 @@ This is the default plan the agent should follow using exposed tools.
   - Why: avoid large multi-call orchestration for recommendation context.
 
 ### Optional (use-case driven)
+
+- [x] `get_current_harvest_cycle`
+  - Input: optional `gardenId`, optional `asOfDate`
+  - Output: single current harvest cycle (or null)
+  - Rule: `StartDate <= asOfDate` and `EndDate == null`, newest `StartDate` wins.
+  - Why: simplify seasonal context resolution for planning questions.
 
 - [ ] `get_rotation_risk`
   - Input: `gardenId`, `gardenBedId`, `plantId`, lookback years
