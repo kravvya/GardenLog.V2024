@@ -94,14 +94,14 @@ public class PlantCatalogApiClient : IPlantCatalogApiClient
         }
 
         var route = Routes.GetIdByPlantName.Replace("{name}", Uri.EscapeDataString(plantName));
-        var response = await _httpClient.ApiGetAsync<string>(route);
-
-        if (!response.IsSuccess || string.IsNullOrWhiteSpace(response.Response))
+        var response = await _httpClient.GetAsync(route);
+        if (!response.IsSuccessStatusCode)
         {
             return null;
         }
 
-        return response.Response;
+        var id = await response.Content.ReadAsStringAsync();
+        return string.IsNullOrWhiteSpace(id) ? null : id;
     }
 
     public async Task<IReadOnlyCollection<PlantNameOnlyViewModel>> GetAllPlantNames()
