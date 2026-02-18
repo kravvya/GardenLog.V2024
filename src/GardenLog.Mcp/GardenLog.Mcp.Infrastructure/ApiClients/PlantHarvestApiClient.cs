@@ -6,7 +6,9 @@ namespace GardenLog.Mcp.Infrastructure.ApiClients;
 public interface IPlantHarvestApiClient
 {
     Task<IReadOnlyCollection<WorkLogViewModel>> SearchWorkLogs(WorkLogSearch search);
+    Task<IReadOnlyCollection<WorkLogViewModel>> GetWorkLogs(string entityType, string entityId);
     Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> SearchPlantHarvestCycles(PlantHarvestCycleSearch search);
+    Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> GetPlantHarvestCycles(string harvestCycleId);
     Task<IReadOnlyCollection<HarvestCycleViewModel>> GetHarvestCycles();
     Task<IReadOnlyCollection<GardenBedPlantHarvestCycleViewModel>> GetGardenBedUsageHistory(string gardenId, string gardenBedId);
 }
@@ -34,7 +36,14 @@ public class PlantHarvestApiClient : IPlantHarvestApiClient
 
     public async Task<IReadOnlyCollection<WorkLogViewModel>> SearchWorkLogs(WorkLogSearch search)
     {
+        if (string.IsNullOrWhiteSpace(search.PlantId))
+        {
+            throw new ArgumentException("plantId is required.", nameof(search.PlantId));
+        }
+
         var queryParams = new List<string>();
+
+        queryParams.Add($"plantId={Uri.EscapeDataString(search.PlantId)}");
 
         if (search.StartDate.HasValue)
         {
@@ -66,6 +75,22 @@ public class PlantHarvestApiClient : IPlantHarvestApiClient
         if (!response.IsSuccess || response.Response == null)
         {
             _logger.LogError("Unable to search WorkLogs");
+            return Array.Empty<WorkLogViewModel>();
+        }
+
+        return response.Response;
+    }
+
+    public async Task<IReadOnlyCollection<WorkLogViewModel>> GetWorkLogs(string entityType, string entityId)
+    {
+        var route = HarvestRoutes.GetWorkLogs
+            .Replace("{entityType}", Uri.EscapeDataString(entityType))
+            .Replace("{entityId}", Uri.EscapeDataString(entityId));
+
+        var response = await _httpClient.ApiGetAsync<List<WorkLogViewModel>>(route);
+        if (!response.IsSuccess || response.Response == null)
+        {
+            _logger.LogError("Unable to get WorkLogs for entityType={EntityType}, entityId={EntityId}", entityType, entityId);
             return Array.Empty<WorkLogViewModel>();
         }
 
@@ -116,6 +141,21 @@ public class PlantHarvestApiClient : IPlantHarvestApiClient
         if (!response.IsSuccess || response.Response == null)
         {
             _logger.LogError("Unable to search PlantHarvestCycles");
+            return Array.Empty<PlantHarvestCycleViewModel>();
+        }
+
+        return response.Response;
+    }
+
+    public async Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> GetPlantHarvestCycles(string harvestCycleId)
+    {
+        var route = HarvestRoutes.GetPlantHarvestCycles
+            .Replace("{harvestId}", Uri.EscapeDataString(harvestCycleId));
+
+        var response = await _httpClient.ApiGetAsync<List<PlantHarvestCycleViewModel>>(route);
+        if (!response.IsSuccess || response.Response == null)
+        {
+            _logger.LogError("Unable to get PlantHarvestCycles for harvestCycleId={HarvestCycleId}", harvestCycleId);
             return Array.Empty<PlantHarvestCycleViewModel>();
         }
 

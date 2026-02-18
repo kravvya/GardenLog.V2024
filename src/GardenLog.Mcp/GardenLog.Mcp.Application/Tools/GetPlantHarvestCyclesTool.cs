@@ -25,9 +25,9 @@ public class GetPlantHarvestCyclesTool
     }
 
     [McpServerTool(Name = "get_plant_harvest_cycles", UseStructuredContent = true)]
-    [Description("Search PlantHarvest cycles for the authenticated user with optional filters such as plant, harvest cycle, date range, and minimum germination rate.")]
+    [Description("Search PlantHarvest cycles for the authenticated user using PlantHarvest search API. plantId is required.")]
     public async Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> ExecuteAsync(
-        [Description("Optional Plant ID filter")] string? plantId = null,
+        [Description("Plant ID filter (required)")] string plantId,
         [Description("Optional Harvest Cycle ID filter")] string? harvestCycleId = null,
         [Description("Optional start date filter (inclusive)")] DateTime? startDate = null,
         [Description("Optional end date filter (inclusive)")] DateTime? endDate = null,
@@ -40,6 +40,11 @@ public class GetPlantHarvestCyclesTool
         if (string.IsNullOrWhiteSpace(userProfileId))
         {
             throw new UnauthorizedAccessException("User context not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(plantId))
+        {
+            throw new ArgumentException("plantId is required.");
         }
 
         if (startDate.HasValue && endDate.HasValue && startDate > endDate)

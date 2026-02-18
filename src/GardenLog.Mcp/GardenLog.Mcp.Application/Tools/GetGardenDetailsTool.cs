@@ -28,19 +28,36 @@ public class GetGardenDetailsTool
         [Description("Include garden bed details in response")] bool includeGardenBeds = true,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(gardenId) && string.IsNullOrWhiteSpace(gardenName))
-        {
-            throw new ArgumentException("Either gardenId or gardenName must be provided.");
-        }
-
         GardenViewModel? garden = null;
 
-        if (!string.IsNullOrWhiteSpace(gardenId))
+        if (string.IsNullOrWhiteSpace(gardenId) && string.IsNullOrWhiteSpace(gardenName))
+        {
+            var gardens = await _userManagementApiClient.GetGardens();
+
+            if (gardens.Count == 0)
+            {
+                throw new ArgumentException("No gardens found for the authenticated user.");
+            }
+
+            if (gardens.Count == 1)
+            {
+                garden = gardens.First();
+                _logger.LogInformation("get_garden_details resolved single garden: gardenId={GardenId}", garden.GardenId);
+            }
+            else
+            {
+                var available = string.Join(", ", gardens.Select(g => $"{g.Name} ({g.GardenId})").Take(5));
+                throw new ArgumentException(
+                    $"Multiple gardens found. Provide gardenId or gardenName. Available gardens: {available}");
+            }
+        }
+
+        if (garden == null && !string.IsNullOrWhiteSpace(gardenId))
         {
             _logger.LogInformation("get_garden_details called with gardenId={GardenId}", gardenId);
             garden = await _userManagementApiClient.GetGarden(gardenId);
         }
-        else if (!string.IsNullOrWhiteSpace(gardenName))
+        else if (garden == null && !string.IsNullOrWhiteSpace(gardenName))
         {
             _logger.LogInformation("get_garden_details called with gardenName={GardenName}", gardenName);
             garden = await _userManagementApiClient.GetGardenByName(gardenName);

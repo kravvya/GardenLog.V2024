@@ -43,15 +43,23 @@ public class WorkLogController : Controller
     [ActionName("SearchWorkLogs")]
     [Route(HarvestRoutes.SearchWorkLogs)]
     [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
     [ProducesResponseType(typeof(IReadOnlyCollection<WorkLogViewModel>), (int)HttpStatusCode.OK)]
     public async Task<ActionResult<IReadOnlyCollection<WorkLogViewModel>>> SearchWorkLogs(
+        string plantId,
         DateTime? startDate,
         DateTime? endDate,
         WorkLogReasonEnum? reason,
         int? limit)
     {
+        if (string.IsNullOrWhiteSpace(plantId))
+        {
+            return BadRequest("plantId is required.");
+        }
+
         var query = new WorkLogSearch
         {
+            PlantId = plantId,
             StartDate = startDate,
             EndDate = endDate,
             Reason = reason,

@@ -5,6 +5,7 @@ namespace GardenLog.Mcp.Infrastructure.ApiClients;
 
 public interface IUserManagementApiClient
 {
+    Task<IReadOnlyCollection<GardenViewModel>> GetGardens();
     Task<GardenViewModel?> GetGarden(string gardenId);
     Task<GardenViewModel?> GetGardenByName(string gardenName);
     Task<IReadOnlyCollection<GardenBedViewModel>> GetGardenBeds(string gardenId);
@@ -40,6 +41,18 @@ public class UserManagementApiClient : IUserManagementApiClient
         {
             _logger.LogError("Unable to get garden {GardenId}", gardenId);
             return null;
+        }
+
+        return response.Response;
+    }
+
+    public async Task<IReadOnlyCollection<GardenViewModel>> GetGardens()
+    {
+        var response = await _httpClient.ApiGetAsync<List<GardenViewModel>>(GardenRoutes.GetGardens);
+        if (!response.IsSuccess || response.Response == null)
+        {
+            _logger.LogError("Unable to get gardens");
+            return Array.Empty<GardenViewModel>();
         }
 
         return response.Response;
