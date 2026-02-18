@@ -126,12 +126,14 @@ public partial class PlantHarvestTests // : IClassFixture<PlantHarvestServiceFix
     public async Task Get_SearchWorkLogs_Should_Return_FilteredRecords()
     {
         var harvestId = await _plantHarvestClient.GetHarvestCycleIdToWorkWith(PlantHarvestTests.TEST_HARVEST_CYCLE_NAME);
+        var plant = await _plantHarvestClient.GetPlantHarvestCycleToWorkWith(harvestId, PlantHarvestTests.TEST_PLANT_ID, PlantHarvestTests.TEST_PLANT_VARIETY_ID);
 
-        var createResponse = await _workLogClient.CreateWorkLog(RelatedEntityTypEnum.HarvestCycle, harvestId);
+        var createResponse = await _workLogClient.CreateWorkLog(RelatedEntityTypEnum.PlantHarvestCycle, plant.PlantHarvestCycleId);
         Assert.Equal(System.Net.HttpStatusCode.OK, createResponse.StatusCode);
 
         var search = new WorkLogSearch
         {
+            PlantId = PlantHarvestTests.TEST_PLANT_ID,
             StartDate = DateTime.UtcNow.AddDays(-2),
             EndDate = DateTime.UtcNow.AddDays(2),
             Reason = WorkLogReasonEnum.Information,
