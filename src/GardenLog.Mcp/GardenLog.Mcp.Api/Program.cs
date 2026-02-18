@@ -35,6 +35,9 @@ try
     builder.Services.AddHttpClient<IPlantHarvestApiClient, PlantHarvestApiClient>()
         .AddHttpMessageHandler<UserAuthenticationHandler>();
 
+    builder.Services.AddHttpClient<IUserManagementApiClient, UserManagementApiClient>()
+        .AddHttpMessageHandler<UserAuthenticationHandler>();
+
     // Configure Authentication - Always require valid Auth0 JWT
     Log.Information("Configuring Auth0 JWT authentication");
     builder.RegisterForAuthentication();

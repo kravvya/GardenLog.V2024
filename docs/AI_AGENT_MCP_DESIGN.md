@@ -169,22 +169,6 @@ These routes allow PlantHarvest to deploy independently while serving MCP query 
 - Use PlantHarvest list/search routes.
 - Prefer server-side filters; only post-filter in MCP when API capability lags.
 
----
-
-### 6) `get_planting_data_for_analysis`
-
-**Purpose:** Return raw cross-domain data for agent reasoning (no hardcoded recommendation logic).
-
-**Implementation approach:**
-
-1. Plant + grow instructions from PlantCatalog API
-2. Garden weather context from UserManagement API
-3. Historical actions from PlantHarvest `SearchWorkLogs`
-4. Historical outcomes from PlantHarvest `SearchPlantHarvestCycles`
-5. MCP composes and returns raw data model for the agent
-
----
-
 ## API Capability Gaps and Ownership
 
 When MCP needs new filters/fields:
@@ -270,12 +254,12 @@ This maintains clean ownership and avoids duplicating persistence models in MCP.
 ### Phase 2
 
 - Implement MCP `get_plant_harvest_cycles` on top of `SearchPlantHarvestCycles`
+- Implement MCP `get_garden_details`, `get_garden_bed_history`, and `search_harvest_cycles`
 - Add/extend API filters for any missing use cases discovered in testing
-- Implement `get_planting_data_for_analysis` composition tool
 
 ### Phase 3
 
-- Add additional API-wrapper tools (`get_garden_details`, `get_garden_bed_history`, `search_harvest_cycles`)
+- Re-evaluate `get_planting_data_for_analysis` after concrete consumer requirements are defined
 - Harden observability and rate limits for production traffic
 
 ---
@@ -317,7 +301,7 @@ Phase 1 focuses on read/query tools. Write tools are deferred until safety and U
 
 ## Document Control
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** 2026-02-18  
 **Owner:** GardenLog Development Team
 
@@ -327,3 +311,4 @@ Phase 1 focuses on read/query tools. Write tools are deferred until safety and U
 |------|---------|---------|
 | 2026-02-17 | 1.0 | Initial design draft |
 | 2026-02-18 | 1.1 | API-first rewrite; removed MCP direct-datastore guidance; aligned with PlantHarvest search routes |
+| 2026-02-18 | 1.2 | Scoped to current needs: deferred `get_planting_data_for_analysis`; clarified PlantTask tooling is deferred for current use cases; moved garden/history/search tools into active implementation phase |

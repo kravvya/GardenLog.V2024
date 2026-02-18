@@ -7,6 +7,8 @@ public interface IPlantHarvestApiClient
 {
     Task<IReadOnlyCollection<WorkLogViewModel>> SearchWorkLogs(WorkLogSearch search);
     Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> SearchPlantHarvestCycles(PlantHarvestCycleSearch search);
+    Task<IReadOnlyCollection<HarvestCycleViewModel>> GetHarvestCycles();
+    Task<IReadOnlyCollection<GardenBedPlantHarvestCycleViewModel>> GetGardenBedUsageHistory(string gardenId, string gardenBedId);
 }
 
 public class PlantHarvestApiClient : IPlantHarvestApiClient
@@ -115,6 +117,34 @@ public class PlantHarvestApiClient : IPlantHarvestApiClient
         {
             _logger.LogError("Unable to search PlantHarvestCycles");
             return Array.Empty<PlantHarvestCycleViewModel>();
+        }
+
+        return response.Response;
+    }
+
+    public async Task<IReadOnlyCollection<HarvestCycleViewModel>> GetHarvestCycles()
+    {
+        var response = await _httpClient.ApiGetAsync<List<HarvestCycleViewModel>>(HarvestRoutes.GetAllHarvestCycles);
+        if (!response.IsSuccess || response.Response == null)
+        {
+            _logger.LogError("Unable to get HarvestCycles");
+            return Array.Empty<HarvestCycleViewModel>();
+        }
+
+        return response.Response;
+    }
+
+    public async Task<IReadOnlyCollection<GardenBedPlantHarvestCycleViewModel>> GetGardenBedUsageHistory(string gardenId, string gardenBedId)
+    {
+        var route = HarvestRoutes.GetGardenBedUsageHistory
+            .Replace("{gardenId}", Uri.EscapeDataString(gardenId))
+            .Replace("{gardenBedId}", Uri.EscapeDataString(gardenBedId));
+
+        var response = await _httpClient.ApiGetAsync<List<GardenBedPlantHarvestCycleViewModel>>(route);
+        if (!response.IsSuccess || response.Response == null)
+        {
+            _logger.LogError("Unable to get garden bed usage history for garden {GardenId} and bed {GardenBedId}", gardenId, gardenBedId);
+            return Array.Empty<GardenBedPlantHarvestCycleViewModel>();
         }
 
         return response.Response;

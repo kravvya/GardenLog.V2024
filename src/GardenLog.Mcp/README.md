@@ -97,6 +97,15 @@ This ensures user-level data isolation throughout the chain.
 3. **get_plant_harvest_cycles** - Searches user-scoped plant harvest cycles from PlantHarvest API
   - Parameters: `plantId`, `harvestCycleId`, `startDate`, `endDate`, `minGerminationRate`, `limit`
   - Returns: Plant harvest cycle records with optional calendar/layout data
+4. **get_garden_details** - Retrieves garden details from UserManagement API
+  - Parameters: `gardenId` or `gardenName`, `includeGardenBeds`
+  - Returns: Garden details including optional garden bed list
+5. **get_garden_bed_history** - Retrieves bed occupancy history from PlantHarvest API
+  - Parameters: `gardenId`, `gardenBedId`, `startDate`, `endDate`, `limit`
+  - Returns: Historical bed usage for rotation analysis
+6. **search_harvest_cycles** - Searches harvest cycles for the authenticated user
+  - Parameters: `harvestCycleName`, `gardenId`, `year`, `startDate`, `endDate`, `limit`
+  - Returns: Matching harvest cycles sorted by start date
 
 ## Authentication Pattern
 
@@ -198,7 +207,7 @@ public class MyTool
 ## Next Steps
 
 - [ ] Test with real Auth0 JWT token
-- [ ] Add more API-wrapper tools (get_garden_details, search_harvest_cycles)
+- [ ] Validate new garden/harvest MCP tools with real production-like data
 - [ ] Add error handling and retry policies
 - [ ] Add audit logging
 - [ ] Deploy to Azure Container Apps
