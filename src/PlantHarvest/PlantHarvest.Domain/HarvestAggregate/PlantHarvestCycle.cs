@@ -5,6 +5,7 @@ namespace PlantHarvest.Domain.HarvestAggregate;
 
 public class PlantHarvestCycle : BaseEntity, IEntity
 {
+    public string UserProfileId { get; private set; } = string.Empty;
     public string PlantId { get; private set; } = string.Empty;
     public string PlantName { get; private set; } = string.Empty;
 
@@ -85,11 +86,12 @@ public class PlantHarvestCycle : BaseEntity, IEntity
     }
 
 
-    public static PlantHarvestCycle Create(PlantHarvestCycleBase plant, Action<HarvestEventTriggerEnum, TriggerEntity> addHarvestEvent)
+    public static PlantHarvestCycle Create(string userProfileId, PlantHarvestCycleBase plant, Action<HarvestEventTriggerEnum, TriggerEntity> addHarvestEvent)
     {
         var harvestPlant = new PlantHarvestCycle()
         {
             Id = Guid.NewGuid().ToString(),
+            UserProfileId = userProfileId,
             PlantId = plant.PlantId,
             PlantName = plant.PlantName,
             PlantVarietyId = plant.PlantVarietyId,
