@@ -21,10 +21,10 @@ public class GetHarvestCyclePlantsTool
     }
 
     [McpServerTool(Name = "get_harvest_cycle_plants", UseStructuredContent = true)]
-    [Description("Get all distinct plants in a harvest cycle for the authenticated user. Can include full PlantHarvestCycle records with calendar dates.")]
+    [Description("Get all distinct plant schedules (grouped by PlantId and GrowthInstructionId) in a harvest cycle for the authenticated user. Includes calendar/schedule information.")]
     public async Task<IReadOnlyCollection<HarvestCyclePlantToolResult>> ExecuteAsync(
         [Description("Harvest cycle ID (required)")] string harvestCycleId,
-        [Description("Include full plant harvest cycle records (including plantCalendar dates)")] bool includePlantHarvestCycles = true,
+        [Description("Include full plant varieties and their individual harvest cycle records")] bool includePlantVarieties = true,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(harvestCycleId))
@@ -33,20 +33,28 @@ public class GetHarvestCyclePlantsTool
         }
 
         _logger.LogInformation(
-            "get_harvest_cycle_plants called: harvestCycleId={HarvestCycleId}, includePlantHarvestCycles={IncludePlantHarvestCycles}",
+            "get_harvest_cycle_plants called: harvestCycleId={HarvestCycleId}, includePlantVarieties={IncludePlantVarieties}",
             harvestCycleId,
-            includePlantHarvestCycles);
+            includePlantVarieties);
 
         var plantHarvestCycles = await _plantHarvestApiClient.GetPlantHarvestCycles(harvestCycleId);
 
         var plants = plantHarvestCycles
-            .GroupBy(x => x.PlantId, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(x => $"{x.PlantId?.ToLowerInvariant()}|{x.PlantGrowthInstructionId?.ToLowerInvariant()}")
             .Select(g =>
             {
+                var firstCycle = g.First();
+                var plantId = firstCycle.PlantId;
+                var growthInstructionId = firstCycle.PlantGrowthInstructionId;
+
                 var plantName = g
                     .Select(x => x.PlantName)
                     .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
-                    ?? g.Key;
+                    ?? plantId;
+
+                var growthInstructionName = g
+                    .Select(x => x.PlantGrowthInstructionName)
+                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
 
                 var cycles = g
                     .OrderBy(x => x.PlantVarietyName, StringComparer.OrdinalIgnoreCase)
@@ -59,17 +67,26 @@ public class GetHarvestCyclePlantsTool
                     .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
+                var allSchedules = g
+                    .SelectMany(x => x.PlantCalendar)
+                    .OrderBy(s => s.StartDate)
+                    .ToList();
+
                 return new HarvestCyclePlantToolResult
                 {
-                    PlantId = g.Key,
+                    PlantId = plantId,
                     PlantName = plantName,
+                    PlantGrowthInstructionId = growthInstructionId,
+                    PlantGrowthInstructionName = growthInstructionName,
                     PlantHarvestCycleCount = cycles.Count,
                     VarietyCount = varietyNames.Count,
                     VarietyNames = varietyNames,
-                    PlantHarvestCycles = includePlantHarvestCycles ? cycles : Array.Empty<PlantHarvestCycleViewModel>()
+                    Schedules = allSchedules,
+                    PlantVarieties = includePlantVarieties ? cycles : Array.Empty<PlantHarvestCycleViewModel>()
                 };
             })
             .OrderBy(x => x.PlantName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.PlantGrowthInstructionName, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         return plants;

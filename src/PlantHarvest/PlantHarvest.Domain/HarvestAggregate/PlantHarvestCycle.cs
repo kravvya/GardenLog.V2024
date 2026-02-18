@@ -57,7 +57,7 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         , DateTime? germinationDate, decimal? germinationRate
         , int? numberOfTransplants, DateTime? transplantDate
         , DateTime? firstHarvestDate, DateTime? lastHarvestDate, decimal? totalWeightInPounds, int? totalItems
-        , string Notes, int? desiredNumberOfPlants, int? spacingInInches, double? plantsPerFoot, List<PlantSchedule> plantCalendar)
+        , string Notes, int? desiredNumberOfPlants, int? spacingInInches, double? plantsPerFoot, string userProfileId, List<PlantSchedule> plantCalendar)
     {
         this.PlantId = plantId;
         this.PlantName = plantName;
@@ -82,6 +82,7 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         this.DesiredNumberOfPlants = desiredNumberOfPlants;
         this.SpacingInInches = spacingInInches == 0 ? null : spacingInInches;
         this.PlantsPerFoot = plantsPerFoot == 0 ? null : plantsPerFoot;
+        this.UserProfileId = userProfileId;
         this._plantCalendar = plantCalendar;
     }
 
