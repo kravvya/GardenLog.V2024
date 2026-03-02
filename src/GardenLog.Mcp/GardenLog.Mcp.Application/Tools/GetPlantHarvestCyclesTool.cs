@@ -11,26 +11,30 @@ namespace GardenLog.Mcp.Application.Tools;
 public class GetPlantHarvestCyclesTool
 {
     private readonly IPlantHarvestApiClient _plantHarvestApiClient;
+    private readonly IPlantCatalogApiClient _plantCatalogApiClient;
     private readonly IUserManagementApiClient _userManagementApiClient;
     private readonly IUserContextAccessor _userContextAccessor;
     private readonly ILogger<GetPlantHarvestCyclesTool> _logger;
 
     public GetPlantHarvestCyclesTool(
         IPlantHarvestApiClient plantHarvestApiClient,
+        IPlantCatalogApiClient plantCatalogApiClient,
         IUserManagementApiClient userManagementApiClient,
         IUserContextAccessor userContextAccessor,
         ILogger<GetPlantHarvestCyclesTool> logger)
     {
         _plantHarvestApiClient = plantHarvestApiClient;
+        _plantCatalogApiClient = plantCatalogApiClient;
         _userManagementApiClient = userManagementApiClient;
         _userContextAccessor = userContextAccessor;
         _logger = logger;
     }
 
     [McpServerTool(Name = "get_plant_harvest_cycles", UseStructuredContent = true)]
-    [Description("Search PlantHarvest cycles for the authenticated user using PlantHarvest search API. plantId is required. Returns simplified data without layout coordinates.")]
+    [Description("Search PlantHarvest cycles for a plant. Provide plantName for convenience OR plantId if already known. Returns simplified historical data without layout coordinates.")]
     public async Task<IReadOnlyCollection<PlantHarvestCycleToolResult>> ExecuteAsync(
-        [Description("Plant ID filter (required)")] string plantId,
+        [Description("Plant name (e.g., 'Tomatoes', 'Peppers') - required if plantId not provided")] string? plantName = null,
+        [Description("Plant ID - required if plantName not provided")] string? plantId = null,
         [Description("Optional Harvest Cycle ID filter")] string? harvestCycleId = null,
         [Description("Optional start date filter (inclusive)")] DateTime? startDate = null,
         [Description("Optional end date filter (inclusive)")] DateTime? endDate = null,
@@ -45,9 +49,20 @@ public class GetPlantHarvestCyclesTool
             throw new UnauthorizedAccessException("User context not found.");
         }
 
-        if (string.IsNullOrWhiteSpace(plantId))
+        if (string.IsNullOrWhiteSpace(plantName) && string.IsNullOrWhiteSpace(plantId))
         {
-            throw new ArgumentException("plantId is required.");
+            throw new ArgumentException("Either plantName or plantId must be provided.");
+        }
+
+        // Resolve plantName to plantId if needed
+        string? resolvedPlantId = plantId;
+        if (string.IsNullOrWhiteSpace(resolvedPlantId) && !string.IsNullOrWhiteSpace(plantName))
+        {
+            resolvedPlantId = await _plantCatalogApiClient.GetPlantIdByName(plantName);
+            if (string.IsNullOrWhiteSpace(resolvedPlantId))
+            {
+                throw new ArgumentException($"Plant '{plantName}' not found.");
+            }
         }
 
         if (startDate.HasValue && endDate.HasValue && startDate > endDate)
@@ -63,9 +78,11 @@ public class GetPlantHarvestCyclesTool
         int boundedLimit = limit <= 0 ? 100 : Math.Min(limit, 500);
 
         _logger.LogInformation(
-            "get_plant_harvest_cycles called: user={UserProfileId}, plantId={PlantId}, harvestCycleId={HarvestCycleId}, start={StartDate}, end={EndDate}, minGerminationRate={MinGerminationRate}, limit={Limit}",
+            "get_plant_harvest_cycles called: user={UserProfileId}, plantName={PlantName}, plantId={PlantId}, resolvedPlantId={ResolvedPlantId}, harvestCycleId={HarvestCycleId}, start={StartDate}, end={EndDate}, minGerminationRate={MinGerminationRate}, limit={Limit}",
             userProfileId,
+            plantName,
             plantId,
+            resolvedPlantId,
             harvestCycleId,
             startDate,
             endDate,
@@ -74,7 +91,7 @@ public class GetPlantHarvestCyclesTool
 
         var query = new PlantHarvestCycleSearch
         {
-            PlantId = plantId,
+            PlantId = resolvedPlantId,
             HarvestCycleId = harvestCycleId,
             StartDate = startDate,
             EndDate = endDate,
