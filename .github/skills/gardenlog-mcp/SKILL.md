@@ -28,8 +28,9 @@ Identify which workflow to use based on the user's question:
 1. **`search_plants`** → Get `plantId` from plant name
 2. **`get_current_harvest_cycle`** → Get active `harvestCycleId`
 3. **`get_plant_details`** → Get baseline grow instructions (e.g., "6 weeks before warm soil")
-4. **`get_plant_harvest_cycles`** → Get planned dates from `plantCalendar` where `taskType == 'SowIndoors'` or `'SowOutside'`
-5. **`get_worklog_history`** → Get historical actual seeding dates (use `reason: 'SowIndoors'` or `'SowOutside'`)
+4. **`get_plant_schedule`** → Get current cycle's planned schedule for the specific plant (use `plantName` or `plantHarvestCycleId`)
+5. **`get_plant_harvest_cycles`** → Get historical cycle data (notes with quality signals, dates, germination rates) for the plant
+6. **`get_worklog_history`** → Get historical actual seeding dates (use `reason: 'SowIndoors'` or `'SowOutside'`)
 
 ### Critical: Evaluate Outcome Quality Signals
 
@@ -89,10 +90,13 @@ From the `notes` field in `get_plant_harvest_cycles` results, classify each hist
 ### Tool Call Sequence
 
 1. **`get_current_harvest_cycle`** → Get active `harvestCycleId`
-2. **`get_harvest_cycle_plants`** → Enumerate all plants in cycle
-3. **For each plant:**
-   - **`get_plant_harvest_cycles`** → Get planned seeding dates
-   - **`get_worklog_history`** → Get historical seeding dates (2-3 years)
+2. **`get_harvest_cycle_plants_summary`** → Enumerate all plants in cycle (lightweight list with optional varieties/beds)
+   - Use `includeVarieties=true` if you need variety-level recommendations
+   - Use `includeBeds=false` if you only need plant/variety list
+3. **For each plant** (or selected plants):
+   - **`get_plant_schedule`** → Get planned seeding schedule for current cycle (use `plantName` parameter)
+   - **`get_plant_harvest_cycles`** → Get historical cycle data with quality signals (2-3 years)
+   - **`get_worklog_history`** → Get historical actual seeding dates (2-3 years)
    - Evaluate quality signals from notes
    - Calculate recommended date
    - Compare: `delta = recommended - planned`
@@ -144,7 +148,7 @@ From the `notes` field in `get_plant_harvest_cycles` results, classify each hist
 
 1. **`search_plants`** → Get `plantId`, infer plant family from name
 2. **`get_current_harvest_cycle`** → Get active `harvestCycleId` and `gardenId`
-3. **`get_plant_harvest_cycles`** → Check `gardenBedLayout` to find assigned `gardenBedId`
+3. **`get_plant_schedule`** → Get plant's current schedule to find assigned `gardenBedId` from bed placements
    - **If no bed assigned:** Stop - inform user to assign bed first
 4. **`get_garden_bed_history`** → Get 3-year history for the bed (use `startDate` = 3 years ago)
 5. **Classify plant families** for all historical plants + target plant
@@ -175,6 +179,39 @@ From the `notes` field in `get_plant_harvest_cycles` results, classify each hist
 **Recommendations:**
 1. [Specific actions: amend soil, monitor, consider different bed]
 ```
+
+---
+
+## Available MCP Tools
+
+### Core Discovery Tools
+
+| Tool | Purpose | Key Parameters | Returns |
+|------|---------|----------------|---------|
+| `search_plants` | Find plant by name/description | `searchText` (required) | Plant matches with `plantId`, `plantName`, `description` |
+| `get_plant_details` | Get baseline grow instructions | `plantId` (required) | Timing guidelines, spacing, germination, botanical info |
+| `get_current_harvest_cycle` | Get active planning cycle | None | Current `harvestCycleId`, cycle name, start/end dates, garden info |
+
+### Current Cycle Tools (Lightweight)
+
+| Tool | Purpose | Key Parameters | Returns |
+|------|---------|----------------|---------|
+| `get_harvest_cycle_plants_summary` | List all plants in cycle | `harvestCycleId` (required), `includeVarieties` (bool), `includeBeds` (bool) | Lightweight plant list (~5-10KB) |
+| `get_plant_schedule` | Get schedule for ONE plant | `plantName` OR `plantHarvestCycleId`, `harvestCycleId` (required) | Planned schedule tasks, notes, bed placements |
+
+### Historical Analysis Tools
+
+| Tool | Purpose | Key Parameters | Returns |
+|------|---------|----------------|---------|
+| `get_plant_harvest_cycles` | Historical cycles for ONE plant | `plantName` (required), `startDate` (optional), `endDate` (optional) | Past cycles with quality notes, germination, simplified bed info |
+| `get_worklog_history` | Get actual completed tasks | `reason` (e.g., "SowIndoors"), `startDate`, `endDate` | Historical actual dates |
+
+### Garden & Crop Rotation Tools
+
+| Tool | Purpose | Key Parameters | Returns |
+|------|---------|----------------|---------|
+| `get_garden_details` | Garden and bed info | `gardenId` (required) | Garden metadata, bed list (NO coordinates/layout) |
+| `get_garden_bed_history` | Bed planting history | `gardenBedId` (required), `startDate` (optional) | What was grown in bed (NO variety/layout details) |
 
 ---
 

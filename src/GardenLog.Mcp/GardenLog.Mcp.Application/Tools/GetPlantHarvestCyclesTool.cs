@@ -1,9 +1,9 @@
 using System.ComponentModel;
 using GardenLog.Mcp.Application.Services;
+using GardenLog.Mcp.Application.Tools.Models;
 using GardenLog.Mcp.Infrastructure.ApiClients;
 using ModelContextProtocol.Server;
 using PlantHarvest.Contract.Query;
-using PlantHarvest.Contract.ViewModels;
 
 namespace GardenLog.Mcp.Application.Tools;
 
@@ -11,22 +11,25 @@ namespace GardenLog.Mcp.Application.Tools;
 public class GetPlantHarvestCyclesTool
 {
     private readonly IPlantHarvestApiClient _plantHarvestApiClient;
+    private readonly IUserManagementApiClient _userManagementApiClient;
     private readonly IUserContextAccessor _userContextAccessor;
     private readonly ILogger<GetPlantHarvestCyclesTool> _logger;
 
     public GetPlantHarvestCyclesTool(
         IPlantHarvestApiClient plantHarvestApiClient,
+        IUserManagementApiClient userManagementApiClient,
         IUserContextAccessor userContextAccessor,
         ILogger<GetPlantHarvestCyclesTool> logger)
     {
         _plantHarvestApiClient = plantHarvestApiClient;
+        _userManagementApiClient = userManagementApiClient;
         _userContextAccessor = userContextAccessor;
         _logger = logger;
     }
 
     [McpServerTool(Name = "get_plant_harvest_cycles", UseStructuredContent = true)]
-    [Description("Search PlantHarvest cycles for the authenticated user using PlantHarvest search API. plantId is required.")]
-    public async Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> ExecuteAsync(
+    [Description("Search PlantHarvest cycles for the authenticated user using PlantHarvest search API. plantId is required. Returns simplified data without layout coordinates.")]
+    public async Task<IReadOnlyCollection<PlantHarvestCycleToolResult>> ExecuteAsync(
         [Description("Plant ID filter (required)")] string plantId,
         [Description("Optional Harvest Cycle ID filter")] string? harvestCycleId = null,
         [Description("Optional start date filter (inclusive)")] DateTime? startDate = null,
@@ -79,6 +82,61 @@ public class GetPlantHarvestCyclesTool
             Limit = boundedLimit
         };
 
-        return await _plantHarvestApiClient.SearchPlantHarvestCycles(query);
+        var cycles = await _plantHarvestApiClient.SearchPlantHarvestCycles(query);
+
+        // Get unique garden IDs to fetch bed names
+        var gardenIds = cycles
+            .SelectMany(c => c.GardenBedLayout)
+            .Select(gbl => gbl.GardenId)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList();
+
+        Dictionary<string, string> bedNames = new();
+        foreach (var gardenId in gardenIds)
+        {
+            try
+            {
+                var beds = await _userManagementApiClient.GetGardenBeds(gardenId);
+                foreach (var bed in beds)
+                {
+                    bedNames.TryAdd(bed.GardenBedId, bed.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to fetch bed names for gardenId={GardenId}", gardenId);
+            }
+        }
+
+        // Transform to simplified model
+        var results = cycles.Select(c => new PlantHarvestCycleToolResult
+        {
+            PlantHarvestCycleId = c.PlantHarvestCycleId,
+            HarvestCycleId = c.HarvestCycleId,
+            PlantId = c.PlantId ?? string.Empty,
+            PlantName = c.PlantName ?? string.Empty,
+            PlantVarietyId = c.PlantVarietyId ?? string.Empty,
+            PlantVarietyName = c.PlantVarietyName ?? string.Empty,
+            PlantGrowthInstructionId = c.PlantGrowthInstructionId,
+            PlantGrowthInstructionName = c.PlantGrowthInstructionName,
+            Notes = c.Notes,
+            GerminationRate = c.GerminationRate.HasValue ? (int?)Math.Round(c.GerminationRate.Value) : null,
+            PlantCalendar = c.PlantCalendar.Select(s => new ScheduledTask
+            {
+                TaskType = s.TaskType.ToString(),
+                StartDate = s.StartDate,
+                EndDate = s.EndDate,
+                IsSystemGenerated = s.IsSystemGenerated
+            }).ToList(),
+            GardenBeds = c.GardenBedLayout.Select(gbl => new GardenBedPlacement
+            {
+                GardenBedId = gbl.GardenBedId,
+                GardenBedName = bedNames.GetValueOrDefault(gbl.GardenBedId, gbl.GardenBedId),
+                NumberOfPlants = gbl.NumberOfPlants
+            }).ToList()
+        }).ToList();
+
+        return results;
     }
 }
