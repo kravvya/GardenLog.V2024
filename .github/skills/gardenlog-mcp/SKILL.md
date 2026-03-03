@@ -31,7 +31,9 @@ Identify which workflow to use based on the user's question:
 4. **`get_plant_schedule`** → Get current cycle's planned schedule for the specific plant
    - Returns ALL schedules (one per grow instruction)
    - For plants with multiple schedules (e.g., Radishes: spring + fall), filter by current date to pick relevant one
-   - Check `plantGrowthInstructionName` to understand which season/method   - Note: Does not include bed assignments. Use `get_harvest_cycle_plants_summary(includeBeds=true)` if you need bed info5. **`get_plant_harvest_cycles`** → Get historical cycle data (notes with quality signals, dates, germination rates) for the plant
+   - Check `plantGrowthInstructionName` to understand which season/method
+   - Note: Does not include bed assignments. Use `get_harvest_cycle_plants_summary(includeVarieties=true, includeBeds=true)` if you need bed info
+5. **`get_plant_harvest_cycles`** → Get historical cycle data (notes with quality signals, dates, germination rates) for the plant
 6. **`get_worklog_history`** → Get historical actual seeding dates (use `reason: 'SowIndoors'` or `'SowOutside'`)
 
 ### Critical: Evaluate Outcome Quality Signals
@@ -94,6 +96,7 @@ From the `notes` field in `get_plant_harvest_cycles` results, classify each hist
 1. **`get_current_harvest_cycle`** → Get active `harvestCycleId`
 2. **`get_harvest_cycle_plants_summary`** → Enumerate all plants in cycle (lightweight list with optional varieties/beds)
    - Use `includeVarieties=true` if you need variety-level recommendations
+   - Use `includeBeds=true` AND `includeVarieties=true` to see bed assignments (beds are associated with varieties)
    - Use `includeBeds=false` if you only need plant/variety list
 3. **For each plant** (or selected plants):
    - **`get_plant_schedule`** → Get planned seeding schedule for current cycle (use `plantName` parameter)
@@ -198,7 +201,7 @@ From the `notes` field in `get_plant_harvest_cycles` results, classify each hist
 
 | Tool | Purpose | Key Parameters | Returns |
 |------|---------|----------------|---------|
-| `get_harvest_cycle_plants_summary` | List all plants in cycle | `harvestCycleId` (required), `includeVarieties` (bool), `includeBeds` (bool) | Lightweight plant list (~5-10KB) |
+| `get_harvest_cycle_plants_summary` | List all plants in cycle | `harvestCycleId` (required), `includeVarieties` (bool), `includeBeds` (bool) | Lightweight plant list (~5-10KB). Note: Bed data requires BOTH `includeVarieties=true` AND `includeBeds=true` (beds are variety-specific). |
 | `get_plant_schedule` | Get ALL schedules for ONE plant | `plantName` OR `plantHarvestCycleId`, `harvestCycleId` (required) | ALL planned schedules (one per grow instruction). For plants with multiple schedules (spring/fall), all returned so AI can pick relevant one by current date. Does not include bed assignments. |
 
 ### Historical Analysis Tools
