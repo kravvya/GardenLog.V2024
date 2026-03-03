@@ -10,23 +10,20 @@ public class GetPlantScheduleTool
 {
     private readonly IPlantHarvestApiClient _plantHarvestApiClient;
     private readonly IPlantCatalogApiClient _plantCatalogApiClient;
-    private readonly IUserManagementApiClient _userManagementApiClient;
     private readonly ILogger<GetPlantScheduleTool> _logger;
 
     public GetPlantScheduleTool(
         IPlantHarvestApiClient plantHarvestApiClient,
         IPlantCatalogApiClient plantCatalogApiClient,
-        IUserManagementApiClient userManagementApiClient,
         ILogger<GetPlantScheduleTool> logger)
     {
         _plantHarvestApiClient = plantHarvestApiClient;
         _plantCatalogApiClient = plantCatalogApiClient;
-        _userManagementApiClient = userManagementApiClient;
         _logger = logger;
     }
 
     [McpServerTool(Name = "get_plant_schedule", UseStructuredContent = true)]
-    [Description("Get planned schedule for a plant. Provide plantName for convenience (finds current cycle), or provide plantHarvestCycleId if already known. For actual dates, call get_worklog_history separately.")]
+    [Description("Get planned schedule(s) for a plant grouped by grow instruction. For plants with multiple schedules (e.g., spring and fall), all are returned so AI can pick the relevant one by date. Multiple varieties with same grow instruction are merged into one schedule. For actual dates, call get_worklog_history separately.")]
     public async Task<PlantScheduleToolResult?> ExecuteAsync(
         [Description("Plant name (finds current harvest cycle automatically)")] string? plantName = null,
         [Description("Plant harvest cycle ID (if already known)")] string? plantHarvestCycleId = null,
@@ -35,15 +32,17 @@ public class GetPlantScheduleTool
     {
         string? resolvedPlantHarvestCycleId = plantHarvestCycleId;
         string? resolvedHarvestCycleId = harvestCycleId;
+        string? resolvedPlantId = null;
+        IReadOnlyCollection<PlantHarvest.Contract.ViewModels.PlantHarvestCycleViewModel> cycles = Array.Empty<PlantHarvest.Contract.ViewModels.PlantHarvestCycleViewModel>();
 
-        // If plantName provided, resolve to plantHarvestCycleId
+        // If plantName provided, get all cycles for that plant
         if (!string.IsNullOrWhiteSpace(plantName) && string.IsNullOrWhiteSpace(plantHarvestCycleId))
         {
-            _logger.LogInformation("get_plant_schedule: Resolving plant name '{PlantName}' to plantHarvestCycleId", plantName);
+            _logger.LogInformation("get_plant_schedule: Resolving plant name '{PlantName}' to plant harvest cycles", plantName);
 
             // Get plantId
-            var plantId = await _plantCatalogApiClient.GetPlantIdByName(plantName);
-            if (string.IsNullOrWhiteSpace(plantId))
+            resolvedPlantId = await _plantCatalogApiClient.GetPlantIdByName(plantName);
+            if (string.IsNullOrWhiteSpace(resolvedPlantId))
             {
                 throw new ArgumentException($"Plant '{plantName}' not found.");
             }
@@ -51,8 +50,8 @@ public class GetPlantScheduleTool
             // Get current harvest cycle if not provided
             if (string.IsNullOrWhiteSpace(resolvedHarvestCycleId))
             {
-                var cycles = await _plantHarvestApiClient.GetHarvestCycles();
-                var currentCycle = cycles
+                var harvestCycles = await _plantHarvestApiClient.GetHarvestCycles();
+                var currentCycle = harvestCycles
                     .Where(h => h.StartDate <= DateTime.UtcNow)
                     .Where(h => !h.EndDate.HasValue)
                     .OrderByDescending(h => h.StartDate)
@@ -64,77 +63,84 @@ public class GetPlantScheduleTool
                 resolvedHarvestCycleId = currentCycle.HarvestCycleId;
             }
 
-            // Find plant harvest cycles
+            // Find ALL plant harvest cycles for this plant in the cycle
             var plantQuery = new PlantHarvest.Contract.Query.PlantHarvestCycleSearch
             {
-                PlantId = plantId,
+                PlantId = resolvedPlantId,
                 HarvestCycleId = resolvedHarvestCycleId
             };
-            var plantHarvestCycles = await _plantHarvestApiClient.SearchPlantHarvestCycles(plantQuery);
+            cycles = await _plantHarvestApiClient.SearchPlantHarvestCycles(plantQuery);
 
-            if (!plantHarvestCycles.Any())
+            if (!cycles.Any())
             {
                 return null;
             }
-
-            // Take first match (could be multiple varieties)
-            resolvedPlantHarvestCycleId = plantHarvestCycles.First().PlantHarvestCycleId;
         }
+        // If plantHarvestCycleId provided, get just that one
+        else if (!string.IsNullOrWhiteSpace(plantHarvestCycleId))
+        {
+            resolvedPlantHarvestCycleId = plantHarvestCycleId;
 
-        if (string.IsNullOrWhiteSpace(resolvedPlantHarvestCycleId))
+            _logger.LogInformation("get_plant_schedule: Getting schedule for plantHarvestCycleId={PlantHarvestCycleId}", resolvedPlantHarvestCycleId);
+
+            // Search for this specific cycle
+            var cycleQuery = new PlantHarvest.Contract.Query.PlantHarvestCycleSearch
+            {
+                PlantId = resolvedPlantId ?? string.Empty,
+                HarvestCycleId = resolvedHarvestCycleId
+            };
+            var results = await _plantHarvestApiClient.SearchPlantHarvestCycles(cycleQuery);
+            var cycle = results.FirstOrDefault(c => c.PlantHarvestCycleId == resolvedPlantHarvestCycleId);
+            
+            if (cycle == null)
+            {
+                return null;
+            }
+            
+            cycles = new[] { cycle };
+            resolvedPlantId = cycle.PlantId;
+            resolvedHarvestCycleId = cycle.HarvestCycleId;
+        }
+        else
         {
             throw new ArgumentException("Either plantName or plantHarvestCycleId must be provided.");
         }
 
-        _logger.LogInformation("get_plant_schedule: Getting schedule for plantHarvestCycleId={PlantHarvestCycleId}", resolvedPlantHarvestCycleId);
-
-        // Get the plant harvest cycle details
-        var cycleQuery = new PlantHarvest.Contract.Query.PlantHarvestCycleSearch
-        {
-            PlantId = string.Empty  // Will be filtered below
-        };
-        var allResults = await _plantHarvestApiClient.SearchPlantHarvestCycles(cycleQuery);
-        var cycle = allResults.FirstOrDefault(c => c.PlantHarvestCycleId == resolvedPlantHarvestCycleId);
-
-        if (cycle == null)
+        if (!cycles.Any())
         {
             return null;
         }
 
-        // Get bed names
-        Dictionary<string, string> bedNames = new();
-        if (cycle.GardenBedLayout.Any())
-        {
-            var gardenId = cycle.GardenBedLayout.First().GardenId;
-            if (!string.IsNullOrWhiteSpace(gardenId))
+        // Build result with schedules grouped by grow instruction
+        var scheduleGroups = cycles
+            .GroupBy(c => c.PlantGrowthInstructionId ?? string.Empty)
+            .Select(g =>
             {
-                var beds = await _userManagementApiClient.GetGardenBeds(gardenId);
-                bedNames = beds.ToDictionary(b => b.GardenBedId, b => b.Name);
-            }
-        }
+                var first = g.First();
+
+                return new PlantScheduleGroup
+                {
+                    PlantHarvestCycleId = first.PlantHarvestCycleId,
+                    PlantGrowthInstructionId = first.PlantGrowthInstructionId,
+                    PlantGrowthInstructionName = first.PlantGrowthInstructionName,
+                    Notes = string.Join(" | ", g.Where(c => !string.IsNullOrWhiteSpace(c.Notes)).Select(c => c.Notes).Distinct()),
+                    PlannedTasks = first.PlantCalendar.Select(s => new ScheduledTask
+                    {
+                        TaskType = s.TaskType.ToString(),
+                        StartDate = s.StartDate,
+                        EndDate = s.EndDate,
+                        IsSystemGenerated = s.IsSystemGenerated
+                    }).ToList()
+                };
+            })
+            .ToList();
 
         var result = new PlantScheduleToolResult
         {
-            PlantHarvestCycleId = cycle.PlantHarvestCycleId,
-            PlantId = cycle.PlantId ?? string.Empty,
-            PlantName = cycle.PlantName ?? string.Empty,
-            PlantVarietyId = cycle.PlantVarietyId ?? string.Empty,
-            PlantVarietyName = cycle.PlantVarietyName ?? string.Empty,
-            HarvestCycleId = cycle.HarvestCycleId,
-            Notes = cycle.Notes,
-            PlannedTasks = cycle.PlantCalendar.Select(s => new ScheduledTask
-            {
-                TaskType = s.TaskType.ToString(),
-                StartDate = s.StartDate,
-                EndDate = s.EndDate,
-                IsSystemGenerated = s.IsSystemGenerated
-            }).ToList(),
-            Beds = cycle.GardenBedLayout.Select(gbl => new GardenBedPlacement
-            {
-                GardenBedId = gbl.GardenBedId,
-                GardenBedName = bedNames.GetValueOrDefault(gbl.GardenBedId, gbl.GardenBedId),
-                NumberOfPlants = gbl.NumberOfPlants
-            }).ToList()
+            PlantId = resolvedPlantId ?? string.Empty,
+            PlantName = cycles.First().PlantName ?? string.Empty,
+            HarvestCycleId = resolvedHarvestCycleId ?? string.Empty,
+            Schedules = scheduleGroups
         };
 
         return result;

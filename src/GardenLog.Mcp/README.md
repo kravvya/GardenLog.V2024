@@ -103,9 +103,9 @@ This ensures user-level data isolation throughout the chain.
 5. **get_harvest_cycle_plants_summary** - Returns lightweight plant list in a harvest cycle
   - Parameters: `harvestCycleId`, `includeVarieties` (bool), `includeBeds` (bool)
   - Returns: Simple plant/variety list (~5-10KB), optionally includes bed names
-6. **get_plant_schedule** - Returns schedule for ONE specific plant in current cycle
+6. **get_plant_schedule** - Returns ALL schedules for ONE specific plant in current cycle
   - Parameters: `harvestCycleId`, `plantName` OR `plantHarvestCycleId`
-  - Returns: Planned schedule tasks, notes, bed placements for ONE plant
+  - Returns: ALL planned schedules (one per grow instruction). For plants with multiple schedules per year (e.g., Radishes in spring and fall), all are returned so AI can filter by date. Does not include bed assignments.
 7. **get_plant_harvest_cycles** - **SIMPLIFIED** Searches user-scoped plant harvest cycles
   - Parameters: `plantName`, `startDate`, `endDate`, `limit`
   - Returns: Historical cycle records with quality notes and germination (simplified - NO layout coordinates)

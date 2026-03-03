@@ -28,8 +28,10 @@ Identify which workflow to use based on the user's question:
 1. **`search_plants`** → Get `plantId` from plant name
 2. **`get_current_harvest_cycle`** → Get active `harvestCycleId`
 3. **`get_plant_details`** → Get baseline grow instructions (e.g., "6 weeks before warm soil")
-4. **`get_plant_schedule`** → Get current cycle's planned schedule for the specific plant (use `plantName` or `plantHarvestCycleId`)
-5. **`get_plant_harvest_cycles`** → Get historical cycle data (notes with quality signals, dates, germination rates) for the plant
+4. **`get_plant_schedule`** → Get current cycle's planned schedule for the specific plant
+   - Returns ALL schedules (one per grow instruction)
+   - For plants with multiple schedules (e.g., Radishes: spring + fall), filter by current date to pick relevant one
+   - Check `plantGrowthInstructionName` to understand which season/method   - Note: Does not include bed assignments. Use `get_harvest_cycle_plants_summary(includeBeds=true)` if you need bed info5. **`get_plant_harvest_cycles`** → Get historical cycle data (notes with quality signals, dates, germination rates) for the plant
 6. **`get_worklog_history`** → Get historical actual seeding dates (use `reason: 'SowIndoors'` or `'SowOutside'`)
 
 ### Critical: Evaluate Outcome Quality Signals
@@ -197,7 +199,7 @@ From the `notes` field in `get_plant_harvest_cycles` results, classify each hist
 | Tool | Purpose | Key Parameters | Returns |
 |------|---------|----------------|---------|
 | `get_harvest_cycle_plants_summary` | List all plants in cycle | `harvestCycleId` (required), `includeVarieties` (bool), `includeBeds` (bool) | Lightweight plant list (~5-10KB) |
-| `get_plant_schedule` | Get schedule for ONE plant | `plantName` OR `plantHarvestCycleId`, `harvestCycleId` (required) | Planned schedule tasks, notes, bed placements |
+| `get_plant_schedule` | Get ALL schedules for ONE plant | `plantName` OR `plantHarvestCycleId`, `harvestCycleId` (required) | ALL planned schedules (one per grow instruction). For plants with multiple schedules (spring/fall), all returned so AI can pick relevant one by current date. Does not include bed assignments. |
 
 ### Historical Analysis Tools
 
@@ -232,6 +234,14 @@ From the `notes` field in `get_plant_harvest_cycles` results, classify each hist
 ### Multiple Varieties
 - If different seeding dates: show range or breakdown by variety
 - If same dates: group as single recommendation
+
+### Plants with Multiple Growing Seasons
+- **Example:** Radishes have spring and fall schedules
+- **Solution:** `get_plant_schedule` returns ALL schedules (one per grow instruction)
+- **AI Action:** Filter by current date:
+  - If asking "what to seed next" in March → Use spring schedule (past dates in fall schedule should be ignored)
+  - If asking "what to seed next" in August → Use fall schedule (past dates in spring schedule should be ignored)
+- **Pattern:** Check `plantGrowthInstructionName` (e.g., "Direct seed in early spring" vs "Direct seed in late summer")
 
 ---
 
