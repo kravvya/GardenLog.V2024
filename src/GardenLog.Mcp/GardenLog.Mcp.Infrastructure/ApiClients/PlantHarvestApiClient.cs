@@ -8,6 +8,7 @@ public interface IPlantHarvestApiClient
     Task<IReadOnlyCollection<WorkLogViewModel>> SearchWorkLogs(WorkLogSearch search);
     Task<IReadOnlyCollection<WorkLogViewModel>> GetWorkLogs(string entityType, string entityId);
     Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> SearchPlantHarvestCycles(PlantHarvestCycleSearch search);
+    Task<IReadOnlyCollection<PlantHarvestCycleSummaryViewModel>> SearchPlantHarvestCycleSummaries(PlantHarvestCycleSummarySearch search);
     Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> GetPlantHarvestCycles(string harvestCycleId);
     Task<IReadOnlyCollection<HarvestCycleViewModel>> GetHarvestCycles();
     Task<IReadOnlyCollection<GardenBedPlantHarvestCycleViewModel>> GetGardenBedUsageHistory(string gardenId, string gardenBedId);
@@ -142,6 +143,46 @@ public class PlantHarvestApiClient : IPlantHarvestApiClient
         {
             _logger.LogError("Unable to search PlantHarvestCycles");
             return Array.Empty<PlantHarvestCycleViewModel>();
+        }
+
+        return response.Response;
+    }
+
+    public async Task<IReadOnlyCollection<PlantHarvestCycleSummaryViewModel>> SearchPlantHarvestCycleSummaries(PlantHarvestCycleSummarySearch search)
+    {
+        var queryParams = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(search.PlantId))
+        {
+            queryParams.Add($"plantId={Uri.EscapeDataString(search.PlantId)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(search.PlantName))
+        {
+            queryParams.Add($"plantName={Uri.EscapeDataString(search.PlantName)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(search.HarvestCycleId))
+        {
+            queryParams.Add($"harvestCycleId={Uri.EscapeDataString(search.HarvestCycleId)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(search.HarvestCycleName))
+        {
+            queryParams.Add($"harvestCycleName={Uri.EscapeDataString(search.HarvestCycleName)}");
+        }
+
+        var route = HarvestRoutes.SearchPlantHarvestCycleSummaries;
+        if (queryParams.Count > 0)
+        {
+            route = $"{route}?{string.Join("&", queryParams)}";
+        }
+
+        var response = await _httpClient.ApiGetAsync<List<PlantHarvestCycleSummaryViewModel>>(route);
+        if (!response.IsSuccess || response.Response == null)
+        {
+            _logger.LogError("Unable to search PlantHarvestCycle summaries");
+            return Array.Empty<PlantHarvestCycleSummaryViewModel>();
         }
 
         return response.Response;

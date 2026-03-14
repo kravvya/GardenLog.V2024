@@ -4,6 +4,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using PlantHarvest.Contract.Query;
+using System.Text.RegularExpressions;
 
 namespace PlantHarvest.Infrastructure.Data.Repositories;
 
@@ -208,6 +209,128 @@ public class PlantHarvestCycleRepository : BaseRepository<PlantHarvestCycle>, IP
         });
 
         return plants;
+    }
+
+    public async Task<IReadOnlyCollection<PlantHarvestCycleSummaryViewModel>> SearchPlantHarvestCycleSummariesForUser(PlantHarvestCycleSummarySearch search, string userProfileId)
+    {
+        var builder = Builders<PlantHarvestCycle>.Filter;
+        List<FilterDefinition<PlantHarvestCycle>> filters = new();
+
+        if (!string.IsNullOrWhiteSpace(search.PlantId))
+        {
+            filters.Add(builder.Eq("PlantId", search.PlantId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(search.HarvestCycleId))
+        {
+            filters.Add(builder.Eq("HarvestCycleId", search.HarvestCycleId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(search.PlantName))
+        {
+            var plantNamePattern = Regex.Escape(search.PlantName.Trim());
+            filters.Add(builder.Regex("PlantName", new BsonRegularExpression(plantNamePattern, "i")));
+        }
+
+        var serializerRegistry = BsonSerializer.SerializerRegistry;
+        var plantSerializer = serializerRegistry.GetSerializer<PlantHarvestCycle>();
+
+        var pipeline = new List<BsonDocument>();
+
+        if (filters.Count > 0)
+        {
+            var renderedFilters = filters
+                .Select(filter => filter.Render(new RenderArgs<PlantHarvestCycle>(plantSerializer, serializerRegistry)))
+                .ToArray();
+
+            pipeline.Add(new BsonDocument("$match", new BsonDocument("$and", new BsonArray(renderedFilters))));
+        }
+
+        var harvestLookupPipeline = new BsonArray
+        {
+            new BsonDocument("$match", new BsonDocument("$expr", new BsonDocument("$eq", new BsonArray { "$_id", "$$cycleId" }))),
+            new BsonDocument("$match", new BsonDocument("UserProfileId", userProfileId))
+        };
+
+        if (!string.IsNullOrWhiteSpace(search.HarvestCycleName))
+        {
+            harvestLookupPipeline.Add(new BsonDocument("$match", new BsonDocument("HarvestCycleName", new BsonRegularExpression(Regex.Escape(search.HarvestCycleName.Trim()), "i"))));
+        }
+
+        pipeline.Add(
+            new BsonDocument("$lookup", new BsonDocument
+            {
+                { "from", HARVEST_COLLECTION_NAME },
+                { "let", new BsonDocument("cycleId", "$HarvestCycleId") },
+                { "pipeline", harvestLookupPipeline },
+                { "as", "AuthorizedHarvestCycle" }
+            }));
+
+        pipeline.Add(new BsonDocument("$match", new BsonDocument("AuthorizedHarvestCycle.0", new BsonDocument("$exists", true))));
+        pipeline.Add(new BsonDocument("$addFields", new BsonDocument
+        {
+            { "HarvestCycleName", new BsonDocument("$arrayElemAt", new BsonArray { "$AuthorizedHarvestCycle.HarvestCycleName", 0 }) },
+            { "NormalizedNotes", new BsonDocument("$trim", new BsonDocument("input", new BsonDocument("$ifNull", new BsonArray { "$Notes", string.Empty }))) }
+        }));
+        pipeline.Add(new BsonDocument("$group", new BsonDocument
+        {
+            {
+                "_id",
+                new BsonDocument
+                {
+                    { "PlantId", "$PlantId" },
+                    { "PlantGrowthInstructionId", "$PlantGrowthInstructionId" },
+                    { "HarvestCycleId", "$HarvestCycleId" }
+                }
+            },
+            { "PlantName", new BsonDocument("$first", "$PlantName") },
+            { "PlantGrowthInstructionName", new BsonDocument("$first", "$PlantGrowthInstructionName") },
+            { "HarvestCycleName", new BsonDocument("$first", "$HarvestCycleName") },
+            { "EarliestSeedingDate", new BsonDocument("$min", "$SeedingDate") },
+            { "EarliestTransplantDate", new BsonDocument("$min", "$TransplantDate") },
+            { "EarliestHarvestDate", new BsonDocument("$min", "$FirstHarvestDate") },
+            { "LatestHarvestDate", new BsonDocument("$max", "$LastHarvestDate") },
+            { "FeedbackNotes", new BsonDocument("$addToSet", "$NormalizedNotes") }
+        }));
+        pipeline.Add(new BsonDocument("$project", new BsonDocument
+        {
+            { "_id", 0 },
+            { "PlantId", "$_id.PlantId" },
+            { "PlantName", "$PlantName" },
+            { "PlantGrowthInstructionId", "$_id.PlantGrowthInstructionId" },
+            { "PlantGrowthInstructionName", "$PlantGrowthInstructionName" },
+            { "HarvestCycleId", "$_id.HarvestCycleId" },
+            { "HarvestCycleName", "$HarvestCycleName" },
+            { "EarliestSeedingDate", "$EarliestSeedingDate" },
+            { "EarliestTransplantDate", "$EarliestTransplantDate" },
+            { "EarliestHarvestDate", "$EarliestHarvestDate" },
+            { "LatestHarvestDate", "$LatestHarvestDate" },
+            {
+                "FeedbackNotes",
+                new BsonDocument("$filter", new BsonDocument
+                {
+                    { "input", "$FeedbackNotes" },
+                    { "as", "note" },
+                    { "cond", new BsonDocument("$ne", new BsonArray { "$$note", string.Empty }) }
+                })
+            }
+        }));
+        pipeline.Add(new BsonDocument("$sort", new BsonDocument
+        {
+            { "LatestHarvestDate", -1 },
+            { "EarliestHarvestDate", -1 },
+            { "HarvestCycleName", 1 },
+            { "PlantName", 1 },
+            { "PlantGrowthInstructionName", 1 }
+        }));
+
+        var documents = await GetBsonCollection()
+            .Aggregate<BsonDocument>(pipeline)
+            .ToListAsync();
+
+        return documents
+            .Select(document => BsonSerializer.Deserialize<PlantHarvestCycleSummaryViewModel>(document))
+            .ToList();
     }
 
 

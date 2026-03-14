@@ -17,6 +17,7 @@ public static class HarvestRoutes
     public const string DeletePlantHarvestCycle = PlantHarvestBase + "/{harvestId}/PlantHarvestCycles/{id}";   
     public const string GetPlantHarvestCyclesByPlant = PlantHarvestBase + "/PlanHarvestCycles/Plants/{plantId}/";
     public const string SearchPlantHarvestCycles = PlantHarvestBase + "/PlantHarvestCycles/search";
+    public const string SearchPlantHarvestCycleSummaries = PlantHarvestBase + "/PlantHarvestCycles/summaries/search";
 
     public const string CreatePlantSchedule = PlantHarvestBase + "/{harvestId}/PlantHarvestCycles/{plantHarvestId}/schedules";
     public const string UpdatePlantSchedule = PlantHarvestBase + "/{harvestId}/PlantHarvestCycles/{plantHarvestId}/schedules/{id}";

@@ -17,5 +17,6 @@ public interface IPlantHarvestCycleRepository : IRepository<PlantHarvestCycle>
     Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> GetPlantHarvestCycleViews(string harvestCycleId);
     Task<IReadOnlyCollection<PlantHarvestCycleIdentityOnlyViewModel>> GetPlantHarvestCyclesByPlantId(string plantId);
     Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> SearchPlantHarvestCyclesForUser(PlantHarvestCycleSearch search, string userProfileId);
+    Task<IReadOnlyCollection<PlantHarvestCycleSummaryViewModel>> SearchPlantHarvestCycleSummariesForUser(PlantHarvestCycleSummarySearch search, string userProfileId);
     void DeletePlantHarvestCycle(string harvestCyclceId);
 }

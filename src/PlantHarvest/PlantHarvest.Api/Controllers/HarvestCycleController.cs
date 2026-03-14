@@ -192,6 +192,28 @@ public class HarvestCycleController : Controller
     }
 
     [HttpGet()]
+    [ActionName("SearchPlantHarvestCycleSummaries")]
+    [Route(HarvestRoutes.SearchPlantHarvestCycleSummaries)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType(typeof(IReadOnlyCollection<PlantHarvestCycleSummaryViewModel>), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult<IReadOnlyCollection<PlantHarvestCycleSummaryViewModel>>> SearchPlantHarvestCycleSummaries(
+        string? plantId,
+        string? plantName,
+        string? harvestCycleId,
+        string? harvestCycleName)
+    {
+        var search = new PlantHarvestCycleSummarySearch
+        {
+            PlantId = plantId,
+            PlantName = plantName,
+            HarvestCycleId = harvestCycleId,
+            HarvestCycleName = harvestCycleName
+        };
+
+        return Ok(await _queryHandler.SearchPlantHarvestCycleSummaries(search));
+    }
+
+    [HttpGet()]
     [ActionName("GetPlantHarvestCyclesByPlant")]
     [Route(HarvestRoutes.GetPlantHarvestCyclesByPlant)]
     [ProducesResponseType((int)HttpStatusCode.Unauthorized)]

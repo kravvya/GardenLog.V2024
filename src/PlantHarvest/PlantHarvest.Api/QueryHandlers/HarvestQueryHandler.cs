@@ -18,6 +18,7 @@ public interface IHarvestQueryHandler
     Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> GetPlantHarvestCycles(string harvestCycleId);
     Task<IReadOnlyCollection<PlantHarvestCycleIdentityOnlyViewModel>> GetPlantHarvestCyclesByPlantId(string plantId);
     Task<IReadOnlyCollection<PlantHarvestCycleViewModel>> SearchPlantHarvestCycles(PlantHarvestCycleSearch search);
+    Task<IReadOnlyCollection<PlantHarvestCycleSummaryViewModel>> SearchPlantHarvestCycleSummaries(PlantHarvestCycleSummarySearch search);
 }
 
 
@@ -148,6 +149,22 @@ public class HarvestQueryHandler : IHarvestQueryHandler
         catch (Exception ex)
         {
             _logger.LogCritical(ex, "Exception searching plant harvest cycles");
+            throw;
+        }
+    }
+
+    public async Task<IReadOnlyCollection<PlantHarvestCycleSummaryViewModel>> SearchPlantHarvestCycleSummaries(PlantHarvestCycleSummarySearch search)
+    {
+        _logger.LogInformation("Received request to search plant harvest cycle summaries");
+        string userProfileId = _httpContextAccessor.HttpContext?.User.GetUserProfileId(_httpContextAccessor.HttpContext.Request.Headers)!;
+
+        try
+        {
+            return await _plantHarvestCycleRepository.SearchPlantHarvestCycleSummariesForUser(search, userProfileId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "Exception searching plant harvest cycle summaries");
             throw;
         }
     }
