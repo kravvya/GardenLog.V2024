@@ -15,6 +15,7 @@ Identify which workflow to use based on the user's question:
 |-------------------|------------------|
 | "When should I seed [plant]?" | **Single Plant Seeding Analysis** |
 | "When should I seed everything?" | **Full Cycle Seed Plan** |
+| "What can I seed between now and [date]?" | **Historical Seeding Window Search** |
 | "Can I plant [plant] in this bed?" | **Crop Rotation Check** |
 
 ---
@@ -134,7 +135,65 @@ From the `notes` field in `get_plant_harvest_cycles` results, classify each hist
 
 ---
 
-## Workflow 3: Crop Rotation Check
+## Workflow 3: Historical Seeding Window Search
+
+**Purpose:** Identify all plants that are historically seeded within a target calendar window, using the full historical summary row per plant, grow instruction, and harvest cycle.
+
+`search_plant_harvest_summaries` is not an earliest-date-only tool. Use `earliestSeedingDate` to decide whether a row falls inside the target seeding window, but also use `earliestTransplantDate`, `earliestHarvestDate`, `latestHarvestDate`, and `feedbackNotes` to explain timing, progression, and quality signals.
+
+Use this workflow for questions like:
+- "What can I seed between now and March 29?"
+- "What should I start in the next two weeks?"
+- "Which plants historically get seeded before April?"
+
+### Tool Call Sequence
+
+1. **`search_plant_harvest_summaries`** → Retrieve grouped historical summaries across all harvest cycles
+   - Leave all filters empty to analyze all plants
+   - Use `plantName` if the user asks about a single plant
+   - Use `harvestCycleName` or `harvestCycleId` only if the user explicitly wants one cycle
+2. **For each result row**:
+   - Read `earliestSeedingDate`, `earliestTransplantDate`, `earliestHarvestDate`, `latestHarvestDate`, and `feedbackNotes`
+   - Use `earliestSeedingDate` to determine whether the row falls in the user's target seeding window
+   - Normalize the seeding date to the current year by month and day only
+   - Compare that normalized month/day against the user's target window
+3. **Group the final answer** by plant and grow instruction
+   - If multiple historical rows exist for the same plant/grow instruction, keep the earliest historical seeding date
+   - Preserve `plantGrowthInstructionName` because different grow instructions for the same plant may have different seeding windows
+4. **Use the rest of the row to improve the answer**
+   - Surface `earliestTransplantDate` when the user is planning starts that move outdoors later
+   - Surface `earliestHarvestDate` and `latestHarvestDate` when the user asks about crop duration or harvest span
+   - Surface `feedbackNotes` when they contain useful context about success, failure, timing, or conditions
+
+### Important Interpretation Rules
+
+- Use `earliestSeedingDate` as the historical baseline for "earliest known start"
+- Ignore rows where `earliestSeedingDate` is null
+- Compare month/day against the current year window, not the original historical year
+- Treat each `plantName + plantGrowthInstructionName` combination separately
+  - Example: Lettuce direct-seeded and lettuce started indoors are different rows
+- Do not discard the other summary fields after filtering
+   - They provide lifecycle context and should be used whenever the user asks follow-up questions about transplant timing, harvest timing, or historical notes
+
+### Output Format
+
+```
+## Plants Historically Seeded Between [Start] and [End]
+
+| Plant | Grow Instruction | Earliest Historical Seeding |
+|-------|------------------|-----------------------------|
+| Peppers | Start Indoors | Mar 15 |
+| Tomatoes | Start Indoors | Mar 27 |
+
+**Notes:**
+- Dates are based on the earliest historical seeding date found in GardenLog.
+- Different grow instructions for the same plant are listed separately when timing differs.
+- When helpful, include transplant timing, harvest timing, and relevant feedback notes from the same summary rows.
+```
+
+---
+
+## Workflow 4: Crop Rotation Check
 
 **Purpose:** Validate that a plant isn't being placed in a bed where the same plant/family was grown within 3 years.
 
@@ -208,6 +267,7 @@ From the `notes` field in `get_plant_harvest_cycles` results, classify each hist
 
 | Tool | Purpose | Key Parameters | Returns |
 |------|---------|----------------|---------|
+| `search_plant_harvest_summaries` | Historical summary rows across plants, grow instructions, and harvest cycles | `plantId`, `plantName`, `harvestCycleId`, `harvestCycleName` (all optional) | One row per plant + grow instruction + harvest cycle with `earliestSeedingDate`, `earliestTransplantDate`, `earliestHarvestDate`, `latestHarvestDate`, and distinct non-empty `feedbackNotes` |
 | `get_plant_harvest_cycles` | Historical cycles for ONE plant | `plantName` (required), `startDate` (optional), `endDate` (optional) | Past cycles with quality notes, germination, simplified bed info |
 | `get_worklog_history` | Get actual completed tasks | `reason` (e.g., "SowIndoors"), `startDate`, `endDate` | Historical actual dates |
 
