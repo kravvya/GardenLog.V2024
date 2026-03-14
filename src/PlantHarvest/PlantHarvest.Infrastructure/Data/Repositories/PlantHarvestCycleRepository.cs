@@ -1,6 +1,7 @@
 ﻿using GardenLog.SharedInfrastructure.MongoDB;
 using GardenLog.SharedKernel.Interfaces;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using PlantHarvest.Contract.Query;
 using System.Text.RegularExpressions;
@@ -10,6 +11,7 @@ namespace PlantHarvest.Infrastructure.Data.Repositories;
 public class PlantHarvestCycleRepository : BaseRepository<PlantHarvestCycle>, IPlantHarvestCycleRepository
 {
     private const string PLANT_HARVEST_COLLECTION_NAME = "PlantHarvestCycle-Collection";
+    private const string HARVEST_COLLECTION_NAME = "HarvestCycle-Collection";
     private readonly ILogger<PlantHarvestCycleRepository> _logger;
 
     public PlantHarvestCycleRepository(IUnitOfWork unitOfWork, ILogger<PlantHarvestCycleRepository> logger)
