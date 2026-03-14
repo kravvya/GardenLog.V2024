@@ -1,0 +1,84 @@
+# Task: Crop Rotation Analysis for {plantName}
+
+## Objective
+Validate crop rotation for {plantName} based on its current bed assignment in the active harvest cycle.
+
+Analyze crop rotation patterns by:
+1. Identifying the plant and its family (Brassicas, Nightshades, Cucurbits, Legumes, Alliums, etc.)
+2. Finding which bed the plant is assigned to in current harvest cycle
+3. Getting 3-year bed history for that bed
+4. Detecting rotation violations:
+   - Critical: Same plant within 3 years
+   - Warning: Same family within 3 years
+   - Info: Good rotation (3+ year gap)
+5. Providing risk assessment and recommendations
+
+**Important:** If plant is not assigned to a bed, stop and inform user.
+
+## Workflow Reference
+Follow the complete workflow defined in:
+**Resource:** gardenlog://guides/crop-rotation
+
+## Key Requirements
+
+### Plant Family Classification:
+Refer to the resource guide for major plant families:
+- **Brassicas:** Broccoli, Cauliflower, Cabbage, Kale, Brussels Sprouts, Radish, Turnip, etc.
+- **Nightshades:** Tomatoes, Peppers, Eggplant, Potatoes
+- **Cucurbits:** Cucumbers, Squash, Zucchini, Melons, Pumpkins
+- **Legumes:** Beans, Peas
+- **Alliums:** Onions, Garlic, Leeks, Shallots
+- And more (see resource guide for complete list)
+
+### Violation Detection:
+- **Critical (❌):** Same plant in bed within last 3 years
+  - Risk: Disease buildup, pest pressure, soil depletion
+- **Warning (⚠️):** Same family in bed within last 3 years
+  - Risk: Nutrient depletion, related diseases
+- **Good (✅):** No family conflict, 3+ year gap
+  - Benefit: Soil recovery, pest break
+
+### Output Format:
+```
+## Crop Rotation Analysis: {plantName}
+
+**Plant:** [Name] ([Family] family)
+**Assigned Bed:** [Bed Name]
+**Current Cycle:** [Cycle Name]
+
+[Status Icon] **[Severity Level]**
+
+**3-Year Bed History:**
+- [Plant] ([Family], occupied [dates])
+- [Plant] ([Family], occupied [dates])
+- [Plant] ([Family], occupied [dates])
+
+**Risk Assessment:**
+[Explain specific problems if violation detected, or confirm good rotation]
+
+**Recommendations:**
+[Specific action items based on findings]
+```
+
+## Expected Tool Calls
+You will need to call these MCP tools:
+1. search_plants (plantName="{plantName}")
+2. get_current_harvest_cycle (to get harvestCycleId and gardenId)
+3. get_plant_harvest_cycles (plantId, harvestCycleId) - to get bed assignment from gardenBedLayout
+4. get_garden_bed_history (gardenId, gardenBedId, startDate=[3 years ago], endDate=[today])
+
+Refer to the resource guide for detailed workflow steps.
+
+## Edge Cases to Handle:
+- **Plant not assigned to bed:** Stop and inform user to assign plant to bed first
+- **No bed history available:** Note "Insufficient history, no concerns detected"
+- **Plant family unknown:** Treat as "Unknown family", only check exact plant match
+- **Multiple varieties in different beds:** Analyze each bed assignment separately
+- **New bed:** Safe to use, no rotation concerns
+
+## Current Context
+- Today's Date: Use current date for history lookback
+- Plant: {plantName}
+- Scope: Current harvest cycle bed assignment only
+
+Begin the rotation analysis now.

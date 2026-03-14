@@ -1,7 +1,7 @@
 using System.ComponentModel;
+using GardenLog.Mcp.Application.Tools.Models;
 using GardenLog.Mcp.Infrastructure.ApiClients;
 using ModelContextProtocol.Server;
-using PlantHarvest.Contract.ViewModels;
 
 namespace GardenLog.Mcp.Application.Tools;
 
@@ -21,7 +21,7 @@ public class GetGardenBedHistoryTool
 
     [McpServerTool(Name = "get_garden_bed_history", UseStructuredContent = true)]
     [Description("Get historical garden bed occupancy from PlantHarvest for crop rotation analysis.")]
-    public async Task<IReadOnlyCollection<GardenBedPlantHarvestCycleViewModel>> ExecuteAsync(
+    public async Task<IReadOnlyCollection<GardenBedHistoryToolResult>> ExecuteAsync(
         [Description("Garden ID (required)")] string gardenId,
         [Description("Garden bed ID (required)")] string gardenBedId,
         [Description("Optional start date filter (inclusive)")] DateTime? startDate = null,
@@ -76,6 +76,15 @@ public class GetGardenBedHistoryTool
             })
             .OrderByDescending(item => item.StartDate ?? DateTime.MinValue)
             .Take(boundedLimit)
+            .Select(item => new GardenBedHistoryToolResult
+            {
+                HarvestCycleId = item.HarvestCycleId,
+                PlantId = item.PlantId,
+                PlantName = item.PlantName,
+                StartDate = item.StartDate,
+                EndDate = item.EndDate,
+                NumberOfPlants = item.NumberOfPlants
+            })
             .ToList();
 
         return filtered;

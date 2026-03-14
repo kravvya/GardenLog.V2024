@@ -148,14 +148,14 @@ Use this sequence for full-cycle planning questions (for example: "go through ev
    - Output: active `harvestCycleId`, `gardenId`, cycle metadata
 
 2. **Enumerate plants present in the active cycle**
-   - Tool: `get_harvest_cycle_plants`
-   - Input: `harvestCycleId`
-   - Output: distinct cycle plants (canonical `plantId` + `plantName`, optional variety summary)
+   - Tool: `get_harvest_cycle_plants_summary` (**NEW - replaces old get_harvest_cycle_plants**)
+   - Input: `harvestCycleId`, `includeVarieties=true`, `includeBeds=false`
+   - Output: Lightweight plant/variety list (~5-10KB vs 517KB from old tool)
 
 3. **Extract planned seeding dates for each cycle plant**
-   - Tool: `get_plant_harvest_cycles`
-   - Input: `plantId` + active `harvestCycleId`
-   - Output: `PlantCalendar` seeding task(s): `SowIndoors` and/or `SowOutside`
+   - Tool: `get_plant_schedule` (**NEW - for ONE plant at a time**)
+   - Input: `harvestCycleId` + `plantName`
+   - Output: Scheduled tasks including `SowIndoors` and/or `SowOutside` with dates
    - Rule: normalize to a representative planned seeding date (single date or window start)
 
 4. **Fetch historical actual seeding dates**

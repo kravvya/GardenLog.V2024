@@ -100,6 +100,7 @@ This ensures user-level data isolation throughout the chain.
 4. **search_harvest_cycles** - Searches harvest cycles for the authenticated user
   - Parameters: `harvestCycleName`, `gardenId`, `year`, `startDate`, `endDate`, `limit`
   - Returns: Matching harvest cycles sorted by start date
+<<<<<<< HEAD
 5. **get_harvest_cycle_plants** - Returns distinct plants in a harvest cycle
   - Parameters: `harvestCycleId`, `includePlantHarvestCycles` (default `true`)
   - Returns: One row per plant plus variety summary and optional full `plantHarvestCycles` (including `plantCalendar` dates)
@@ -116,8 +117,26 @@ This ensures user-level data isolation throughout the chain.
   - Parameters: `gardenId` or `gardenName`, `includeGardenBeds`
   - Returns: Garden details including optional garden bed list
 10. **get_garden_bed_history** - Retrieves bed occupancy history from PlantHarvest API
+=======
+5. **get_harvest_cycle_plants_summary** - Returns lightweight plant list in a harvest cycle
+  - Parameters: `harvestCycleId`, `includeVarieties` (bool), `includeBeds` (bool)
+  - Returns: Simple plant/variety list (~5-10KB). Note: Bed data requires BOTH `includeVarieties=true` AND `includeBeds=true` (beds are variety-specific).
+6. **get_plant_schedule** - Returns ALL schedules for ONE specific plant in current cycle
+  - Parameters: `harvestCycleId`, `plantName` OR `plantHarvestCycleId`
+  - Returns: ALL planned schedules (one per grow instruction). For plants with multiple schedules per year (e.g., Radishes in spring and fall), all are returned so AI can filter by date. Does not include bed assignments.
+7. **get_plant_harvest_cycles** - **SIMPLIFIED** Searches user-scoped plant harvest cycles
+  - Parameters: `plantName`, `startDate`, `endDate`, `limit`
+  - Returns: Historical cycle records with quality notes and germination (simplified - NO layout coordinates)
+8. **get_worklog_history** - Searches user-scoped work logs from PlantHarvest API
+  - Parameters: `plantId`, `startDate`, `endDate`, `reason`, `limit`
+  - Returns: WorkLog history ordered by event date
+9. **get_garden_details** - **SIMPLIFIED** Retrieves garden details from UserManagement API
+  - Parameters: `gardenId` or `gardenName`, `includeGardenBeds`
+  - Returns: Garden details with bed list (NO coordinates, rotation, or visual layout fields)
+10. **get_garden_bed_history** - **SIMPLIFIED** Retrieves bed occupancy history for crop rotation
+>>>>>>> 4349edfd9fd1fd84200d97fec5e9a906f044ca71
   - Parameters: `gardenId`, `gardenBedId`, `startDate`, `endDate`, `limit`
-  - Returns: Historical bed usage for rotation analysis
+  - Returns: Historical bed usage (NO variety info or layout coordinates - just plant names and dates)
 
 ## Authentication Pattern
 
