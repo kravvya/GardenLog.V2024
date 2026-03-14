@@ -68,16 +68,32 @@ public class GetGardenDetailsTool
             return null;
         }
 
-        IReadOnlyCollection<GardenBedViewModel> beds = Array.Empty<GardenBedViewModel>();
+        IReadOnlyCollection<GardenBedToolResult> beds = Array.Empty<GardenBedToolResult>();
 
         if (includeGardenBeds)
         {
-            beds = await _userManagementApiClient.GetGardenBeds(garden.GardenId);
+            var bedViewModels = await _userManagementApiClient.GetGardenBeds(garden.GardenId);
+            beds = bedViewModels.Select(b => new GardenBedToolResult
+            {
+                GardenBedId = b.GardenBedId,
+                Name = b.Name,
+                Notes = b.Notes,
+                Type = b.Type.ToString(),
+                Length = b.Length,
+                Width = b.Width
+            }).ToList();
         }
 
         return new GardenDetailsToolResult
         {
-            Garden = garden,
+            GardenId = garden.GardenId,
+            Name = garden.Name,
+            City = garden.City,
+            StateCode = garden.StateCode,
+            Notes = garden.Notes,
+            LastFrostDate = garden.LastFrostDate,
+            FirstFrostDate = garden.FirstFrostDate,
+            WarmSoilDate = garden.WarmSoilDate,
             GardenBeds = beds
         };
     }

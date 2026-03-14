@@ -37,6 +37,7 @@ public class PlantHarvestCycle : BaseEntity, IEntity
     public int? DesiredNumberOfPlants { get; private set; }
     public int? SpacingInInches { get; private set; }
     public double? PlantsPerFoot { get; private set; }
+    public string UserProfileId { get; private set; } = string.Empty;
 
     private readonly List<PlantSchedule> _plantCalendar = new();
     public IReadOnlyCollection<PlantSchedule> PlantCalendar => _plantCalendar.AsReadOnly();
@@ -56,7 +57,7 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         , DateTime? germinationDate, decimal? germinationRate
         , int? numberOfTransplants, DateTime? transplantDate
         , DateTime? firstHarvestDate, DateTime? lastHarvestDate, decimal? totalWeightInPounds, int? totalItems
-        , string Notes, int? desiredNumberOfPlants, int? spacingInInches, double? plantsPerFoot, List<PlantSchedule> plantCalendar)
+        , string Notes, int? desiredNumberOfPlants, int? spacingInInches, double? plantsPerFoot, string userProfileId, List<PlantSchedule> plantCalendar)
     {
         this.PlantId = plantId;
         this.PlantName = plantName;
@@ -81,15 +82,17 @@ public class PlantHarvestCycle : BaseEntity, IEntity
         this.DesiredNumberOfPlants = desiredNumberOfPlants;
         this.SpacingInInches = spacingInInches == 0 ? null : spacingInInches;
         this.PlantsPerFoot = plantsPerFoot == 0 ? null : plantsPerFoot;
+        this.UserProfileId = userProfileId;
         this._plantCalendar = plantCalendar;
     }
 
 
-    public static PlantHarvestCycle Create(PlantHarvestCycleBase plant, Action<HarvestEventTriggerEnum, TriggerEntity> addHarvestEvent)
+    public static PlantHarvestCycle Create(string userProfileId, PlantHarvestCycleBase plant, Action<HarvestEventTriggerEnum, TriggerEntity> addHarvestEvent)
     {
         var harvestPlant = new PlantHarvestCycle()
         {
             Id = Guid.NewGuid().ToString(),
+            UserProfileId = userProfileId,
             PlantId = plant.PlantId,
             PlantName = plant.PlantName,
             PlantVarietyId = plant.PlantVarietyId,
