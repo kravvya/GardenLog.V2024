@@ -1,11 +1,27 @@
 ---
 name: gardenlog-mcp
-description: 'Answer gardening questions using GardenLog MCP: when to seed/plant specific plants, full cycle seed planning, crop rotation advice, garden bed history.'
+description: 'Answer gardening questions using GardenLog MCP: single-plant timing, cross-plant seeding window discovery, full cycle seed planning, crop rotation advice, and garden bed history.'
 ---
 
 # GardenLog MCP Skill
 
 This skill enables answering gardening questions by calling GardenLog MCP tools and analyzing historical data with quality signals.
+
+## Tool Selection Rules
+
+Use these routing rules before choosing tools:
+
+- If the user asks about **one specific plant**, start with **Single Plant Seeding Analysis**
+- If the user asks about **all plants**, **everything**, or **what can I seed/start before, by, between, or during a date window**, start with **Historical Seeding Window Search**
+- If the user asks about **the whole current cycle plan**, use **Full Cycle Seed Plan**
+- If the user asks whether a plant belongs in a specific bed, use **Crop Rotation Check**
+
+Critical routing rule:
+
+- For cross-plant date-window questions, call **`search_plant_harvest_summaries` first**
+- Do **not** start with `get_worklog_history` for this question type
+- Do **not** iterate plant-by-plant with `get_plant_harvest_cycles` unless you already narrowed to a small plant set and need deeper follow-up analysis
+- Do **not** start with `get_harvest_cycle_plants_summary` unless the user explicitly wants the currently planned cycle rather than historical timing
 
 ## Question Types & Workflows
 
@@ -16,6 +32,8 @@ Identify which workflow to use based on the user's question:
 | "When should I seed [plant]?" | **Single Plant Seeding Analysis** |
 | "When should I seed everything?" | **Full Cycle Seed Plan** |
 | "What can I seed between now and [date]?" | **Historical Seeding Window Search** |
+| "What should I start before the end of the month?" | **Historical Seeding Window Search** |
+| "Which plants should be seeded by [date]?" | **Historical Seeding Window Search** |
 | "Can I plant [plant] in this bed?" | **Crop Rotation Check** |
 
 ---
@@ -145,6 +163,17 @@ Use this workflow for questions like:
 - "What can I seed between now and March 29?"
 - "What should I start in the next two weeks?"
 - "Which plants historically get seeded before April?"
+- "What should I seed before the end of the month?"
+- "Which plants need to be started by March 31?"
+
+### Tool Selection Intent
+
+This is the default workflow for broad seeding-window discovery across many plants.
+
+- Choose this workflow when the user is asking for a date window, deadline, or cutoff across multiple plants
+- Choose this workflow when the user says "what can I seed," "what should I start," or "what needs to be seeded before"
+- Do not choose the single-plant workflow unless the user clearly names one plant
+- Do not choose the full-cycle workflow unless the user is asking about the currently planned cycle rather than historical timing
 
 ### Tool Call Sequence
 
@@ -267,9 +296,15 @@ Use this workflow for questions like:
 
 | Tool | Purpose | Key Parameters | Returns |
 |------|---------|----------------|---------|
-| `search_plant_harvest_summaries` | Historical summary rows across plants, grow instructions, and harvest cycles | `plantId`, `plantName`, `harvestCycleId`, `harvestCycleName` (all optional) | One row per plant + grow instruction + harvest cycle with `earliestSeedingDate`, `earliestTransplantDate`, `earliestHarvestDate`, `latestHarvestDate`, and distinct non-empty `feedbackNotes` |
+| `search_plant_harvest_summaries` | Primary tool for cross-plant historical timing and date-window questions | `plantId`, `plantName`, `harvestCycleId`, `harvestCycleName` (all optional) | One row per plant + grow instruction + harvest cycle with `earliestSeedingDate`, `earliestTransplantDate`, `earliestHarvestDate`, `latestHarvestDate`, and distinct non-empty `feedbackNotes` |
 | `get_plant_harvest_cycles` | Historical cycles for ONE plant | `plantName` (required), `startDate` (optional), `endDate` (optional) | Past cycles with quality notes, germination, simplified bed info |
 | `get_worklog_history` | Get actual completed tasks | `reason` (e.g., "SowIndoors"), `startDate`, `endDate` | Historical actual dates |
+
+Selection guidance:
+
+- Use `search_plant_harvest_summaries` first for any broad historical question spanning multiple plants or a target date window
+- Use `get_plant_harvest_cycles` only for deeper single-plant investigation
+- Use `get_worklog_history` only when you specifically need historical task/event records rather than summary rows
 
 ### Garden & Crop Rotation Tools
 
